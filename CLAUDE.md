@@ -2,19 +2,20 @@
 
 App de navegação off-road no estilo do DMD2 (roadbook PDF, GPX, odômetro de rali), feito como PWA de um arquivo só. Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v1.1, 13/11/2026)
+## Estado (v1.2, 14/11/2026)
 
 - `index.html`: app inteiro (HTML + CSS + JS inline). Leaflet e pdf.js vêm do cdnjs.
 - `lib/`: `pmtiles.js` 4.5.0 e `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline).
 - `sw.js`: cache offline do app e dos tiles online já vistos. Subir a versão `trilhanav-vN` a cada release.
 - `manifest.json`, `icon.svg`, `icon-192.png`, `icon-512.png`.
-- `dev/`: testes Playwright (`t.py` GPS/odômetro/alertas/teclas, `t2.py` PDF e tela dividida, `t3.py` mapa offline em partes) e `t.gpx`.
+- `dev/`: testes Playwright (`t.py` GPS/odômetro/alertas/teclas, `t2.py` PDF e tela dividida, `t3.py` mapa offline por arquivo em partes, `t4.py` download do mapa pelo app com falha, parte corrompida e retomada) e `t.gpx`.
 
-Pronto e testado só em Chrome headless (nunca em celular real): odômetro TOTAL/PARCIAL com multiplicador e calibração, CAP até o waypoint, validação automática de waypoint, alertas de fora da trilha e de velocidade, roadbook PDF, tela dividida, gravação e exportação GPX, cronômetro, teclas do controle de guidão configuráveis, simulação de GPS, trava de toque, dia/noite, mapa offline `.pmtiles` instalado no OPFS (aceita arquivo em partes `.part1..N`), botão que abre o Spotify.
+Pronto e testado só em Chrome headless (nunca em celular real): odômetro TOTAL/PARCIAL com multiplicador e calibração, CAP até o waypoint, validação automática de waypoint, alertas de fora da trilha e de velocidade, roadbook PDF, tela dividida, gravação e exportação GPX, cronômetro, teclas do controle de guidão configuráveis, simulação de GPS, trava de toque, dia/noite, mapa offline `.pmtiles` no OPFS (botão que baixa o mapa de MG direto do branch `mapas`, retomável e com conferência SHA-256; ou instalação por arquivo, aceitando partes `.part1..N`), botão que abre o Spotify.
 
 ## Pendências
 
-1. **Publicado** em 14/11/2026: repo `Lubiell/trilhanav` (branch `main`), GitHub Pages em https://lubiell.github.io/trilhanav/. Só por esse link https o GPS e o mapa offline funcionam.
+1. **Publicado** em 14/11/2026 em https://lubiell.github.io/trilhanav/ (só por esse link https o GPS e o mapa offline funcionam). O Pages publica o branch **`gh-pages`**, então todo release é `git push origin main main:gh-pages`.
+   - A sessão do Claude não alcança a API do GitHub para criar repo, release ou configurar Pages; só git push. O Pages foi ligado pelo push do branch `gh-pages`.
 2. **Testar em celular real**: ainda não foi feito.
 3. **Backup**: toda modificação vai também para o Google Drive dele (`trilhanav_backup_AAAA-MM-DD_vX.Y.zip`).
 
@@ -47,4 +48,6 @@ Gerado com `go-pmtiles` (`go install github.com/protomaps/go-pmtiles@latest`), 1
 go-pmtiles extract https://build.protomaps.com/AAAAMMDD.pmtiles mg.pmtiles --bbox=-51.05,-22.93,-39.85,-14.23 --maxzoom=15
 ```
 
-Usar o build diário mais recente. Para entregar pelo chat, dividir em partes de 340 MB (`split -b 340M`); o app junta as partes na instalação.
+Usar o build diário mais recente.
+
+O app baixa o mapa do branch órfão **`mapas`** (pasta `mg/`: `manifest.json` + 30 partes de 45 MB, lidas por `raw.githubusercontent.com`, que libera CORS). Para atualizar o mapa: gerar o `.pmtiles`, `split -b 45M -d -a 3`, refazer o `manifest.json` (`id`, `label`, `size`, `parts[{f,size,sha256}]`) com `id` novo e enviar em pushes de até 6 partes. No app as partes ficam em `mapa-dl/` no OPFS e são lidas sem juntar (`PartsSource`).
