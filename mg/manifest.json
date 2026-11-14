@@ -1,0 +1,158 @@
+{
+"id": "mg-20261112-z15",
+"label": "Minas Gerais",
+"maxzoom": 15,
+"size": 1379269769,
+"parts": [
+{
+"f": "mg.pmtiles.000",
+"size": 47185920,
+"sha256": "0b52f4154084972d3e1e6b9c7041491026f7cc0ad18d9d8a251404d6d88abf9f"
+},
+{
+"f": "mg.pmtiles.001",
+"size": 47185920,
+"sha256": "66c3879d913a08a1f2c1fff857965c615bea8cadedf423f77584a29f68879c01"
+},
+{
+"f": "mg.pmtiles.002",
+"size": 47185920,
+"sha256": "2a03b19d5de3493af8ecc498a983ac20905490eadc8a497e733ee59702486df3"
+},
+{
+"f": "mg.pmtiles.003",
+"size": 47185920,
+"sha256": "b0566a71a8d305fc75429d94557fc7198b215019aaa1d5a5df060c1529f4a822"
+},
+{
+"f": "mg.pmtiles.004",
+"size": 47185920,
+"sha256": "5ce70f7a6c86ceda10a1c9b733ef1dfddaedf70ac4f6f0cf5ae8e224e5ee03d8"
+},
+{
+"f": "mg.pmtiles.005",
+"size": 47185920,
+"sha256": "f5dab1e8586d79794eb5eebdc0d02819987ef24a53da9e6ac15c8b8ae98c0106"
+},
+{
+"f": "mg.pmtiles.006",
+"size": 47185920,
+"sha256": "897fe0a4235f26a332d2884da5f0d649e8a4785314dc2cb80824fe150197bdcb"
+},
+{
+"f": "mg.pmtiles.007",
+"size": 47185920,
+"sha256": "0b1e8ce41ff40946faba51ae876c57cf2cf279b2b9c391be2edd0a2d33f37f29"
+},
+{
+"f": "mg.pmtiles.008",
+"size": 47185920,
+"sha256": "ed4a6e1a28406ebab316ed27de62979f81344c2b872e442cceaf89c1bf1ae1bb"
+},
+{
+"f": "mg.pmtiles.009",
+"size": 47185920,
+"sha256": "804dcaee48b9fa2a6c72a79ad531c61ffc2a2746355b3f9f27c64f092b21034f"
+},
+{
+"f": "mg.pmtiles.010",
+"size": 47185920,
+"sha256": "98b1c8ac140fe32e6a9b77ca81c53170ab4638f68ec29326dc03d01d138af2a1"
+},
+{
+"f": "mg.pmtiles.011",
+"size": 47185920,
+"sha256": "00428a25813ab0a2f8d02e8f94209ec335cf382213db161481b0545412a9f649"
+},
+{
+"f": "mg.pmtiles.012",
+"size": 47185920,
+"sha256": "e7d9ab5fc111c3cddaed539d2d45380aea8035f1bd084fd31d6a5188d70a4005"
+},
+{
+"f": "mg.pmtiles.013",
+"size": 47185920,
+"sha256": "11c956f3264c85a28bca9fb90b7c1b34eaaeeca60d533ac9c4c0291ba37de9a1"
+},
+{
+"f": "mg.pmtiles.014",
+"size": 47185920,
+"sha256": "fc97bb19948b9c624012f2cf7427c0e639d6b18f19107e69ecefad67febdb28a"
+},
+{
+"f": "mg.pmtiles.015",
+"size": 47185920,
+"sha256": "1f7c45b6534789ddc04bba1fc9cf1d5ea09a0d0746c4432ff5bbd46598a5d0f6"
+},
+{
+"f": "mg.pmtiles.016",
+"size": 47185920,
+"sha256": "c38f2dc4090c0c065a3e25f2d0d660752caa093158d60f7a5d7a5cb7972c109c"
+},
+{
+"f": "mg.pmtiles.017",
+"size": 47185920,
+"sha256": "b13c7aaed1755bc5e2d79772e8e0c8bce775b0133f91737774de3aae91df0688"
+},
+{
+"f": "mg.pmtiles.018",
+"size": 47185920,
+"sha256": "ba815fc4ef3db272602af583be9bdaac8b4f3cc408c393f44b17ebc23c2857fc"
+},
+{
+"f": "mg.pmtiles.019",
+"size": 47185920,
+"sha256": "e7b93a77f5334d259ec6885340c62236bcb06bd7d589b0a528db412ffd2a0e11"
+},
+{
+"f": "mg.pmtiles.020",
+"size": 47185920,
+"sha256": "0abbc943622b5ee5a8b1697c88141c030d1efceaa1d29ebf62eafdbf3af21545"
+},
+{
+"f": "mg.pmtiles.021",
+"size": 47185920,
+"sha256": "682e7e99570633ee0a1cebef78dbb85aadd6a9ee93471a5ce7708b83e05ba7ac"
+},
+{
+"f": "mg.pmtiles.022",
+"size": 47185920,
+"sha256": "1f0ce5721cfbf2e6761c4fbdc348b073a4d1aa92af49bef8f6551af3ea448314"
+},
+{
+"f": "mg.pmtiles.023",
+"size": 47185920,
+"sha256": "f52813779b0a6767e25c23ff18ce11e244e3a895137238cc2fad1d0fd78ed8b7"
+},
+{
+"f": "mg.pmtiles.024",
+"size": 47185920,
+"sha256": "7d7ff4a7cf89ca2fe8faee31b1ad38cd57f336bcb2393e3f918464a9050afb1a"
+},
+{
+"f": "mg.pmtiles.025",
+"size": 47185920,
+"sha256": "49bb7def667a4e914eda5ff72b1531776cbd9f4e920a45cce800bcc939be7fe5"
+},
+{
+"f": "mg.pmtiles.026",
+"size": 47185920,
+"sha256": "b591350d05000327bcd681367353863a82db474fd8767b7616531bcad17554eb"
+},
+{
+"f": "mg.pmtiles.027",
+"size": 47185920,
+"sha256": "023139e3b41c3363996e8dafae402398db504be7ad76e970261cd6a8bc87ea61"
+},
+{
+"f": "mg.pmtiles.028",
+"size": 47185920,
+"sha256": "bfe0a48a68a6fed477fa703aed39539c1682133c39b7f283b3fe5f60aa614ed9"
+},
+{
+"f": "mg.pmtiles.029",
+"size": 10878089,
+"sha256": "f5c5ce15199114a5ee948a7f1bfc7a0d9539df792d0e0e1b0d29cc5f8ab0aee4"
+}
+]
+}
