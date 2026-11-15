@@ -68,7 +68,7 @@ body.day #rb{background:#ccc}
 dialog{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:14px;max-width:min(560px,94vw);max-height:88vh;padding:0}
 dialog .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
 dialog .bd{padding:12px 16px;overflow:auto}
-dialog label{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+dialog label,dialog .lr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
 dialog input,dialog select{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px;width:110px}
 dialog input[type=checkbox]{width:22px;height:22px}
 .btn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:600;font-size:14px}
@@ -116,9 +116,11 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <button class="b" data-pane="paneDash">📊<span>Painel</span></button>
     <i class="sep"></i>
     <button class="b" id="bOpen">📂<span>Abrir</span></button>
+    <button class="b" id="bGpx">🗂️<span>Trilhas</span></button>
     <button class="b" id="bWp">📍<span>Waypoints</span></button>
     <button class="b" id="bChrono">⏱️<span id="chronoTxt">00:00</span></button>
     <button class="b" id="bRec">⏺<span>Gravar</span></button>
+    <button class="b" id="bNote">📝<span>Nota</span></button>
     <button class="b" id="bResetP">↺<span>Zerar parc.</span></button>
     <button class="b" id="bSpot">🎵<span>Spotify</span></button>
     <i class="sep"></i>
@@ -158,6 +160,8 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Zonas de velocidade <input type="checkbox" id="sZoneOn"></label>
   <label>Tolerância dentro da zona (km/h) <input type="number" id="sZoneTol"></label>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bVoiceTest">Testar voz</button><button class="btn g" id="bZones">Zonas de velocidade…</button></div>
+  <h3>Aparência</h3>
+  <label>Tema <select id="sTheme"><option value="auto">Automático (pelo sol)</option><option value="day">Dia</option><option value="night">Noite</option></select></label>
   <h3>Roadbook</h3>
   <label>Rolagem por clique (px) <input type="number" id="sScroll"></label>
   <label>Copiloto fala curvas a partir de (°) <input type="number" id="sNoteMin"></label>
@@ -176,8 +180,28 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Velocidade simulada (km/h) <input type="number" id="sSimV"></label>
   <h3>Dados</h3>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
+  <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
   <div class="small" style="padding-top:8px">TrilhaNav v1.3-dev · mapas © OpenStreetMap</div>
+</div></dialog>
+
+<dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
+  <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px"><button class="btn g" id="askNo">Cancelar</button><button class="btn" id="askOk">OK</button></div></div></dialog>
+
+<dialog id="dlgGpx"><div class="hd"><b>Trilhas (GPX)</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div id="gpxCrumb" class="small" style="padding-bottom:6px"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:8px"><button class="btn" id="gImport">Importar GPX</button><button class="btn g" id="gNewDir">Nova pasta</button><button class="btn g" id="gSaveCur">Guardar o GPX aberto aqui</button></div>
+  <div id="gpxList"></div>
+  <input type="file" id="gImportIn" accept=".gpx,application/gpx+xml,.xml" multiple hidden>
+</div></dialog>
+
+<dialog id="dlgNote"><div class="hd"><b>Nota na trilha</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div class="small" id="noteWhere"></div>
+  <textarea id="noteTx" rows="3" placeholder="O que tem aqui? (perigo, ponto de água, lama…)" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px;font:inherit"></textarea>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 0"><button class="btn g" id="notePhoto">📷 Foto</button><span class="small" id="notePhInfo"></span></div>
+  <input type="file" id="notePhIn" accept="image/*" capture="environment" hidden>
+  <div style="display:flex;justify-content:flex-end"><button class="btn" id="noteSave">Salvar nota</button></div>
+  <h3>Notas desta gravação</h3><div id="noteList"></div>
 </div></dialog>
 
 <dialog id="dlgZones"><div class="hd"><b>Zonas de velocidade</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -209,7 +233,7 @@ const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto'};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque'};
@@ -437,7 +461,8 @@ function orNote(e){const L=[],S=[];const dang=e.danger?'⚠ '+'!'.repeat(e.dange
     labels:L,say:S.join('. ')||null,tulip:e.tulip||null,notes:e.notes||null,danger:e.danger,cap:e.cap,speed:e.speed,dz:e.dz,fz:e.fz,reset:e.reset,type:'or'}}
 
 let rbNotes=[],orInfo=null;
-function loadGPX(txt,name){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length&&!(g.or&&g.or.ents.length)){toast('GPX sem pontos');return}
+let curGpxText=null;
+function loadGPX(txt,name,src){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length&&!(g.or&&g.or.ents.length)){toast('GPX sem pontos');return}
   orInfo=g.or;track=g.trk;rbNotes=[];
   if(g.or){const ents=g.or.ents.map(orNote).sort((a,b)=>(a.km==null)-(b.km==null)||a.km-b.km);rbNotes=ents;
     if(!track.length){track=ents.filter(n=>n.lat||n.lon).map(n=>({lat:n.lat,lon:n.lon,ele:null,name:n.name}))}
@@ -447,7 +472,7 @@ function loadGPX(txt,name){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length
   if(!wps.length&&track.length){const step=Math.max(1,Math.floor(track.length/40));wps=track.filter((p,i)=>i%step===0||i===track.length-1).map((p,i)=>({...p,name:'Ponto '+(i+1),auto:true}))}
   buildCum();assignWpKm();buildRb();snapWarned=false;progI=0;prog=null;loadZones(name);
   if(LS.get('gpxName')!==name){wpState=wps.map(()=>null);st.wpIdx=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0}
-  LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){try{localStorage.removeItem('tn_gpx')}catch(_){}}
+  curGpxText=txt;LS.set('gpxPath',src||null);LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){try{localStorage.removeItem('tn_gpx')}catch(_){}}
   drawGPX();drawZones();drawElevation();updateNav();$('#fileName').textContent=name;
   toast((g.or?'OpenRally: ':'GPX carregado: ')+track.length+' pontos, '+wps.filter(w=>!w.auto).length+' waypoints'+(rbNotes.length?', '+rbNotes.length+' notas':''))}
 function drawGPX(){if(trackLine)map.removeLayer(trackLine);wpLayer.clearLayers();
@@ -577,7 +602,7 @@ function copilot(){if(!prog)return;const lead=Math.max(150,speedKmh/3.6*cfg.lead
     if(dm<-30)continue;if(dm<=(ev.lead||lead)){evDone.add(ev.id);say((dm<40?'Agora, ':'Em '+round50(dm)+' metros, ')+(typeof ev.say==='function'?ev.say():ev.say))}}}
 /* ---------- GPS ---------- */
 let lastT=0;
-function onPos(p){const c=p.coords;const now=p.timestamp||Date.now();const cur={lat:c.latitude,lon:c.longitude,ele:c.altitude,acc:c.accuracy,t:now};
+function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.now();const cur={lat:c.latitude,lon:c.longitude,ele:c.altitude,acc:c.accuracy,t:now};
   $('#gpsDot').className='dot '+(c.accuracy<=15?'ok':c.accuracy<=40?'mid':'');$('#gpsTxt').textContent='GPS ±'+Math.round(c.accuracy)+' m';
   let sp=c.speed!=null&&!isNaN(c.speed)?c.speed*3.6:null;
   if(last&&c.accuracy<=50){const d=hav(last,cur);const dt=(now-last.t)/1000;if(sp==null&&dt>0)sp=d/dt*3.6;
@@ -589,7 +614,7 @@ function onPos(p){const c=p.coords;const now=p.timestamp||Date.now();const cur={
   $('#speed').textContent=Math.round(speedKmh);if(speedKmh>=15)learnComp();applyHeading();
   if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
-  renderOdo();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();lastT=now}if(curPane==='paneDash')renderDash()}
+  if(first)autoTheme();renderOdo();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
 let watchId=null;function startGPS(){if(cfg.sim)return startSim();if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
 function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;stopSim()}
@@ -618,9 +643,18 @@ let hold=null;$('#bChrono').onpointerdown=()=>{hold=setTimeout(()=>{hold='done';
 
 /* ---------- gravação ---------- */
 $('#bRec').onclick=()=>{recording=!recording;$('#bRec').classList.toggle('rec',recording);$('#recTop').style.display=recording?'':'none';toast(recording?'Gravando trilha':'Gravação pausada ('+rec.length+' pontos)')};
-function exportGPX(){if(!rec.length){toast('Nada gravado');return}const t=rec.map(p=>'<trkpt lat="'+p.lat.toFixed(7)+'" lon="'+p.lon.toFixed(7)+'">'+(p.ele!=null?'<ele>'+p.ele.toFixed(1)+'</ele>':'')+'<time>'+new Date(p.t).toISOString()+'</time></trkpt>').join('\n');
-  const w=wps.filter((_,i)=>wpState[i]).map((p,i)=>'<wpt lat="'+p.lat+'" lon="'+p.lon+'"><name>'+p.name.replace(/[<&]/g,'')+'</name></wpt>').join('\n');
-  download('trilhanav_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.gpx','<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="TrilhaNav" xmlns="http://www.topografix.com/GPX/1/1">\n'+w+'\n<trk><name>TrilhaNav</name><trkseg>\n'+t+'\n</trkseg></trk></gpx>','application/gpx+xml')}
+async function exportGPX(){if(!rec.length&&!rnotes.length){toast('Nada gravado');return}
+  const t=rec.map(p=>'<trkpt lat="'+p.lat.toFixed(7)+'" lon="'+p.lon.toFixed(7)+'">'+(p.ele!=null?'<ele>'+p.ele.toFixed(1)+'</ele>':'')+'<time>'+new Date(p.t).toISOString()+'</time></trkpt>').join('\n');
+  const w=wps.filter((_,i)=>wpState[i]).map(p=>'<wpt lat="'+p.lat+'" lon="'+p.lon+'"><name>'+xmlEsc(p.name)+'</name></wpt>').join('\n');
+  const stamp=new Date().toISOString().slice(0,16).replace(/[:T]/g,'-'),files=[];
+  const nw=rnotes.map((n,i)=>{const pf=n.photo?'fotos/nota_'+(i+1)+'_'+new Date(n.t).toTimeString().slice(0,8).replace(/:/g,'')+'.jpg':null;if(pf)files.push({name:pf,id:n});
+    return '<wpt lat="'+n.lat.toFixed(7)+'" lon="'+n.lon.toFixed(7)+'"><time>'+new Date(n.t).toISOString()+'</time><name>'+xmlEsc((n.text||'Foto').slice(0,40))+'</name>'+(n.text?'<desc>'+xmlEsc(n.text)+'</desc>':'')+(pf?'<link href="'+pf+'"><text>foto</text></link>':'')+'</wpt>'}).join('\n');
+  const gpx='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="TrilhaNav" xmlns="http://www.topografix.com/GPX/1/1">\n'+w+'\n'+nw+'\n<trk><name>TrilhaNav</name><trkseg>\n'+t+'\n</trkseg></trk></gpx>';
+  const base='trilhanav_'+stamp;
+  try{if(navigator.storage&&navigator.storage.getDirectory)await fsWrite(['gpx','Gravações'],base+'.gpx',gpx)}catch(e){}
+  if(!files.length){download(base+'.gpx',gpx,'application/gpx+xml');return}
+  try{const zf=[{name:base+'.gpx',data:new TextEncoder().encode(gpx)}];for(const f of files)zf.push({name:f.name,data:new Uint8Array(await (await fsRead(['notas',recSession],f.id.photo)).arrayBuffer())});
+    download(base+'.zip',makeZip(zf),'application/zip')}catch(e){toast('Falhou ao montar o ZIP: '+(e.message||e),4000);download(base+'.gpx',gpx,'application/gpx+xml')}}
 function download(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
 
 /* ---------- waypoints dialog ---------- */
@@ -636,7 +670,7 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}wps.splice(st.wpIdx,
 /* ---------- ajustes ---------- */
 const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat]];
 const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim']];
-function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);
+function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sTheme').value=cfg.dayMode;
   $('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
 binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}});
@@ -653,13 +687,102 @@ $('#bRestore').onclick=()=>$('#restoreIn').click();
 $('#restoreIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());Object.assign(cfg,j.cfg||{});keys=Object.assign({},DEFKEYS,j.keys||{});saveCfg();LS.set('keys',keys);fillSet();renderOdo();toast('Ajustes restaurados')}catch(err){toast('Arquivo inválido')}};
 
 /* ---------- zonas de velocidade: tela ---------- */
-function renderZones(){$('#zList').innerHTML=zones.length?zones.map((z,i)=>'<label><span>'+z.limit+' km/h · km '+z.from.toFixed(2)+' a '+z.to.toFixed(2)+(z.src!=='user'?' <span class="small">(do GPX)</span>':'')+'</span>'+(z.src==='user'?'<button class="btn r" data-rm="'+i+'">remover</button>':'')+'</label>').join(''):'<div class="small" style="padding:8px 0">Nenhuma zona neste GPX.</div>';
+function renderZones(){$('#zList').innerHTML=zones.length?zones.map((z,i)=>'<div class="lr"><span>'+z.limit+' km/h · km '+z.from.toFixed(2)+' a '+z.to.toFixed(2)+(z.src!=='user'?' <span class="small">(do GPX)</span>':'')+'</span>'+(z.src==='user'?'<button class="btn r" data-rm="'+i+'">remover</button>':'')+'</div>').join(''):'<div class="small" style="padding:8px 0">Nenhuma zona neste GPX.</div>';
   $('#zList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const z=zones[+b.dataset.rm];zonesUser=zonesUser.filter(u=>!(u.from===z.from&&u.to===z.to&&u.limit===z.limit));LS.set('zones_'+LS.get('gpxName',''),zonesUser);rebuildZones()})}
 document.querySelectorAll('[data-here]').forEach(b=>b.onclick=()=>{if(!prog){toast('Sem posição no trilho');return}$('#'+b.dataset.here).value=prog.km.toFixed(2)});
 $('#zAdd').onclick=()=>{const f=parseFloat($('#zFrom').value),t=parseFloat($('#zTo').value),l=parseFloat($('#zLim').value);if(!(f>=0&&t>f&&l>=5&&l<=200)){toast('Confira início, fim (maior que o início) e limite');return}
   zonesUser.push({from:f,to:t,limit:l});LS.set('zones_'+LS.get('gpxName',''),zonesUser);rebuildZones();toast('Zona adicionada')};
 $('#bZones').onclick=()=>{$('#dlgSet').close();renderZones();$('#dlgZones').showModal()};
 $('#bVoiceTest').onclick=()=>say('Copiloto ligado. Em duzentos metros, curva à direita.',true);
+
+/* ---------- diálogo simples (texto, escolha, confirmação) ---------- */
+function ask({title,msg='',value=null,options=null,ok='OK',danger=false}){return new Promise(res=>{const d=$('#dlgAsk'),inp=$('#askIn'),sel=$('#askSel');let done=false;
+  $('#askT').textContent=title;$('#askMsg').textContent=msg;inp.style.display=value!=null?'':'none';sel.style.display=options?'':'none';if(value!=null)inp.value=value;
+  if(options)sel.innerHTML=options.map((o,i)=>'<option value="'+i+'">'+esc(o.label)+'</option>').join('');
+  $('#askOk').textContent=ok;$('#askOk').className='btn'+(danger?' r':'');
+  const fin=v=>{if(done)return;done=true;d.close();res(v)};
+  $('#askOk').onclick=()=>fin(options?options[+sel.value].value:value!=null?inp.value:true);$('#askNo').onclick=()=>fin(null);d.onclose=()=>fin(null);d.showModal();if(value!=null)inp.focus()})}
+
+/* ---------- arquivos no aparelho (OPFS): GPX em pastas e notas da gravação ---------- */
+const cleanName=n=>String(n).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').trim().slice(0,80);
+async function opfsAt(parts,create=false){let d=await navigator.storage.getDirectory();for(const p of parts)d=await d.getDirectoryHandle(p,{create});return d}
+async function fsList(parts){const d=await opfsAt(parts,true),dirs=[],files=[];for await(const [n,h] of d.entries()){if(h.kind==='directory')dirs.push(n);else{const f=await h.getFile();files.push({name:n,size:f.size,t:f.lastModified})}}
+  dirs.sort((a,b)=>a.localeCompare(b));files.sort((a,b)=>a.name.localeCompare(b.name));return {dirs,files}}
+async function fsWrite(parts,name,data){const d=await opfsAt(parts,true),w=await (await d.getFileHandle(name,{create:true})).createWritable();await w.write(data);await w.close()}
+async function fsRead(parts,name){return await (await (await opfsAt(parts)).getFileHandle(name)).getFile()}
+async function fsDel(parts,name){await (await opfsAt(parts)).removeEntry(name,{recursive:true})}
+async function fsUnique(parts,name){const {files,dirs}=await fsList(parts),have=new Set([...files.map(f=>f.name),...dirs]);if(!have.has(name))return name;const m=/^(.*?)(\.[^.]*)?$/.exec(name);for(let i=2;;i++){const n=m[1]+' ('+i+')'+(m[2]||'');if(!have.has(n))return n}}
+async function fsAllDirs(parts=[]){const out=[parts],{dirs}=await fsList(['gpx',...parts]);for(const d of dirs)out.push(...await fsAllDirs([...parts,d]));return out}
+
+/* ---------- gerenciador de GPX com pastas ---------- */
+let gCwd=[];
+const gLabel=parts=>'/'+parts.join('/');
+async function renderGpx(){const c=$('#gpxList');try{const {dirs,files}=await fsList(['gpx',...gCwd]);
+  $('#gpxCrumb').innerHTML=['Trilhas',...gCwd].map((n,i)=>'<a href="#" data-up="'+i+'" style="color:var(--acc)">'+esc(n)+'</a>').join(' › ');
+  $('#gpxCrumb').querySelectorAll('[data-up]').forEach(a=>a.onclick=e=>{e.preventDefault();gCwd=gCwd.slice(0,+a.dataset.up);renderGpx()});
+  c.innerHTML=(dirs.length||files.length)?dirs.map(n=>'<div class="lr" style="cursor:pointer" data-dir="'+esc(n)+'"><span>📁 '+esc(n)+'</span><span style="display:flex;gap:6px"><button class="btn g" data-act="rmdir" data-n="'+esc(n)+'">Apagar</button></span></div>').join('')+
+    files.map(f=>'<div class="lr" data-file="'+esc(f.name)+'"><span style="cursor:pointer" data-act="open" data-n="'+esc(f.name)+'">📄 '+esc(f.name)+' <span class="small">'+(f.size/1024).toFixed(f.size<1e4?1:0)+' KB</span></span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn g" data-act="mv" data-n="'+esc(f.name)+'">Mover</button><button class="btn g" data-act="ren" data-n="'+esc(f.name)+'">Nome</button><button class="btn g" data-act="rm" data-n="'+esc(f.name)+'">Apagar</button></span></div>').join(''):'<div class="small" style="padding:10px 0">Pasta vazia. Toque em "Importar GPX".</div>';
+  c.querySelectorAll('[data-dir]').forEach(l=>l.onclick=e=>{if(e.target.closest('[data-act]'))return;gCwd=[...gCwd,l.dataset.dir];renderGpx()});
+  c.querySelectorAll('[data-act]').forEach(b=>b.onclick=async e=>{e.stopPropagation();await gAct(b.dataset.act,b.dataset.n)})}catch(e){c.textContent='Não consegui abrir o armazenamento: '+(e.message||e)}}
+async function gAct(act,n){const base=['gpx',...gCwd];
+  if(act==='open'){const f=await fsRead(base,n);loadGPX(await f.text(),n,{parts:base,name:n});$('#dlgGpx').close();return}
+  if(act==='rm'||act==='rmdir'){if(await ask({title:'Apagar',msg:(act==='rmdir'?'Apagar a pasta "':'Apagar "')+n+'"'+(act==='rmdir'?' e tudo dentro dela':'')+'? Não dá para desfazer.',ok:'Apagar',danger:true})){await fsDel(base,n);toast('Apagado')}}
+  else if(act==='ren'){const v=await ask({title:'Renomear',value:n});const nn=v&&cleanName(v);if(nn&&nn!==n){const f=await fsRead(base,n);await fsWrite(base,await fsUnique(base,nn),f);await fsDel(base,n)}}
+  else if(act==='mv'){const all=(await fsAllDirs()).filter(p=>gLabel(p)!==gLabel(gCwd));if(!all.length){toast('Crie uma pasta primeiro');return}
+    const dest=await ask({title:'Mover "'+n+'" para…',options:all.map(p=>({label:p.length?gLabel(p):'/ (raiz)',value:p})),ok:'Mover'});
+    if(dest){const f=await fsRead(base,n);await fsWrite(['gpx',...dest],await fsUnique(['gpx',...dest],n),f);await fsDel(base,n);toast('Movido para '+(dest.length?gLabel(dest):'raiz'))}}
+  renderGpx()}
+$('#bGpx').onclick=()=>{$('#dlgGpx').showModal();renderGpx()};
+$('#gImport').onclick=()=>$('#gImportIn').click();
+$('#gImportIn').onchange=async e=>{const base=['gpx',...gCwd];let n=0;for(const f of e.target.files){try{await fsWrite(base,await fsUnique(base,cleanName(f.name)),await f.text());n++}catch(err){toast('Falhou: '+f.name)}}e.target.value='';if(n)toast(n+' arquivo(s) importado(s)');renderGpx()};
+$('#gNewDir').onclick=async()=>{const v=await ask({title:'Nova pasta',value:''});const nn=v&&cleanName(v);if(nn){await opfsAt(['gpx',...gCwd,nn],true);renderGpx()}};
+$('#gSaveCur').onclick=async()=>{const g=localStorage.getItem('tn_gpx');if(!g&&!curGpxText){toast('Nenhum GPX aberto');return}const nm=cleanName(LS.get('gpxName','rota.gpx')),base=['gpx',...gCwd];await fsWrite(base,await fsUnique(base,nm),curGpxText||g);toast('Guardado em '+gLabel(gCwd));renderGpx()};
+
+/* ---------- notas e fotos na gravação ---------- */
+let recSession=LS.get('recSession',null),rnotes=[],noteLayer=null,notePhoto=null;
+const xmlEsc=t=>String(t==null?'':t).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]));
+function newSession(){recSession='r'+Date.now().toString(36);LS.set('recSession',recSession);return recSession}
+async function loadNotes(){rnotes=[];if(!recSession||!navigator.storage||!navigator.storage.getDirectory){drawNotes();return}
+  try{const {files}=await fsList(['notas',recSession]);for(const f of files.filter(f=>f.name.endsWith('.json'))){try{const n=JSON.parse(await (await fsRead(['notas',recSession],f.name)).text());if(n.photo){try{n.url=URL.createObjectURL(await fsRead(['notas',recSession],n.photo))}catch(e){n.photo=null}}rnotes.push(n)}catch(e){}}}catch(e){}
+  rnotes.sort((a,b)=>a.t-b.t);drawNotes()}
+function drawNotes(){if(!noteLayer)noteLayer=L.layerGroup().addTo(map);noteLayer.clearLayers();
+  rnotes.forEach((n,i)=>{const el=document.createElement('div');el.style.cssText='min-width:140px;max-width:240px';const t=document.createElement('div');t.textContent=n.text||'(sem texto)';t.style.fontWeight='600';el.appendChild(t);
+    if(n.url){const im=document.createElement('img');im.src=n.url;im.style.cssText='max-width:100%;margin-top:6px;border-radius:6px';el.appendChild(im)}
+    L.marker([n.lat,n.lon],{icon:L.divIcon({className:'',html:'<div style="font-size:24px;line-height:24px">📝</div>',iconSize:[24,24],iconAnchor:[4,22]})}).bindPopup(el).addTo(noteLayer)});
+  if($('#dlgNote').open)renderNoteList()}
+function renderNoteList(){$('#noteList').innerHTML=rnotes.length?rnotes.map((n,i)=>'<div class="lr"><span>'+(i+1)+'. '+esc(n.text||'(sem texto)')+(n.photo?' 📷':'')+' <span class="small">'+new Date(n.t).toTimeString().slice(0,5)+'</span></span><button class="btn g" data-rm="'+esc(n.id)+'">Apagar</button></div>').join(''):'<div class="small">Nenhuma nota ainda.</div>';
+  $('#noteList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=async()=>{const n=rnotes.find(x=>x.id===b.dataset.rm);if(!n)return;try{await fsDel(['notas',recSession],n.id+'.json');if(n.photo)await fsDel(['notas',recSession],n.photo)}catch(e){}if(n.url)URL.revokeObjectURL(n.url);rnotes=rnotes.filter(x=>x!==n);drawNotes()})}
+async function photoBlob(file){const bmp=await createImageBitmap(file),k=Math.min(1,1280/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise(r=>c.toBlob(r,'image/jpeg',0.8))}
+$('#bNote').onclick=()=>{$('#noteWhere').textContent=fix?'Posição: '+fix.lat.toFixed(5)+', '+fix.lon.toFixed(5)+' (±'+Math.round(fix.acc)+' m)':'Sem GPS: a nota precisa de uma posição.';$('#noteTx').value='';notePhoto=null;$('#notePhInfo').textContent='';renderNoteList();$('#dlgNote').showModal()};
+$('#notePhoto').onclick=()=>$('#notePhIn').click();
+$('#notePhIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{notePhoto=await photoBlob(f);$('#notePhInfo').textContent='Foto pronta ('+Math.round(notePhoto.size/1024)+' KB)'}catch(err){notePhoto=null;$('#notePhInfo').textContent='Não consegui ler a foto'}};
+$('#noteSave').onclick=async()=>{if(!fix){toast('Sem GPS: não dá para marcar a posição');return}const text=$('#noteTx').value.trim();if(!text&&!notePhoto){toast('Escreva algo ou tire uma foto');return}
+  if(!recSession)newSession();const id='n'+Date.now().toString(36),n={id,t:Date.now(),lat:fix.lat,lon:fix.lon,text,photo:notePhoto?id+'.jpg':null};
+  try{if(notePhoto){await fsWrite(['notas',recSession],id+'.jpg',notePhoto);n.url=URL.createObjectURL(notePhoto)}await fsWrite(['notas',recSession],id+'.json',JSON.stringify({id,t:n.t,lat:n.lat,lon:n.lon,text,photo:n.photo}))}catch(e){toast('Não consegui guardar a nota: '+(e.message||e),4000);return}
+  rnotes.push(n);notePhoto=null;$('#noteTx').value='';$('#notePhInfo').textContent='';drawNotes();toast('Nota salva')};
+$('#bNewRec').onclick=async()=>{if(!(await ask({title:'Limpar gravação',msg:'Apagar o trilho gravado e as notas e fotos desta gravação? Exporte antes se quiser guardar.',ok:'Limpar',danger:true})))return;
+  rec=[];recLine.setLatLngs([]);rnotes.forEach(n=>n.url&&URL.revokeObjectURL(n.url));if(recSession){try{await fsDel(['notas'],recSession)}catch(e){}}recSession=null;LS.set('recSession',null);rnotes=[];drawNotes();toast('Gravação limpa')};
+
+/* ---------- ZIP simples (sem compressão) para exportar GPX + fotos ---------- */
+const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function makeZip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;const n=new Date(),dt=((n.getFullYear()-1980)<<9)|((n.getMonth()+1)<<5)|n.getDate(),tm=(n.getHours()<<11)|(n.getMinutes()<<5)|(n.getSeconds()>>1);
+  for(const f of files){const nm=enc.encode(f.name),crc=crc32(f.data),L=f.data.length,h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(10,tm,true);h.setUint16(12,dt,true);h.setUint32(14,crc,true);h.setUint32(18,L,true);h.setUint32(22,L,true);h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer),nm,f.data);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(12,tm,true);c.setUint16(14,dt,true);c.setUint32(16,crc,true);c.setUint32(20,L,true);c.setUint32(24,L,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cd.push(new Uint8Array(c.buffer),nm);off+=30+nm.length+L}
+  const cs=cd.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:'application/zip'})}
+
+/* ---------- dia/noite automático (altura do sol no lugar e na hora) ---------- */
+function sunElev(ms,lat,lon){const d=ms/86400000+2440587.5-2451545.0,g=rad((357.529+0.98560028*d)%360),q=(280.459+0.98564736*d)%360,Lm=rad((q+1.915*Math.sin(g)+0.020*Math.sin(2*g))%360),e=rad(23.439-0.00000036*d);
+  const ra=Math.atan2(Math.cos(e)*Math.sin(Lm),Math.cos(Lm)),dec=Math.asin(Math.sin(e)*Math.sin(Lm)),gmst=((18.697374558+24.06570982441908*d)%24+24)%24,ha=rad(gmst*15+lon)-ra;
+  return deg(Math.asin(Math.sin(rad(lat))*Math.sin(dec)+Math.cos(rad(lat))*Math.cos(dec)*Math.cos(ha)))}
+function themeNow(){if(cfg.dayMode==='day')return true;if(cfg.dayMode==='night')return false;const p=fix||LS.get('lastPos',null);if(p)return sunElev(Date.now(),p.lat,p.lon)>-1;const h=new Date().getHours();return h>=6&&h<18}
+function autoTheme(){const d=themeNow();if(d!==cfg.day){cfg.day=d;saveCfg();applyTheme()}}
+setInterval(autoTheme,60000);
 
 /* ---------- teclas / controle remoto ---------- */
 let learning=null;
@@ -676,7 +799,8 @@ function toggleLock(){locked=!locked;shield.style.display=locked?'block':'none';
 $('#lockIco').onclick=toggleLock;
 $('#bResetP').onclick=ACT.resetPartial;
 $('#bSpot').onclick=()=>{const a=/Android/i.test(navigator.userAgent);location.href=a?'intent://open.spotify.com/#Intent;scheme=https;package=com.spotify.music;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.spotify.music;end':'spotify:'};
-$('#bDay').onclick=()=>{cfg.day=!cfg.day;saveCfg();applyTheme()};
+$('#bDay').onclick=()=>{const o=['auto','day','night'];cfg.dayMode=o[(o.indexOf(cfg.dayMode)+1)%3];saveCfg();autoTheme();toast('Tema: '+{auto:'automático (pelo sol)',day:'dia',night:'noite'}[cfg.dayMode])};
+$('#sTheme').onchange=e=>{cfg.dayMode=e.target.value;saveCfg();autoTheme()};
 function applyTheme(){document.body.classList.toggle('day',cfg.day);if(typeof offLayer!=='undefined'&&offLayer)loadOffline()}
 $('#bFull').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else{await document.documentElement.requestFullscreen();try{await screen.orientation.lock('landscape')}catch(e){}}}catch(e){toast('Tela cheia indisponível')}};
 let wake=null;async function keepAwake(){try{if('wakeLock' in navigator){wake=await navigator.wakeLock.request('screen')}}catch(e){}}
@@ -684,11 +808,13 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 document.addEventListener('click',()=>{keepAwake();askCompass();if(actx&&actx.state==='suspended')actx.resume()},{once:true});
 
 /* ---------- início ---------- */
-applyTheme();renderOdo();
-try{const g=localStorage.getItem('tn_gpx');if(g)loadGPX(g,LS.get('gpxName','rota.gpx'))}catch(e){}
+autoTheme();applyTheme();renderOdo();
+(async()=>{const sp=LS.get('gpxPath',null);if(sp&&navigator.storage&&navigator.storage.getDirectory){try{const f=await fsRead(sp.parts,sp.name);loadGPX(await f.text(),LS.get('gpxName',sp.name),sp);return}catch(e){}}
+  try{const g=localStorage.getItem('tn_gpx');if(g)loadGPX(g,LS.get('gpxName','rota.gpx'))}catch(e){}})();
+loadNotes();
 startGPS();keepAwake();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={st,cfg,onPos,loadGPX,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={st,cfg,onPos,loadGPX,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
