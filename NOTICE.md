@@ -15,3 +15,9 @@ O TrilhaNav embarca estas bibliotecas (cópias fixas em `lib/`, sem `npm install
 do conjunto sob a mesma licença. Enquanto o repositório do TrilhaNav for público, isso está atendido. Não
 publique o app (nem o APK) em loja ou em repositório fechado sem rever isso. O repositório ainda não tem um
 arquivo `LICENSE` próprio: a escolha da licença é do dono do projeto.
+
+## Formatos
+
+- **OpenRally** (cross-country, v1.0.x): o TrilhaNav lê arquivos nesse formato (`<wpt><extensions>` no namespace
+  `openrally.org`). A especificação é de openrally.org/openrally no GitHub, sob CC BY 4.0. Nenhum código ou
+  arquivo dela é copiado aqui; as fixtures de `dev/t8.py` foram escritas do zero seguindo o XSD.
