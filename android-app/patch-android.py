@@ -22,7 +22,22 @@ if '<queries>' not in s:
     add += '    <queries>\n        <package android:name="com.spotify.music" />\n        <package android:name="com.google.android.apps.youtube.music" />\n    </queries>\n'
 if add:
     s = s.replace('</manifest>', add + '</manifest>')
+# o serviço de GPS do plugin vem com exported=true; só o próprio app o usa, então fecha para outros apps
+if 'xmlns:tools=' not in s:
+    s = s.replace('<manifest ', '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
+if 'BackgroundGeolocationService' not in s:
+    s = s.replace('</application>', '        <service android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService" android:exported="false" tools:replace="android:exported" />\n    </application>')
 open(mf, 'w', encoding='utf-8').write(s)
+
+# versão do APK = versão do package.json
+import json
+ver = json.load(open(os.path.join(here, 'package.json')))['version']
+a, b, c = (int(x) for x in ver.split('.'))
+gf = os.path.join(adir, 'app', 'build.gradle')
+g = open(gf, encoding='utf-8').read()
+g = re.sub(r'versionCode \d+', f'versionCode {a * 10000 + b * 100 + c}', g)
+g = re.sub(r'versionName "[^"]*"', f'versionName "{ver}"', g)
+open(gf, 'w', encoding='utf-8').write(g)
 
 # 3) nome do canal da notificação do GPS
 sx = os.path.join(main, 'res', 'values', 'strings.xml')

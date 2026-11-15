@@ -39,7 +39,25 @@ sendo gravada com o app em segundo plano.
 Capacitor e o plugin de GPS são MIT. O app carrega `leaflet-rotate` e `leaflet-elevation` (GPL-3.0), então o APK
 só pode ser distribuído com o código-fonte aberto (ver `../NOTICE.md`).
 
+## Problemas conhecidos
+
+- **Gradle diz "Could not find" para artefatos que existem** (por exemplo `httpmime`, `commons-io`): o Maven Central pode
+  responder 429 a requisições `HEAD` para certos IPs/proxies (o Gradle usa `HEAD` e trata como "não encontrado").
+  Solução usada na sessão que gerou o primeiro APK: apontar o Gradle para o espelho do Maven Central do Google num
+  init script **local**, fora do repositório, em `~/.gradle/init.d/mirror.gradle`:
+
+  ```groovy
+  def mirror = 'https://maven-central.storage-download.googleapis.com/maven2'
+  def fix = { repos -> repos.all { r -> if (r instanceof MavenArtifactRepository && r.url.toString().contains('repo.maven.apache.org')) r.url = mirror } }
+  beforeSettings { s -> fix(s.pluginManagement.repositories) }
+  allprojects { fix(buildscript.repositories); fix(repositories) }
+  ```
+
+  No GitHub Actions isso não é preciso.
+
 ## Não verificado
 
-O lado Java (`native/`) e o serviço de GPS só são exercitados num aparelho Android de verdade. Os testes `dev/t11.py`
-cobrem o lado do app com um Capacitor simulado.
+O lado Java (`native/`) e o serviço de GPS só são exercitados num aparelho Android de verdade. O que foi conferido no APK
+pronto: pacote, versão, permissões, manifest mesclado (serviço de GPS fechado para outros apps, `allowBackup=false`), assinatura,
+classes nativas no dex e assets sem CDN. Os testes `dev/t11.py` cobrem o lado do app com um Capacitor simulado e `dev/t13.py`
+o pacote web (`bash build-apk.sh --www-only`, `python3 -m http.server 8766` dentro de `www/`).

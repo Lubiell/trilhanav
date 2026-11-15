@@ -26,7 +26,7 @@ App de navegação off-road no estilo do DMD2 (roadbook PDF/OpenRally, GPX, odô
 ## Pendências
 
 1. **Publicado** em https://lubiell.github.io/trilhanav/ (só por esse link https o GPS e o mapa offline funcionam). O Pages publica o branch **`gh-pages`**; a sessão do Claude só alcança o repositório por git push (sem API de Pages/Releases).
-2. **Testar em celular real**: nada disto foi feito (bússola, GPS em segundo plano, voz, mídia, APK, mapa em tela real). Pode haver diferenças entre aparelhos, principalmente na bússola.
+2. **Testar em celular real**: nada disto foi feito (bússola, GPS em segundo plano, voz, mídia, APK, mapa em tela real). O APK de depuração `trilhanav-2.0.0.apk` foi compilado em 15/11/2026 e está no Drive; conferi manifest, assinatura, classes e assets, mas ele nunca rodou num aparelho. Pode haver diferenças entre aparelhos, principalmente na bússola.
 3. **Backup**: toda modificação vai também para o Google Drive dele (`trilhanav_backup_AAAA-MM-DD_vX.Y.zip`).
 4. **Licença**: as libs GPL-3.0 obrigam manter o código aberto; o repositório ainda não tem `LICENSE` próprio (decisão do dono).
 5. Ideias ainda não feitas: busca de endereço offline, controle de câmeras GoPro/Insta360 pelo guidão, exportar o roadbook automático como OpenRally, preferir menos curvas no caminho de volta.
@@ -47,7 +47,7 @@ Precisa do pacote Python `playwright` (os testes usam `/usr/bin/google-chrome`) 
 - `dl/` (t4): `manifest.json` (`id`, `label`, `size`, `parts[{f,size,sha256}]`) + as 3 partes.
 - `roads.pmtiles` (t10): z14 com uma malha de estradas, um rio e uma só ponte, tiles recortados com buffer de 64 (como o Planetiler).
 
-`t5` bússola/odômetro, `t6` copiloto/zonas, `t7` rotação/altimetria, `t8` OpenRally/roadbook automático, `t9` gerenciador/notas/tema, `t10` rota de volta, `t11` integração do APK (Capacitor simulado), `t12` correções das revisões (backup malicioso, teclas ao digitar, MVT malformado, GPX por pasta, etc.).
+`t5` bússola/odômetro, `t6` copiloto/zonas, `t7` rotação/altimetria, `t8` OpenRally/roadbook automático, `t9` gerenciador/notas/tema, `t10` rota de volta, `t11` integração do APK (Capacitor simulado), `t12` correções das revisões (backup malicioso, teclas ao digitar, MVT malformado, GPX por pasta, etc.). `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py`.
 
 ## Mapa offline de Minas Gerais
 
