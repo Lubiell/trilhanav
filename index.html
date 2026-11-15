@@ -134,6 +134,13 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Ajuste da bússola (°) <input type="number" step="0.1" id="sCompOff"></label>
   <div class="small" id="compInfo"></div>
   <label>Som nos alertas <input type="checkbox" id="sSnd"></label>
+  <h3>Copiloto e zonas de velocidade</h3>
+  <label>Copiloto por voz <input type="checkbox" id="sVoice"></label>
+  <label>Aviso com antecedência (s) <input type="number" id="sLead"></label>
+  <label>Volume da voz (0 a 1) <input type="number" step="0.1" min="0" max="1" id="sVoiceVol"></label>
+  <label>Zonas de velocidade <input type="checkbox" id="sZoneOn"></label>
+  <label>Tolerância dentro da zona (km/h) <input type="number" id="sZoneTol"></label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bVoiceTest">Testar voz</button><button class="btn g" id="bZones">Zonas de velocidade…</button></div>
   <h3>Roadbook</h3>
   <label>Rolagem por clique (px) <input type="number" id="sScroll"></label>
   <h3>Controle de guidão / teclado</h3>
@@ -154,6 +161,15 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" style="padding-top:8px">TrilhaNav v1.3-dev · mapas © OpenStreetMap</div>
 </div></dialog>
 
+<dialog id="dlgZones"><div class="hd"><b>Zonas de velocidade</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div class="small">Aparecem sozinhas quando o GPX tem waypoints chamados "VEL 40" (ou "LIMITE 30", "ZV 50") até um "FIM". Aqui você cria as suas, em km do roadbook.</div>
+  <label>Início (km) <span><input type="number" step="0.01" id="zFrom"> <button class="btn g" data-here="zFrom">aqui</button></span></label>
+  <label>Fim (km) <span><input type="number" step="0.01" id="zTo"> <button class="btn g" data-here="zTo">aqui</button></span></label>
+  <label>Limite (km/h) <input type="number" id="zLim" value="40"></label>
+  <div style="padding:8px 0"><button class="btn" id="zAdd">Adicionar zona</button></div>
+  <div id="zList"></div>
+</div></dialog>
+
 <dialog id="dlgWp"><div class="hd"><b>Waypoints</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
   <div style="display:flex;gap:8px;padding-bottom:8px"><button class="btn g" id="bPrevWp">◀ Anterior</button><button class="btn g" id="bNextWp">Pular ▶</button><button class="btn g" id="bMarkWp">+ Marcar aqui</button></div>
   <div style="display:flex;gap:8px;padding-bottom:8px;flex-wrap:wrap"><button class="btn g" id="bValWp">✔ Validar este</button><button class="btn g" id="bAlignWp">Alinhar TOTAL ao roadbook</button></div>
@@ -171,7 +187,7 @@ const $=s=>document.querySelector(s);
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque'};
@@ -189,8 +205,8 @@ function hav(a,b){const dLa=rad(b.lat-a.lat),dLo=rad(b.lon-a.lon);const x=Math.s
 function brg(a,b){const y=Math.sin(rad(b.lon-a.lon))*Math.cos(rad(b.lat));const x=Math.cos(rad(a.lat))*Math.sin(rad(b.lat))-Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lon-a.lon));return (deg(Math.atan2(y,x))+360)%360}
 let tcum=[];function buildCum(){tcum=[0];for(let i=1;i<track.length;i++)tcum[i]=tcum[i-1]+hav(track[i-1],track[i])}
 /* projeta p no trilho (a partir do ponto "from"); devolve distância ao trilho, segmento e km acumulado do trilho */
-function projTrack(p,from=0){if(track.length<2)return null;if(tcum.length!==track.length)buildCum();const k=Math.cos(rad(p.lat))*R*Math.PI/180,m=R*Math.PI/180;let best=Infinity,bi=0,bt=0;
-  for(let i=Math.max(0,Math.min(from,track.length-2));i<track.length-1;i++){const a=track[i],b=track[i+1];const ax=(a.lon-p.lon)*k,ay=(a.lat-p.lat)*m,bx=(b.lon-p.lon)*k,by=(b.lat-p.lat)*m;const dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy,d=x*x+y*y;if(d<best){best=d;bi=i;bt=t}}
+function projTrack(p,from=0,to=Infinity){if(track.length<2)return null;if(tcum.length!==track.length)buildCum();const k=Math.cos(rad(p.lat))*R*Math.PI/180,m=R*Math.PI/180;let best=Infinity,bi=0,bt=0;
+  for(let i=Math.max(0,Math.min(from,track.length-2)),e=Math.min(to,track.length-1);i<e;i++){const a=track[i],b=track[i+1];const ax=(a.lon-p.lon)*k,ay=(a.lat-p.lat)*m,bx=(b.lon-p.lon)*k,by=(b.lat-p.lat)*m;const dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy,d=x*x+y*y;if(d<best){best=d;bi=i;bt=t}}
   const mm=tcum[bi]+bt*(tcum[bi+1]-tcum[bi]);return {d:Math.sqrt(best),i:bi,t:bt,km:mm/1000}}
 function distToTrack(p){const r=projTrack(p);return r&&{d:r.d,i:r.i}}
 /* km do roadbook de cada waypoint = distância percorrida no trilho até ele (em ordem, para não confundir trechos que passam duas vezes no mesmo lugar) */
@@ -299,10 +315,10 @@ function parseGPX(txt){const x=new DOMParser().parseFromString(txt,'application/
 function loadGPX(txt,name){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length){toast('GPX sem pontos');return}
   track=g.trk;wps=g.wps.map((p,i)=>({...p,name:p.name||('WP '+(i+1))}));
   if(!wps.length&&track.length){const step=Math.max(1,Math.floor(track.length/40));wps=track.filter((p,i)=>i%step===0||i===track.length-1).map((p,i)=>({...p,name:'Ponto '+(i+1),auto:true}))}
-  buildCum();assignWpKm();snapWarned=false;
+  buildCum();assignWpKm();snapWarned=false;progI=0;prog=null;loadZones(name);
   if(LS.get('gpxName')!==name){wpState=wps.map(()=>null);st.wpIdx=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0}
   LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){}
-  drawGPX();updateNav();$('#fileName').textContent=name;toast('GPX carregado: '+track.length+' pontos, '+wps.length+' waypoints')}
+  drawGPX();drawZones();updateNav();$('#fileName').textContent=name;toast('GPX carregado: '+track.length+' pontos, '+wps.length+' waypoints')}
 function drawGPX(){if(trackLine)map.removeLayer(trackLine);wpLayer.clearLayers();
   if(track.length){trackLine=L.polyline(track.map(p=>[p.lat,p.lon]),{color:'#f0a020',weight:5,opacity:.85}).addTo(map);if(!fix)map.fitBounds(trackLine.getBounds(),{padding:[20,20]})}
   wps.forEach((w,i)=>{if(w.auto)return;const s=wpState[i];const c=s==='ok'?'#3cc46b':s==='miss'?'#e64545':i===st.wpIdx?'#1e9be0':'#fff';
@@ -335,9 +351,15 @@ function updateNav(){const w=curWp();if(!w){$('#cap').textContent='---';$('#wpDi
   const rel=heading==null?b:b-heading;$('#capArrow').style.transform='rotate('+rel+'deg)';
   if(cfg.auto&&d<=cfg.wpR&&wpState[st.wpIdx]!=='ok'){wpState[st.wpIdx]='ok';const ex=onWpValidated(st.wpIdx);beep(1200,120);setTimeout(()=>beep(1500,160),160);vib([80,60,80]);toast('✅ '+w.name+' validado'+(ex?' · '+ex:''),ex?5000:1800);if(st.wpIdx<wps.length-1)setWp(st.wpIdx+1);else{LS.set('wpState',wpState);drawGPX();renderWpList()}}}
 function banner(t){const b=$('#banner');if(t){b.textContent=t;b.style.display='block'}else b.style.display='none'}
-function checkAlerts(){let msg='';
-  if(cfg.off>0&&track.length>1&&fix){const r=distToTrack(fix);if(r&&r.d>cfg.off){msg='FORA DA TRILHA '+Math.round(r.d)+' m';if(!offAlert){offAlert=true;beep(440,400);vib([300,100,300])}}else offAlert=false}
-  if(cfg.spd>0&&speedKmh>cfg.spd){msg=(msg?msg+' · ':'')+'VELOCIDADE '+Math.round(speedKmh)+' km/h';if(!spdAlert){spdAlert=true;beep(660,300);vib(300)}}else spdAlert=false;
+function checkAlerts(){let msg='';const now=fix?fix.t:Date.now();
+  if(cfg.off>0&&track.length>1&&fix){const r=distToTrack(fix);if(r&&r.d>cfg.off){msg='FORA DA TRILHA '+Math.round(r.d)+' m';if(!offAlert){offAlert=true;beep(440,400);vib([300,100,300]);say('Fora da trilha',true)}}else{if(offAlert)say('De volta à trilha');offAlert=false}}
+  /* zona de velocidade: entrada, saída, aviso antecipado e excesso */
+  const z=cfg.zoneOn&&prog?zoneAt(prog.km):null;
+  if(z!==curZone){if(z){toast('Zona de velocidade: limite '+z.limit+' km/h',3000);beep(800,120)}else if(curZone){say('Fim da zona de velocidade');toast('Fim da zona de velocidade')}curZone=z}
+  const limit=z?z.limit+cfg.zoneTol:(cfg.spd>0?cfg.spd:0);
+  if(limit>0&&speedKmh>limit){msg=(msg?msg+' · ':'')+'VELOCIDADE '+Math.round(speedKmh)+' / LIMITE '+(z?z.limit:cfg.spd);if(!spdAlert){spdAlert=true;beep(660,300);vib(300);say('Velocidade acima do limite. Limite '+(z?z.limit:cfg.spd),true);lastWarnT=now}else if(now-lastWarnT>12000){lastWarnT=now;say('Reduza a velocidade')}}else spdAlert=false;
+  if(cfg.zoneOn&&prog&&!z){const lead=Math.max(150,speedKmh/3.6*cfg.lead);const nz=zones.find(q=>q.from>prog.km);
+    if(nz){const dm=(nz.from-prog.km)*1000;if(dm<=lead&&speedKmh>nz.limit+cfg.zoneTol)msg=(msg?msg+' · ':'')+'ZONA '+nz.limit+' EM '+round50(dm)+' m: REDUZA'}}
   banner(msg)}
 
 /* ---------- bússola do aparelho ---------- */
@@ -379,6 +401,39 @@ function onWpValidated(i){const w=wps[i];if(!w||w.auto||w.km==null||!cfg.snap)re
   if(cfg.learn&&st.snapKm!=null&&st.snapTot!=null){const exp=w.km-st.snapKm,got=st.total-st.snapTot;if(exp>1&&got>0.5){const r=exp/got;if(Math.abs(r-1)<0.15){cfg.mult=+(cfg.mult*(1+(r-1)*0.5)).toFixed(4);saveCfg()}}}
   return corrTxt(alignTotal(w.km))}
 
+/* ---------- progresso no trilho, zonas de velocidade e copiloto ---------- */
+let progI=0,prog=null,zones=[],zonesUser=[],curZone=null,events=[],evDone=new Set(),zoneLayer=null,lastWarnT=0;
+const spoken=[],round50=m=>Math.max(0,Math.round(m/50)*50);
+function say(t,urgent){spoken.push(t);if(spoken.length>60)spoken.shift();if(!cfg.voice)return;
+  try{const ss=window.speechSynthesis;if(!ss||typeof SpeechSynthesisUtterance==='undefined')return;if(urgent)ss.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.volume=Math.max(0,Math.min(1,cfg.voiceVol));u.rate=1.05;
+    const v=(ss.getVoices()||[]).find(v=>/^pt[-_]BR/i.test(v.lang));if(v)u.voice=v;ss.speak(u)}catch(e){}}
+function updateProg(){prog=null;if(!fix||track.length<2)return;
+  let r=projTrack(fix,Math.max(0,progI-30),Math.min(track.length-1,progI+400));
+  if(!r||r.d>120){const g=projTrack(fix);if(g&&(!r||g.d<r.d-50))r=g}
+  if(r&&r.d<=400){prog=r;progI=r.i}}
+/* zonas: waypoints "VEL 40" ... "FIM" no GPX + zonas criadas à mão (guardadas por GPX) */
+const ZRE=/(?:vel(?:ocidade)?|zv|lim(?:ite)?|speed|zona)[^0-9a-z]*(\d{2,3})/i,ZEND=/^\s*(?:fim|end|livre|free)/i,isZoneWp=w=>ZRE.test(w.name||'')||(ZEND.test(w.name||'')&&zones.some(z=>z.src==='gpx'&&z.to===w.km));
+function zonesFromWps(){const out=[],L=tcum.length?tcum[tcum.length-1]/1000:null;let open=null;
+  wps.forEach(w=>{if(w.auto||w.km==null)return;const m=ZRE.exec(w.name||'');
+    if(m){if(open){open.to=w.km;out.push(open)}open={from:w.km,to:L!=null?L:w.km+1,limit:+m[1],name:w.name,src:'gpx'}}
+    else if(open&&ZEND.test(w.name||'')){open.to=w.km;out.push(open);open=null}});
+  if(open)out.push(open);return out}
+function loadZones(name){zonesUser=LS.get('zones_'+name,[]);rebuildZones()}
+function rebuildZones(){zones=[...zonesFromWps(),...zonesUser.map(z=>({...z,src:'user'}))].sort((a,b)=>a.from-b.from);curZone=null;buildEvents();drawZones();if($('#dlgZones').open)renderZones()}
+function sliceTrack(a,b){const out=[];for(let i=0;i<track.length;i++){const k=tcum[i]/1000;if(k>=a&&k<=b)out.push([track[i].lat,track[i].lon])}return out}
+function drawZones(){if(!zoneLayer)zoneLayer=L.layerGroup().addTo(map);zoneLayer.clearLayers();
+  if(track.length>1)zones.forEach(z=>{const pts=sliceTrack(z.from,z.to);if(pts.length>1)L.polyline(pts,{color:'#e64545',weight:11,opacity:.45,lineCap:'butt'}).bindTooltip(z.limit+' km/h').addTo(zoneLayer)})}
+const zoneAt=km=>zones.find(z=>km>=z.from&&km<z.to);
+/* eventos à frente que o copiloto canta antes da hora */
+function buildEvents(){events=[];
+  wps.forEach((w,i)=>{if(w.auto||w.km==null||isZoneWp(w))return;events.push({id:'w'+i,km:w.km,say:w.say||w.name,kind:'wp'})});
+  zones.forEach((z,i)=>events.push({id:'z'+i+'_'+z.from,km:z.from,say:'zona de velocidade, limite '+z.limit+' quilômetros por hora',kind:'zone',zone:z}));
+  if(typeof noteEvents==='function')events.push(...noteEvents());
+  events.sort((a,b)=>a.km-b.km);evDone.clear()}
+function copilot(){if(!prog)return;const lead=Math.max(150,speedKmh/3.6*cfg.lead);
+  for(const ev of events){const dm=(ev.km-prog.km)*1000;
+    if(evDone.has(ev.id)){if(dm>Math.max(600,lead*2))evDone.delete(ev.id);continue}
+    if(dm<-30)continue;if(dm<=lead){evDone.add(ev.id);say((dm<40?'Agora, ':'Em '+round50(dm)+' metros, ')+ev.say)}}}
 /* ---------- GPS ---------- */
 let lastT=0;
 function onPos(p){const c=p.coords;const now=p.timestamp||Date.now();const cur={lat:c.latitude,lon:c.longitude,ele:c.altitude,acc:c.accuracy,t:now};
@@ -393,7 +448,7 @@ function onPos(p){const c=p.coords;const now=p.timestamp||Date.now();const cur={
   $('#speed').textContent=Math.round(speedKmh);if(speedKmh>=15)learnComp();applyHeading();
   if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
-  renderOdo();updateNav();checkAlerts();if(now-lastT>3000){saveOdo();lastT=now}if(curPane==='paneDash')renderDash()}
+  renderOdo();updateNav();updateProg();copilot();checkAlerts();if(now-lastT>3000){saveOdo();lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
 let watchId=null;function startGPS(){if(cfg.sim)return startSim();if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
 function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;stopSim()}
@@ -408,7 +463,7 @@ function stopSim(){if(simT)clearInterval(simT);simT=null}
 /* ---------- painel ---------- */
 function renderDash(){const avg=st.movSec>0?st.movKm/(st.movSec/3600):0;const ok=wpState.filter(s=>s==='ok').length,miss=wpState.filter(s=>s==='miss').length;
   let rest='—';if(fix&&track.length>1){const r=distToTrack(fix);if(r){let s=hav(fix,track[r.i+1]);for(let i=r.i+1;i<track.length-1;i++)s+=hav(track[i],track[i+1]);rest=(s/1000).toFixed(1)+' km'}}
-  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Pontos gravados',rec.length],['Correção do odômetro',st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—'],['Cronômetro',$('#chronoTxt').textContent]];
+  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Limite agora',curZone?curZone.limit+' km/h (zona)':cfg.spd>0?cfg.spd+' km/h':'—'],['Pontos gravados',rec.length],['Correção do odômetro',st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—'],['Cronômetro',$('#chronoTxt').textContent]];
   $('#dash').innerHTML=items.map(([k,v])=>'<div class="card"><h4>'+k.toUpperCase()+'</h4><div class="mid">'+v+'</div></div>').join('')}
 const hms=s=>{s=Math.floor(s);return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 
@@ -438,8 +493,8 @@ $('#bNextWp').onclick=()=>setWp(st.wpIdx+1,'miss');$('#bPrevWp').onclick=()=>set
 $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}wps.splice(st.wpIdx,0,{lat:fix.lat,lon:fix.lon,name:'Marcado '+new Date().toTimeString().slice(0,5)});wpState.splice(st.wpIdx,0,'ok');setWp(st.wpIdx+1)};
 
 /* ---------- ajustes ---------- */
-const bind=[['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat]];
-const binc=[['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim']];
+const bind=[['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat]];
+const binc=[['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);
   $('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
@@ -454,6 +509,15 @@ $('#bExport').onclick=exportGPX;
 $('#bBackup').onclick=()=>download('trilhanav_ajustes.json',JSON.stringify({cfg,keys,odo:st},null,1),'application/json');
 $('#bRestore').onclick=()=>$('#restoreIn').click();
 $('#restoreIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());Object.assign(cfg,j.cfg||{});keys=Object.assign({},DEFKEYS,j.keys||{});saveCfg();LS.set('keys',keys);fillSet();renderOdo();toast('Ajustes restaurados')}catch(err){toast('Arquivo inválido')}};
+
+/* ---------- zonas de velocidade: tela ---------- */
+function renderZones(){$('#zList').innerHTML=zones.length?zones.map((z,i)=>'<label><span>'+z.limit+' km/h · km '+z.from.toFixed(2)+' a '+z.to.toFixed(2)+(z.src==='gpx'?' <span class="small">(do GPX)</span>':'')+'</span>'+(z.src==='user'?'<button class="btn r" data-rm="'+i+'">remover</button>':'')+'</label>').join(''):'<div class="small" style="padding:8px 0">Nenhuma zona neste GPX.</div>';
+  $('#zList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const z=zones[+b.dataset.rm];zonesUser=zonesUser.filter(u=>!(u.from===z.from&&u.to===z.to&&u.limit===z.limit));LS.set('zones_'+LS.get('gpxName',''),zonesUser);rebuildZones()})}
+document.querySelectorAll('[data-here]').forEach(b=>b.onclick=()=>{if(!prog){toast('Sem posição no trilho');return}$('#'+b.dataset.here).value=prog.km.toFixed(2)});
+$('#zAdd').onclick=()=>{const f=parseFloat($('#zFrom').value),t=parseFloat($('#zTo').value),l=parseFloat($('#zLim').value);if(!(f>=0&&t>f&&l>=5&&l<=200)){toast('Confira início, fim (maior que o início) e limite');return}
+  zonesUser.push({from:f,to:t,limit:l});LS.set('zones_'+LS.get('gpxName',''),zonesUser);rebuildZones();toast('Zona adicionada')};
+$('#bZones').onclick=()=>{$('#dlgSet').close();renderZones();$('#dlgZones').showModal()};
+$('#bVoiceTest').onclick=()=>say('Copiloto ligado. Em duzentos metros, curva à direita.',true);
 
 /* ---------- teclas / controle remoto ---------- */
 let learning=null;
@@ -482,7 +546,7 @@ applyTheme();renderOdo();
 try{const g=localStorage.getItem('tn_gpx');if(g)loadGPX(g,LS.get('gpxName','rota.gpx'))}catch(e){}
 startGPS();keepAwake();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={st,cfg,onPos,loadGPX,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={st,cfg,onPos,loadGPX,say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
