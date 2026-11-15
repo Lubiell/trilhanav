@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="lib/elevation/dist/leaflet-elevation.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1620;--panel:#12202c;--card:#162837;--line:#24394b;--txt:#e8eef3;--mut:#8aa0b2;--acc:#1e9be0;--ok:#3cc46b;--warn:#f0a020;--bad:#e64545}
@@ -39,6 +40,9 @@ body.day #rb{background:#ccc}
 #rb canvas{display:block;width:100%;margin:0 auto 6px;background:#fff}
 #rbEmpty,#mapEmpty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);padding:20px;pointer-events:none}
 #map{position:absolute;inset:0}
+#elevDiv{position:absolute;left:0;right:0;bottom:0;height:38%;display:none;background:var(--panel);border-top:1px solid var(--line);overflow:hidden}
+#paneMap.withElev #map{bottom:38%}#paneMap.withElev #elevDiv{display:block}
+#elevMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);padding:12px;text-align:center}
 #dash{padding:10px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-content:start}
 #bot{display:flex;align-items:center;gap:4px;padding:0 6px;background:var(--panel);border-top:1px solid var(--line);overflow-x:auto}
 .b{flex:0 0 auto;min-width:54px;height:52px;border:0;border-radius:10px;background:transparent;color:var(--txt);font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
@@ -87,7 +91,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <div id="view">
       <div id="banner"></div>
       <div class="pane on" id="paneRb"><div id="rb"></div><div id="rbEmpty">Nenhum roadbook carregado<br>Abra um PDF ou GPX pelo botão 📂</div></div>
-      <div class="pane" id="paneMap"><div id="map"></div></div>
+      <div class="pane" id="paneMap"><div id="map"></div><div id="elevDiv"><div id="elevMsg"></div></div></div>
       <div class="pane" id="paneSplit"></div>
       <div class="pane" id="paneDash"><div id="dash"></div></div>
     </div>
@@ -96,6 +100,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <button class="b on" data-pane="paneRb">📜<span>Roadbook</span></button>
     <button class="b" data-pane="paneMap">🗺️<span>Mapa</span></button>
     <button class="b" id="bSplit">🧩<span>Dividir</span></button>
+    <button class="b" id="bElev">📈<span>Altimetria</span></button>
     <button class="b" data-pane="paneDash">📊<span>Painel</span></button>
     <i class="sep"></i>
     <button class="b" id="bOpen">📂<span>Abrir</span></button>
@@ -178,6 +183,8 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 </div></dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="lib/leaflet-rotate.js"></script>
+<script src="lib/elevation/dist/leaflet-elevation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="lib/pmtiles.js"></script>
 <script src="lib/protomaps-leaflet.js"></script>
@@ -235,7 +242,7 @@ function nextPane(){const order=['paneRb','paneMap','paneDash'];showPane(order[(
 function orient(){document.body.classList.toggle('portrait',innerHeight>innerWidth)}addEventListener('resize',()=>{orient();map&&map.invalidateSize()});orient();
 
 /* ---------- mapa ---------- */
-const map=L.map('map',{zoomControl:true,attributionControl:true}).setView([-15.78,-47.93],5);
+const map=L.map('map',{zoomControl:true,attributionControl:true,rotate:true,bearing:0,touchRotate:false,shiftKeyRotate:false,rotateControl:false}).setView([-15.78,-47.93],5);
 const base={'Ruas (OSM)':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}),
  'Relevo (OpenTopoMap)':L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenStreetMap, SRTM | OpenTopoMap'}),
  'Satélite (Esri)':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'})};
@@ -307,6 +314,26 @@ const me=L.marker([0,0],{icon:meIcon,interactive:false});
 map.on('dragstart',()=>{follow=false;toast('Seguir desligado — toque 🎯 para voltar')});
 const Center=L.Control.extend({onAdd(){const b=L.DomUtil.create('button');b.textContent='🎯';b.style.cssText='font-size:22px;width:44px;height:44px;border-radius:8px;border:0;background:#fff';b.onclick=e=>{L.DomEvent.stop(e);follow=true;fix&&map.setView([fix.lat,fix.lon],Math.max(map.getZoom(),15))};return b}});new Center({position:'topleft'}).addTo(map);
 
+/* ---------- perfil de altimetria (leaflet-elevation) ---------- */
+let elevCtl=null,elevOn=false;
+function trackGeoJSON(){let ok=0,prev=null;const co=track.map(p=>{let z=p.ele;if(z==null||isNaN(z))z=prev;else{ok++;prev=z}return [p.lon,p.lat,z]});
+  const first=co.find(c=>c[2]!=null);if(!first||ok<2)return null;co.forEach(c=>{if(c[2]==null)c[2]=first[2]});
+  return {type:'FeatureCollection',features:[{type:'Feature',properties:{name:LS.get('gpxName','trilha')},geometry:{type:'LineString',coordinates:co}}]}}
+function setElevMsg(t){$('#elevMsg').textContent=t||'';$('#elevMsg').style.display=t?'flex':'none'}
+function drawElevation(){if(!elevOn||typeof L.control.elevation!=='function')return;
+  const gj=trackGeoJSON();if(elevCtl){try{elevCtl.clear()}catch(e){}}
+  if(!track.length){setElevMsg('Carregue um GPX para ver o perfil de altimetria.');return}
+  if(!gj){setElevMsg('Este GPX não tem altitude nos pontos do trilho.');return}
+  setElevMsg('');
+  if(!elevCtl)elevCtl=L.control.elevation({detached:true,elevationDiv:'#elevDiv',theme:cfg.day?'lightblue-theme':'steelblue-theme',handlers:['Distance','Altitude','Slope'],time:false,speed:false,acceleration:false,slope:true,summary:'inline',legend:false,followMarker:false,almostOver:false,distanceMarkers:false,edgeScale:false,hotline:false,downloadLink:false,collapsed:false,autohide:false,closeBtn:false,height:Math.max(110,Math.round($('#paneMap').clientHeight*0.30)),width:Math.max(300,$('#paneMap').clientWidth),waypoints:false,wptIcons:false,wptLabels:false,polyline:{opacity:0},ruler:false}).addTo(map);
+  elevCtl.addData(gj)}
+function elevCursor(){if(!elevOn||!elevCtl||!prog||!elevCtl._chart||!elevCtl._data)return;
+  try{const ch=elevCtl._chart,d=elevCtl._data;if(!d.length||!ch._x)return;const km=prog.km;let i=0;while(i<d.length-1&&d[i].dist<km)i++;const it=d[i];if(it&&it.dist!=null)elevCtl._showDiagramIndicator(it,ch._x(it.dist))}catch(e){}}
+function toggleElev(on){elevOn=on==null?!elevOn:on;$('#paneMap').classList.toggle('withElev',elevOn);$('#bElev').classList.toggle('on',elevOn);
+  if(elevOn&&curPane!=='paneMap'&&!split)showPane('paneMap');
+  setTimeout(()=>{map.invalidateSize();if(elevOn)drawElevation();else if(elevCtl){try{elevCtl.clear()}catch(e){}}},60)}
+$('#bElev').onclick=()=>toggleElev();
+
 /* ---------- GPX ---------- */
 function parseGPX(txt){const x=new DOMParser().parseFromString(txt,'application/xml');const pt=e=>({lat:+e.getAttribute('lat'),lon:+e.getAttribute('lon'),ele:e.querySelector('ele')?+e.querySelector('ele').textContent:null,name:(e.querySelector('name')||{}).textContent||''});
   let trk=[...x.getElementsByTagName('trkpt')].map(pt);const rte=[...x.getElementsByTagName('rtept')].map(pt);let w=[...x.getElementsByTagName('wpt')].map(pt);
@@ -318,7 +345,7 @@ function loadGPX(txt,name){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length
   buildCum();assignWpKm();snapWarned=false;progI=0;prog=null;loadZones(name);
   if(LS.get('gpxName')!==name){wpState=wps.map(()=>null);st.wpIdx=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0}
   LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){}
-  drawGPX();drawZones();updateNav();$('#fileName').textContent=name;toast('GPX carregado: '+track.length+' pontos, '+wps.length+' waypoints')}
+  drawGPX();drawZones();drawElevation();updateNav();$('#fileName').textContent=name;toast('GPX carregado: '+track.length+' pontos, '+wps.length+' waypoints')}
 function drawGPX(){if(trackLine)map.removeLayer(trackLine);wpLayer.clearLayers();
   if(track.length){trackLine=L.polyline(track.map(p=>[p.lat,p.lon]),{color:'#f0a020',weight:5,opacity:.85}).addTo(map);if(!fix)map.fitBounds(trackLine.getBounds(),{padding:[20,20]})}
   wps.forEach((w,i)=>{if(w.auto)return;const s=wpState[i];const c=s==='ok'?'#3cc46b':s==='miss'?'#e64545':i===st.wpIdx?'#1e9be0':'#fff';
@@ -386,8 +413,10 @@ function learnComp(){if(!compOK()||gpsHdg==null)return;const g=gpsHdg;if(comp.la
 function applyHeading(){const cOK=cfg.comp&&compOK(),cH=cOK?norm360(comp.mag+cfg.compOff):null,useC=cOK&&speedKmh<cfg.compSpd;
   heading=useC?cH:(gpsHdg!=null?gpsHdg:cH);
   $('#hdgTxt').textContent='RUMO '+(heading==null?'---':String(Math.round(heading)).padStart(3,'0')+'°')+(heading!=null&&heading===cH?' 🧭':'');
-  const s=document.getElementById('meSvg');if(s)s.style.transform='rotate('+(heading||0)+'deg)';
-  if(cfg.rot&&heading!=null){$('#map').style.transform='rotate('+(-heading)+'deg) scale(1.42)'}else $('#map').style.transform=''}
+  /* leaflet-rotate: o bearing gira o mapa no sentido horário; "rumo para cima" = 360 - rumo */
+  const want=cfg.rot&&heading!=null?norm360(360-heading):0,cur=map.getBearing?norm360(map.getBearing()):0;
+  if(map.setBearing&&Math.abs(angDiff(want,cur))>=2)map.setBearing(want);
+  const s=document.getElementById('meSvg');if(s)s.style.transform='rotate('+norm360((heading||0)+(map.getBearing?map.getBearing():0))+'deg)'}
 addEventListener('deviceorientationabsolute',onOrient,true);addEventListener('deviceorientation',onOrient,true);
 async function askCompass(){try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission)await DeviceOrientationEvent.requestPermission()}catch(e){}}
 
@@ -448,7 +477,7 @@ function onPos(p){const c=p.coords;const now=p.timestamp||Date.now();const cur={
   $('#speed').textContent=Math.round(speedKmh);if(speedKmh>=15)learnComp();applyHeading();
   if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
-  renderOdo();updateNav();updateProg();copilot();checkAlerts();if(now-lastT>3000){saveOdo();lastT=now}if(curPane==='paneDash')renderDash()}
+  renderOdo();updateNav();updateProg();elevCursor();copilot();checkAlerts();if(now-lastT>3000){saveOdo();lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
 let watchId=null;function startGPS(){if(cfg.sim)return startSim();if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
 function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;stopSim()}
@@ -546,7 +575,7 @@ applyTheme();renderOdo();
 try{const g=localStorage.getItem('tn_gpx');if(g)loadGPX(g,LS.get('gpxName','rota.gpx'))}catch(e){}
 startGPS();keepAwake();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={st,cfg,onPos,loadGPX,say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={st,cfg,onPos,loadGPX,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
