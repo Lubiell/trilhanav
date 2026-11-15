@@ -1,6 +1,7 @@
 package io.github.lubiell.trilhanav;
 
 import android.Manifest;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
@@ -12,7 +13,10 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.util.Base64;
 import android.view.KeyEvent;
+
+import androidx.core.content.FileProvider;
 
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
@@ -22,11 +26,14 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Locale;
 
 /**
  * Funções nativas do TrilhaNav: voz do copiloto (funciona com a tela apagada e baixa a música enquanto fala),
- * comandos de mídia para o player ativo (Spotify etc.) e abrir outro app.
+ * comandos de mídia para o player ativo (Spotify etc.), abrir outro app e entregar arquivos exportados
+ * (o WebView não baixa arquivos: o GPX/ZIP vai para a tela de compartilhar do Android).
  */
 @CapacitorPlugin(
     name = "TrilhaNative",
@@ -149,6 +156,50 @@ public class TrilhaNativePlugin extends Plugin {
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(i);
         call.resolve();
+    }
+
+    /**
+     * Entrega um arquivo gerado pelo app (GPX, ZIP, backup): grava no cache e abre a tela de compartilhar,
+     * de onde dá para salvar em Arquivos, mandar para o Drive, WhatsApp etc.
+     */
+    @PluginMethod
+    public void shareFile(PluginCall call) {
+        String name = call.getString("name");
+        String data = call.getString("data");
+        String mime = call.getString("mime", "application/octet-stream");
+        if (name == null || data == null || !name.matches("[A-Za-z0-9_. ()-]{1,80}") || name.startsWith(".")) {
+            call.reject("arquivo inválido");
+            return;
+        }
+        try {
+            File dir = new File(getContext().getCacheDir(), "export");
+            if (!dir.exists() && !dir.mkdirs()) {
+                call.reject("sem acesso ao armazenamento");
+                return;
+            }
+            File[] old = dir.listFiles();
+            if (old != null) {
+                for (File f : old) {
+                    f.delete();
+                }
+            }
+            File out = new File(dir, name);
+            try (FileOutputStream os = new FileOutputStream(out)) {
+                os.write(Base64.decode(data, Base64.DEFAULT));
+            }
+            Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", out);
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType(mime);
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            send.setClipData(ClipData.newRawUri(name, uri));
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent chooser = Intent.createChooser(send, "Salvar ou enviar " + name);
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            getContext().startActivity(chooser);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("não consegui preparar o arquivo: " + e.getMessage());
+        }
     }
 
     /** Android 13+: pede permissão da notificação do serviço de GPS. */

@@ -6,6 +6,9 @@ Empacota o app (`../index.html` e `../lib`) num APK Android. O que muda em rela�
   (notificação fixa "TrilhaNav: GPS ativo"). No navegador o GPS para quando a tela apaga.
 - **Voz do copiloto nativa** (TTS do Android, abaixa a música enquanto fala) e **controle de música**
   (⏮ ⏯ ⏭ e abrir o Spotify) pelo plugin `TrilhaNative` (`native/TrilhaNativePlugin.java`).
+- **Exportar** (trilha gravada, ZIP com fotos, backup de ajustes): o WebView não baixa arquivos, então o app abre a
+  tela de compartilhar do Android (`TrilhaNative.shareFile`), de onde dá para salvar em Arquivos, Drive, WhatsApp etc.
+- **Tela sempre ligada** enquanto o app está aberto (`FLAG_KEEP_SCREEN_ON` no `MainActivity`).
 - **Funciona sem internet na primeira abertura**: Leaflet, pdf.js e as fontes vão dentro do APK
   (`build-apk.sh` troca os links do CDN por cópias locais). Os mapas continuam sendo o `.pmtiles` offline.
 
