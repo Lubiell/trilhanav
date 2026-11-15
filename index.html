@@ -118,6 +118,8 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Multiplicador de distância <input type="number" step="0.001" id="sMult"></label>
   <label>Ajuste por clique (km) <input type="number" step="0.01" id="sStep"></label>
   <label>Definir TOTAL (km) <input type="number" step="0.01" id="sTotal"></label>
+  <label>Corrigir TOTAL ao validar waypoint (km do roadbook) <input type="checkbox" id="sSnap"></label>
+  <label>Aprender o multiplicador pelo roadbook <input type="checkbox" id="sLearn"></label>
   <label>Calibrar: distância do roadbook <input type="number" step="0.01" id="sCalRb" placeholder="ex. 10.00"></label>
   <label>Calibrar: distância medida no app <input type="number" step="0.01" id="sCalApp" placeholder="ex. 9.80"></label>
   <div style="padding:8px 0;display:flex;gap:8px"><button class="btn" id="bCal">Aplicar calibração</button><button class="btn r" id="bResetT">Zerar TOTAL</button></div>
@@ -127,6 +129,10 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Alerta de velocidade (km/h, 0 = desliga) <input type="number" id="sSpd"></label>
   <label>Avanço automático de waypoint <input type="checkbox" id="sAuto"></label>
   <label>Mapa gira com o rumo <input type="checkbox" id="sRot"></label>
+  <label>Bússola do aparelho (rumo parado ou devagar) <input type="checkbox" id="sComp"></label>
+  <label>Usar só o GPS acima de (km/h) <input type="number" id="sCompSpd"></label>
+  <label>Ajuste da bússola (°) <input type="number" step="0.1" id="sCompOff"></label>
+  <div class="small" id="compInfo"></div>
   <label>Som nos alertas <input type="checkbox" id="sSnd"></label>
   <h3>Roadbook</h3>
   <label>Rolagem por clique (px) <input type="number" id="sScroll"></label>
@@ -145,11 +151,12 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <h3>Dados</h3>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v1.2 · mapas © OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v1.3-dev · mapas © OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgWp"><div class="hd"><b>Waypoints</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
   <div style="display:flex;gap:8px;padding-bottom:8px"><button class="btn g" id="bPrevWp">◀ Anterior</button><button class="btn g" id="bNextWp">Pular ▶</button><button class="btn g" id="bMarkWp">+ Marcar aqui</button></div>
+  <div style="display:flex;gap:8px;padding-bottom:8px;flex-wrap:wrap"><button class="btn g" id="bValWp">✔ Validar este</button><button class="btn g" id="bAlignWp">Alinhar TOTAL ao roadbook</button></div>
   <div id="wpSummary" class="small"></div>
   <div id="wpList"></div>
 </div></dialog>
@@ -164,7 +171,7 @@ const $=s=>document.querySelector(s);
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque'};
@@ -172,17 +179,23 @@ const DEFKEYS={rbDown:'ArrowDown',rbUp:'ArrowUp',totPlus:'ArrowRight',totMinus:'
 let keys=Object.assign({},DEFKEYS,LS.get('keys',{}));
 
 /* ---------- estado ---------- */
-const st=Object.assign({total:0,partial:0,maxSpd:0,movSec:0,movKm:0,wpIdx:0},LS.get('odo',{}));
-const saveOdo=()=>LS.set('odo',{total:st.total,partial:st.partial,maxSpd:st.maxSpd,movSec:st.movSec,movKm:st.movKm,wpIdx:st.wpIdx});
-let last=null,fix=null,heading=null,speedKmh=0,track=[],wps=[],wpState=LS.get('wpState',[]),rec=[],recording=false,locked=false,offAlert=false,spdAlert=false;
+const st=Object.assign({total:0,partial:0,maxSpd:0,movSec:0,movKm:0,wpIdx:0,snapKm:null,snapTot:null,corr:0,nCorr:0},LS.get('odo',{}));
+const saveOdo=()=>LS.set('odo',{total:st.total,partial:st.partial,maxSpd:st.maxSpd,movSec:st.movSec,movKm:st.movKm,wpIdx:st.wpIdx,snapKm:st.snapKm,snapTot:st.snapTot,corr:st.corr,nCorr:st.nCorr});
+let last=null,fix=null,heading=null,gpsHdg=null,speedKmh=0,track=[],wps=[],wpState=LS.get('wpState',[]),rec=[],recording=false,locked=false,offAlert=false,spdAlert=false;
 
 /* ---------- geo ---------- */
 const R=6371000,rad=d=>d*Math.PI/180,deg=r=>r*180/Math.PI;
 function hav(a,b){const dLa=rad(b.lat-a.lat),dLo=rad(b.lon-a.lon);const x=Math.sin(dLa/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
 function brg(a,b){const y=Math.sin(rad(b.lon-a.lon))*Math.cos(rad(b.lat));const x=Math.cos(rad(a.lat))*Math.sin(rad(b.lat))-Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lon-a.lon));return (deg(Math.atan2(y,x))+360)%360}
-function distToTrack(p){if(track.length<2)return null;const k=Math.cos(rad(p.lat))*R*Math.PI/180,m=R*Math.PI/180;let best=Infinity,bi=0;
-  for(let i=0;i<track.length-1;i++){const a=track[i],b=track[i+1];const ax=(a.lon-p.lon)*k,ay=(a.lat-p.lat)*m,bx=(b.lon-p.lon)*k,by=(b.lat-p.lat)*m;const dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy,d=x*x+y*y;if(d<best){best=d;bi=i}}
-  return {d:Math.sqrt(best),i:bi}}
+let tcum=[];function buildCum(){tcum=[0];for(let i=1;i<track.length;i++)tcum[i]=tcum[i-1]+hav(track[i-1],track[i])}
+/* projeta p no trilho (a partir do ponto "from"); devolve distância ao trilho, segmento e km acumulado do trilho */
+function projTrack(p,from=0){if(track.length<2)return null;if(tcum.length!==track.length)buildCum();const k=Math.cos(rad(p.lat))*R*Math.PI/180,m=R*Math.PI/180;let best=Infinity,bi=0,bt=0;
+  for(let i=Math.max(0,Math.min(from,track.length-2));i<track.length-1;i++){const a=track[i],b=track[i+1];const ax=(a.lon-p.lon)*k,ay=(a.lat-p.lat)*m,bx=(b.lon-p.lon)*k,by=(b.lat-p.lat)*m;const dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy,d=x*x+y*y;if(d<best){best=d;bi=i;bt=t}}
+  const mm=tcum[bi]+bt*(tcum[bi+1]-tcum[bi]);return {d:Math.sqrt(best),i:bi,t:bt,km:mm/1000}}
+function distToTrack(p){const r=projTrack(p);return r&&{d:r.d,i:r.i}}
+/* km do roadbook de cada waypoint = distância percorrida no trilho até ele (em ordem, para não confundir trechos que passam duas vezes no mesmo lugar) */
+function assignWpKm(){if(track.length<2)return;let from=0;
+  wps.forEach(w=>{if(w.kmSrc==='rb')return;const g=projTrack(w),f=projTrack(w,from);const r=f&&g&&f.d<=Math.max(g.d*3,60)?f:g;w.km=r.km;w.kmSrc='trk';from=r.i})}
 
 /* ---------- UI helpers ---------- */
 const fmt=v=>(Math.round(v*100)/100).toFixed(2);
@@ -286,7 +299,8 @@ function parseGPX(txt){const x=new DOMParser().parseFromString(txt,'application/
 function loadGPX(txt,name){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length){toast('GPX sem pontos');return}
   track=g.trk;wps=g.wps.map((p,i)=>({...p,name:p.name||('WP '+(i+1))}));
   if(!wps.length&&track.length){const step=Math.max(1,Math.floor(track.length/40));wps=track.filter((p,i)=>i%step===0||i===track.length-1).map((p,i)=>({...p,name:'Ponto '+(i+1),auto:true}))}
-  if(LS.get('gpxName')!==name){wpState=wps.map(()=>null);st.wpIdx=0}
+  buildCum();assignWpKm();snapWarned=false;
+  if(LS.get('gpxName')!==name){wpState=wps.map(()=>null);st.wpIdx=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0}
   LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){}
   drawGPX();updateNav();$('#fileName').textContent=name;toast('GPX carregado: '+track.length+' pontos, '+wps.length+' waypoints')}
 function drawGPX(){if(trackLine)map.removeLayer(trackLine);wpLayer.clearLayers();
@@ -319,12 +333,51 @@ function updateNav(){const w=curWp();if(!w){$('#cap').textContent='---';$('#wpDi
   const b=brg(fix,w),d=hav(fix,w);$('#cap').textContent=String(Math.round(b)).padStart(3,'0')+'°';
   $('#wpDist').textContent=d<1000?Math.round(d)+' m':(d/1000).toFixed(2)+' km';
   const rel=heading==null?b:b-heading;$('#capArrow').style.transform='rotate('+rel+'deg)';
-  if(cfg.auto&&d<=cfg.wpR&&wpState[st.wpIdx]!=='ok'){wpState[st.wpIdx]='ok';beep(1200,120);setTimeout(()=>beep(1500,160),160);vib([80,60,80]);toast('✅ '+w.name+' validado');if(st.wpIdx<wps.length-1)setWp(st.wpIdx+1);else{LS.set('wpState',wpState);drawGPX();renderWpList()}}}
+  if(cfg.auto&&d<=cfg.wpR&&wpState[st.wpIdx]!=='ok'){wpState[st.wpIdx]='ok';const ex=onWpValidated(st.wpIdx);beep(1200,120);setTimeout(()=>beep(1500,160),160);vib([80,60,80]);toast('✅ '+w.name+' validado'+(ex?' · '+ex:''),ex?5000:1800);if(st.wpIdx<wps.length-1)setWp(st.wpIdx+1);else{LS.set('wpState',wpState);drawGPX();renderWpList()}}}
 function banner(t){const b=$('#banner');if(t){b.textContent=t;b.style.display='block'}else b.style.display='none'}
 function checkAlerts(){let msg='';
   if(cfg.off>0&&track.length>1&&fix){const r=distToTrack(fix);if(r&&r.d>cfg.off){msg='FORA DA TRILHA '+Math.round(r.d)+' m';if(!offAlert){offAlert=true;beep(440,400);vib([300,100,300])}}else offAlert=false}
   if(cfg.spd>0&&speedKmh>cfg.spd){msg=(msg?msg+' · ':'')+'VELOCIDADE '+Math.round(speedKmh)+' km/h';if(!spdAlert){spdAlert=true;beep(660,300);vib(300)}}else spdAlert=false;
   banner(msg)}
+
+/* ---------- bússola do aparelho ---------- */
+/* Parado ou devagar o GPS não dá rumo; a bússola dá. Acima de compSpd km/h vale o rumo do GPS, e ele
+   também ensina a bússola: a diferença média entre os dois é a declinação magnética + o ajuste do suporte. */
+const comp={mag:null,vx:0,vy:0,t:0,lastG:null,n:0};let compTick=0;
+const angDiff=(a,b)=>((a-b+540)%360)-180,norm360=a=>((a%360)+360)%360,compOK=()=>comp.mag!=null&&Date.now()-comp.t<3000;
+/* rumo magnético da frente da moto, a partir de alpha/beta/gamma (W3C): deitado vale a ponta de cima da tela (corrigida pela rotação da tela); em pé (suporte de guidão) vale a direção para onde as costas do aparelho apontam */
+function eulerHeading(a,b,g,ang){const ca=Math.cos(rad(a)),sa=Math.sin(rad(a)),cb=Math.cos(rad(b)),sb=Math.sin(rad(b)),cg=Math.cos(rad(g)),sg=Math.sin(rad(g));let x,y;
+  if(Math.abs(cb*cg)>0.7){const X=[ca*cg-sa*sb*sg,sa*cg+ca*sb*sg],Y=[-sa*cb,ca*cb];ang=norm360(ang||0);
+    [x,y]=ang===90?X:ang===270?[-X[0],-X[1]]:ang===180?[-Y[0],-Y[1]]:Y}
+  else{x=-ca*sg-sa*sb*cg;y=-sa*sg+ca*sb*cg}
+  return norm360(deg(Math.atan2(x,y)))}
+function onOrient(e){const ios=e.webkitCompassHeading;if(!(e.absolute===true||ios!=null||e.type==='deviceorientationabsolute'))return;
+  if(e.beta==null||e.gamma==null)return;const al=ios!=null?norm360(360-ios):e.alpha;if(al==null)return;
+  const h=eulerHeading(al,e.beta,e.gamma,(screen.orientation&&screen.orientation.angle)||window.orientation||0),now=Date.now();
+  if(comp.mag==null||now-comp.t>3000){comp.vx=Math.sin(rad(h));comp.vy=Math.cos(rad(h))}else{comp.vx+=0.2*(Math.sin(rad(h))-comp.vx);comp.vy+=0.2*(Math.cos(rad(h))-comp.vy)}
+  comp.mag=norm360(deg(Math.atan2(comp.vx,comp.vy)));comp.t=now;
+  if(now-compTick>250){compTick=now;applyHeading();updateNav()}}
+function learnComp(){if(!compOK()||gpsHdg==null)return;const g=gpsHdg;if(comp.lastG!=null&&Math.abs(angDiff(g,comp.lastG))>6){comp.lastG=g;return}comp.lastG=g;
+  const d=angDiff(g,comp.mag);if(!cfg.compLearned){cfg.compOff=+d.toFixed(1);cfg.compLearned=true}
+  else{const o=cfg.compOff;cfg.compOff=+angDiff(norm360(o+0.05*angDiff(d,o)),0).toFixed(1)}
+  if(++comp.n%20===1)saveCfg()}
+function applyHeading(){const cOK=cfg.comp&&compOK(),cH=cOK?norm360(comp.mag+cfg.compOff):null,useC=cOK&&speedKmh<cfg.compSpd;
+  heading=useC?cH:(gpsHdg!=null?gpsHdg:cH);
+  $('#hdgTxt').textContent='RUMO '+(heading==null?'---':String(Math.round(heading)).padStart(3,'0')+'°')+(heading!=null&&heading===cH?' 🧭':'');
+  const s=document.getElementById('meSvg');if(s)s.style.transform='rotate('+(heading||0)+'deg)';
+  if(cfg.rot&&heading!=null){$('#map').style.transform='rotate('+(-heading)+'deg) scale(1.42)'}else $('#map').style.transform=''}
+addEventListener('deviceorientationabsolute',onOrient,true);addEventListener('deviceorientation',onOrient,true);
+async function askCompass(){try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission)await DeviceOrientationEvent.requestPermission()}catch(e){}}
+
+/* ---------- correção automática do odômetro pelo roadbook ---------- */
+let snapWarned=false;
+const corrTxt=d=>Math.abs(d)>=0.005?'odômetro '+(d>=0?'+':'')+d.toFixed(2)+' km':'';
+function alignTotal(km){const diff=km-st.total;st.total=km;st.snapKm=km;st.snapTot=km;st.corr+=diff;st.nCorr++;saveOdo();renderOdo();return diff}
+/* devolve um texto curto para juntar ao aviso de "waypoint validado" (o toast é um só) */
+function onWpValidated(i){const w=wps[i];if(!w||w.auto||w.km==null||!cfg.snap)return '';
+  const diff=w.km-st.total;if(Math.abs(diff)>Math.max(0.5,w.km*0.08)){if(snapWarned)return '';snapWarned=true;return 'TOTAL difere do roadbook em '+diff.toFixed(2)+' km: não corrigi (zere o TOTAL na largada ou use "Alinhar TOTAL" em Waypoints)'}
+  if(cfg.learn&&st.snapKm!=null&&st.snapTot!=null){const exp=w.km-st.snapKm,got=st.total-st.snapTot;if(exp>1&&got>0.5){const r=exp/got;if(Math.abs(r-1)<0.15){cfg.mult=+(cfg.mult*(1+(r-1)*0.5)).toFixed(4);saveCfg()}}}
+  return corrTxt(alignTotal(w.km))}
 
 /* ---------- GPS ---------- */
 let lastT=0;
@@ -333,14 +386,13 @@ function onPos(p){const c=p.coords;const now=p.timestamp||Date.now();const cur={
   let sp=c.speed!=null&&!isNaN(c.speed)?c.speed*3.6:null;
   if(last&&c.accuracy<=50){const d=hav(last,cur);const dt=(now-last.t)/1000;if(sp==null&&dt>0)sp=d/dt*3.6;
     if(d>=Math.max(3,c.accuracy*0.3)||(sp!=null&&sp>3)){const km=d/1000*cfg.mult;if(dt>0&&d/dt<90){st.total+=km;st.partial+=km;if(sp>3){st.movSec+=dt;st.movKm+=km}}
-      if(c.heading!=null&&!isNaN(c.heading)&&sp>3)heading=c.heading;else if(d>5)heading=brg(last,cur);last=cur;
+      if(c.heading!=null&&!isNaN(c.heading)&&sp>3)gpsHdg=c.heading;else if(d>5)gpsHdg=brg(last,cur);last=cur;
       if(recording){rec.push(cur);recLine.addLatLng([cur.lat,cur.lon])}}}
   else if(!last)last=cur;
   speedKmh=sp||0;if(speedKmh<2)speedKmh=0;st.maxSpd=Math.max(st.maxSpd,speedKmh);fix=cur;
-  $('#speed').textContent=Math.round(speedKmh);$('#hdgTxt').textContent='RUMO '+(heading==null?'---':String(Math.round(heading)).padStart(3,'0')+'°');
-  if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);const s=document.getElementById('meSvg');if(s)s.style.transform='rotate('+(heading||0)+'deg)';
+  $('#speed').textContent=Math.round(speedKmh);if(speedKmh>=15)learnComp();applyHeading();
+  if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
-  if(cfg.rot&&heading!=null){$('#map').style.transform='rotate('+(-heading)+'deg) scale(1.42)'}else $('#map').style.transform='';
   renderOdo();updateNav();checkAlerts();if(now-lastT>3000){saveOdo();lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
 let watchId=null;function startGPS(){if(cfg.sim)return startSim();if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
@@ -356,7 +408,7 @@ function stopSim(){if(simT)clearInterval(simT);simT=null}
 /* ---------- painel ---------- */
 function renderDash(){const avg=st.movSec>0?st.movKm/(st.movSec/3600):0;const ok=wpState.filter(s=>s==='ok').length,miss=wpState.filter(s=>s==='miss').length;
   let rest='—';if(fix&&track.length>1){const r=distToTrack(fix);if(r){let s=hav(fix,track[r.i+1]);for(let i=r.i+1;i<track.length-1;i++)s+=hav(track[i],track[i+1]);rest=(s/1000).toFixed(1)+' km'}}
-  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Pontos gravados',rec.length],['Cronômetro',$('#chronoTxt').textContent]];
+  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Pontos gravados',rec.length],['Correção do odômetro',st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—'],['Cronômetro',$('#chronoTxt').textContent]];
   $('#dash').innerHTML=items.map(([k,v])=>'<div class="card"><h4>'+k.toUpperCase()+'</h4><div class="mid">'+v+'</div></div>').join('')}
 const hms=s=>{s=Math.floor(s);return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 
@@ -377,21 +429,25 @@ function download(name,txt,type){const a=document.createElement('a');a.href=URL.
 
 /* ---------- waypoints dialog ---------- */
 function renderWpList(){const ok=wpState.filter(s=>s==='ok').length,miss=wpState.filter(s=>s==='miss').length;$('#wpSummary').textContent=wps.length?('Validados: '+ok+' · Perdidos: '+miss+' · Total: '+wps.length):'Nenhum waypoint. Carregue um GPX.';
-  $('#wpList').innerHTML=wps.map((w,i)=>{const s=wpState[i];const d=fix?hav(fix,w):null;return '<label data-i="'+i+'" style="cursor:pointer'+(i===st.wpIdx?';background:var(--card)':'')+'"><span class="'+(s==='ok'?'wpok':s==='miss'?'wpmiss':'')+'">'+(s==='ok'?'✅ ':s==='miss'?'❌ ':i===st.wpIdx?'▶ ':'')+w.name+'</span><span class="small">'+(d==null?'':d<1000?Math.round(d)+' m':(d/1000).toFixed(1)+' km')+'</span></label>'}).join('');
+  $('#wpList').innerHTML=wps.map((w,i)=>{const s=wpState[i];const d=fix?hav(fix,w):null;return '<label data-i="'+i+'" style="cursor:pointer'+(i===st.wpIdx?';background:var(--card)':'')+'"><span class="'+(s==='ok'?'wpok':s==='miss'?'wpmiss':'')+'">'+(s==='ok'?'✅ ':s==='miss'?'❌ ':i===st.wpIdx?'▶ ':'')+w.name+'</span><span class="small">'+(w.km!=null&&!w.auto?w.km.toFixed(2)+' km · ':'')+(d==null?'':d<1000?Math.round(d)+' m':(d/1000).toFixed(1)+' km')+'</span></label>'}).join('');
   $('#wpList').querySelectorAll('[data-i]').forEach(e=>e.onclick=()=>setWp(+e.dataset.i))}
 $('#bWp').onclick=()=>{renderWpList();$('#dlgWp').showModal()};
+$('#bValWp').onclick=()=>{const w=curWp();if(!w){toast('Sem waypoint');return}wpState[st.wpIdx]='ok';const ex=onWpValidated(st.wpIdx);beep(1200,120);toast('✅ '+w.name+' validado'+(ex?' · '+ex:''),ex?5000:1800);setWp(Math.min(st.wpIdx+1,wps.length-1))};
+$('#bAlignWp').onclick=()=>{const w=curWp();if(!w||w.km==null){toast('Este waypoint não tem km de roadbook');return}const d=alignTotal(w.km);toast('TOTAL alinhado a '+w.km.toFixed(2)+' km'+(Math.abs(d)>=0.005?' ('+corrTxt(d)+')':''))};
 $('#bNextWp').onclick=()=>setWp(st.wpIdx+1,'miss');$('#bPrevWp').onclick=()=>setWp(st.wpIdx-1);
 $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}wps.splice(st.wpIdx,0,{lat:fix.lat,lon:fix.lon,name:'Marcado '+new Date().toTimeString().slice(0,5)});wpState.splice(st.wpIdx,0,'ok');setWp(st.wpIdx+1)};
 
 /* ---------- ajustes ---------- */
-const bind=[['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat]];
-const binc=[['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim']];
-function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);renderKeys()}
+const bind=[['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat]];
+const binc=[['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim']];
+function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);
+  $('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
 binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}});
 $('#sTotal').onchange=e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){st.total=v;saveOdo();renderOdo()}};
 $('#bCal').onclick=()=>{const a=parseFloat($('#sCalRb').value),b=parseFloat($('#sCalApp').value);if(a>0&&b>0){cfg.mult=+(cfg.mult*a/b).toFixed(4);saveCfg();$('#sMult').value=cfg.mult;renderOdo();toast('Multiplicador: '+cfg.mult)}else toast('Preencha as duas distâncias')};
-$('#bResetT').onclick=()=>{st.total=0;st.partial=0;st.maxSpd=0;st.movSec=0;st.movKm=0;saveOdo();renderOdo();toast('TOTAL zerado')};
+$('#sCompOff').addEventListener('change',()=>{cfg.compLearned=true;saveCfg()});
+$('#bResetT').onclick=()=>{st.total=0;st.partial=0;st.maxSpd=0;st.movSec=0;st.movKm=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0;saveOdo();renderOdo();toast('TOTAL zerado')};
 $('#bSet').onclick=()=>{fillSet();$('#dlgSet').showModal()};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('#bExport').onclick=exportGPX;
@@ -419,14 +475,14 @@ function applyTheme(){document.body.classList.toggle('day',cfg.day);if(typeof of
 $('#bFull').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else{await document.documentElement.requestFullscreen();try{await screen.orientation.lock('landscape')}catch(e){}}}catch(e){toast('Tela cheia indisponível')}};
 let wake=null;async function keepAwake(){try{if('wakeLock' in navigator){wake=await navigator.wakeLock.request('screen')}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')keepAwake()});
-document.addEventListener('click',()=>{keepAwake();if(actx&&actx.state==='suspended')actx.resume()},{once:true});
+document.addEventListener('click',()=>{keepAwake();askCompass();if(actx&&actx.state==='suspended')actx.resume()},{once:true});
 
 /* ---------- início ---------- */
 applyTheme();renderOdo();
 try{const g=localStorage.getItem('tn_gpx');if(g)loadGPX(g,LS.get('gpxName','rota.gpx'))}catch(e){}
 startGPS();keepAwake();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={st,cfg,onPos,loadGPX,get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={st,cfg,onPos,loadGPX,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
