@@ -1,0 +1,26 @@
+name: APK
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compilar o APK
+        working-directory: android-app
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          bash build-apk.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trilhanav-apk
+          path: android-app/*.apk

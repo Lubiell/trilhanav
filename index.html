@@ -183,7 +183,13 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v1.3-dev · mapas © OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.0 · mapas © OpenStreetMap</div>
+</div></dialog>
+
+<dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div style="display:flex;gap:10px;justify-content:center;padding:6px 0 14px"><button class="btn g" id="mPrev" style="font-size:26px;padding:12px 20px">⏮</button><button class="btn" id="mPlay" style="font-size:26px;padding:12px 24px">⏯</button><button class="btn g" id="mNext" style="font-size:26px;padding:12px 20px">⏭</button></div>
+  <div style="display:flex;justify-content:center"><button class="btn g" id="mOpen">Abrir o Spotify</button></div>
+  <div class="small" style="padding-top:10px;text-align:center">Os botões mandam o comando de mídia para o player que estiver tocando (Spotify, YouTube Music…).</div>
 </div></dialog>
 
 <dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
@@ -231,14 +237,17 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* No APK (Capacitor) o GPS roda num serviço nativo e continua com a tela apagada; a voz e o controle de música também são nativos. No navegador nada disto existe. */
+const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
+const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.registerPlugin('TrilhaNative')}:null;
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
 const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto'};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
-const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque'};
-const DEFKEYS={rbDown:'ArrowDown',rbUp:'ArrowUp',totPlus:'ArrowRight',totMinus:'ArrowLeft',resetPartial:'Enter',nextWp:'PageDown',prevWp:'PageUp',chrono:'KeyC',zoomIn:'Equal',zoomOut:'Minus',nextPane:'Tab',lock:'KeyL'};
+const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior'};
+const DEFKEYS={rbDown:'ArrowDown',rbUp:'ArrowUp',totPlus:'ArrowRight',totMinus:'ArrowLeft',resetPartial:'Enter',nextWp:'PageDown',prevWp:'PageUp',chrono:'KeyC',zoomIn:'Equal',zoomOut:'Minus',nextPane:'Tab',lock:'KeyL',mediaPlay:'',mediaNext:'',mediaPrev:''};
 let keys=Object.assign({},DEFKEYS,LS.get('keys',{}));
 
 /* ---------- estado ---------- */
@@ -569,6 +578,7 @@ function onWpValidated(i){const w=wps[i];if(!w||w.auto||w.km==null||!cfg.snap)re
 let progI=0,prog=null,zones=[],zonesUser=[],curZone=null,events=[],evDone=new Set(),zoneLayer=null,lastWarnT=0;
 const spoken=[],round50=m=>Math.max(0,Math.round(m/50)*50);
 function say(t,urgent){spoken.push(t);if(spoken.length>60)spoken.shift();if(!cfg.voice)return;
+  if(NATIVE){try{NP.nat.speak({text:t,volume:Math.max(0,Math.min(1,cfg.voiceVol)),urgent:!!urgent}).catch(()=>{})}catch(e){}return}
   try{const ss=window.speechSynthesis;if(!ss||typeof SpeechSynthesisUtterance==='undefined')return;if(urgent)ss.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.volume=Math.max(0,Math.min(1,cfg.voiceVol));u.rate=1.05;
     const v=(ss.getVoices()||[]).find(v=>/^pt[-_]BR/i.test(v.lang));if(v)u.voice=v;ss.speak(u)}catch(e){}}
 function updateProg(){prog=null;if(!fix||track.length<2)return;
@@ -713,8 +723,14 @@ function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
   if(first)autoTheme();renderOdo();rtCheck();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
-let watchId=null;function startGPS(){if(cfg.sim)return startSim();if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
-function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;stopSim()}
+let watchId=null,bgId=null;
+/* APK: serviço de localização em primeiro plano (notificação fixa), segue com a tela apagada */
+async function startNativeGPS(){try{try{await NP.nat.requestNotifications()}catch(e){}
+  bgId=await NP.bg.addWatcher({backgroundTitle:'TrilhaNav',backgroundMessage:'Navegando: GPS ativo com a tela apagada',requestPermissions:true,stale:false,distanceFilter:0},(l,err)=>{
+    if(err){$('#gpsDot').className='dot';$('#gpsTxt').textContent=err.code==='NOT_AUTHORIZED'?'GPS sem permissão':'GPS ---';if(err.code==='NOT_AUTHORIZED')toast('Permita a localização "o tempo todo" nas configurações do app',6000);return}
+    onPos({timestamp:l.time||Date.now(),coords:{latitude:l.latitude,longitude:l.longitude,altitude:l.altitude,accuracy:l.accuracy,speed:l.speed,heading:l.bearing}})})}catch(e){onErr({code:0})}}
+function startGPS(){if(cfg.sim)return startSim();if(NATIVE){startNativeGPS();return}if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
+function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;if(NATIVE&&bgId!=null){try{NP.bg.removeWatcher({id:bgId}).catch(()=>{})}catch(e){}bgId=null}stopSim()}
 
 /* ---------- simulação ---------- */
 let simT=null,simI=0,simPos=null;
@@ -886,7 +902,7 @@ let learning=null;
 function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':keys[a]||'—')+'</button></label>').join('');
   $('#keyList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{learning=b.dataset.a;renderKeys()})}
 $('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
-const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock};
+const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous')};
 addEventListener('keydown',e=>{if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
   if(e.target.tagName==='INPUT')return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a){e.preventDefault();if(e.repeat&&!['totPlus','totMinus','rbDown','rbUp'].includes(a))return;ACT[a]()}});
 
@@ -895,7 +911,10 @@ const shield=document.createElement('div');shield.style.cssText='position:fixed;
 function toggleLock(){locked=!locked;shield.style.display=locked?'block':'none';$('#lockIco').textContent=locked?'🔒':'🔓';toast(locked?'Toque travado — toque no cadeado para liberar':'Toque liberado')}
 $('#lockIco').onclick=toggleLock;
 $('#bResetP').onclick=ACT.resetPartial;
-$('#bSpot').onclick=()=>{const a=/Android/i.test(navigator.userAgent);location.href=a?'intent://open.spotify.com/#Intent;scheme=https;package=com.spotify.music;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.spotify.music;end':'spotify:'};
+function media(key){if(!NATIVE){toast('Controle de música só funciona no app (APK)');return}try{NP.nat.mediaKey({key}).catch(()=>toast('Não consegui controlar a música'))}catch(e){}}
+$('#bSpot').onclick=()=>{if(NATIVE){$('#dlgMedia').showModal();return}const a=/Android/i.test(navigator.userAgent);location.href=a?'intent://open.spotify.com/#Intent;scheme=https;package=com.spotify.music;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.spotify.music;end':'spotify:'};
+$('#mPrev').onclick=()=>media('previous');$('#mPlay').onclick=()=>media('playpause');$('#mNext').onclick=()=>media('next');
+$('#mOpen').onclick=()=>{try{NP.nat.openApp({package:'com.spotify.music'}).catch(()=>toast('Spotify não encontrado'))}catch(e){}};
 $('#bDay').onclick=()=>{const o=['auto','day','night'];cfg.dayMode=o[(o.indexOf(cfg.dayMode)+1)%3];saveCfg();autoTheme();toast('Tema: '+{auto:'automático (pelo sol)',day:'dia',night:'noite'}[cfg.dayMode])};
 $('#sTheme').onchange=e=>{cfg.dayMode=e.target.value;saveCfg();autoTheme()};
 function applyTheme(){document.body.classList.toggle('day',cfg.day);if(typeof offLayer!=='undefined'&&offLayer)loadOffline()}
@@ -910,8 +929,8 @@ autoTheme();applyTheme();renderOdo();
   try{const g=localStorage.getItem('tn_gpx');if(g)loadGPX(g,LS.get('gpxName','rota.gpx'))}catch(e){}})();
 loadNotes();
 startGPS();keepAwake();
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={st,cfg,onPos,loadGPX,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.TN={st,cfg,onPos,loadGPX,NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
