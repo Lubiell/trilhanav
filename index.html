@@ -121,6 +121,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <button class="b" id="bChrono">⏱️<span id="chronoTxt">00:00</span></button>
     <button class="b" id="bRec">⏺<span>Gravar</span></button>
     <button class="b" id="bNote">📝<span>Nota</span></button>
+    <button class="b" id="bBack">↩️<span>Voltar</span></button>
     <button class="b" id="bResetP">↺<span>Zerar parc.</span></button>
     <button class="b" id="bSpot">🎵<span>Spotify</span></button>
     <i class="sep"></i>
@@ -275,10 +276,10 @@ if(navigator.getBattery)navigator.getBattery().then(b=>{const u=()=>$('#bat').te
 
 /* ---------- telas ---------- */
 let curPane='paneRb',split=false;
-function showPane(id){curPane=id;split=false;document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===id));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.toggle('on',b.dataset.pane===id));$('#bSplit').classList.remove('on');layoutSplit(false);if(id==='paneMap')setTimeout(()=>map.invalidateSize(),50);if(id==='paneDash')renderDash()}
+function showPane(id){curPane=id;split=false;document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===id));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.toggle('on',b.dataset.pane===id));$('#bSplit').classList.remove('on');layoutSplit(false);if(id==='paneMap')setTimeout(mapShown,50);if(id==='paneDash')renderDash()}
 function layoutSplit(on){const rb=$('#paneRb'),mp=$('#paneMap');if(on){rb.classList.add('on');mp.classList.add('on');rb.style.right='50%';mp.style.left='50%'}else{rb.style.right='';mp.style.left=''}}
 document.querySelectorAll('#bot [data-pane]').forEach(b=>b.onclick=()=>showPane(b.dataset.pane));
-$('#bSplit').onclick=()=>{split=!split;if(split){document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.remove('on'));$('#bSplit').classList.add('on');layoutSplit(true);setTimeout(()=>map.invalidateSize(),50)}else showPane('paneRb')};
+$('#bSplit').onclick=()=>{split=!split;if(split){document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.remove('on'));$('#bSplit').classList.add('on');layoutSplit(true);setTimeout(mapShown,50)}else showPane('paneRb')};
 function nextPane(){const order=['paneRb','paneMap','paneDash'];showPane(order[(order.indexOf(curPane)+1)%order.length])}
 function orient(){document.body.classList.toggle('portrait',innerHeight>innerWidth)}addEventListener('resize',()=>{orient();map&&map.invalidateSize()});orient();
 
@@ -287,7 +288,7 @@ const map=L.map('map',{zoomControl:true,attributionControl:true,rotate:true,bear
 const base={'Ruas (OSM)':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}),
  'Relevo (OpenTopoMap)':L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenStreetMap, SRTM | OpenTopoMap'}),
  'Satélite (Esri)':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'})};
-const layersCtl=L.control.layers(base).addTo(map);let offLayer=null;
+const layersCtl=L.control.layers(base).addTo(map);let offLayer=null,offPM=null,offH=null;
 const MAPS_BASE='https://raw.githubusercontent.com/Lubiell/trilhanav/mapas/mg/';
 async function opfsDir(){return await navigator.storage.getDirectory()}
 /* fonte PMTiles que lê um mapa guardado em várias partes, sem precisar juntar */
@@ -303,7 +304,7 @@ async function offSource(){const s=await dlState();if(s&&s.complete)return {src:
   const d=await opfsDir();const f=await (await d.getFileHandle('mapa.pmtiles')).getFile();return {src:new pmtiles.FileSource(f),size:f.size,label:''}}
 const mb=b=>(b/1048576).toFixed(0);
 async function loadOffline(){try{if(!navigator.storage||!navigator.storage.getDirectory){$('#offInfo').textContent='Este navegador não suporta mapa offline.';if(!offLayer)base['Ruas (OSM)'].addTo(map);return false}
-  const o=await offSource();const pm=new pmtiles.PMTiles(o.src);const h=await pm.getHeader();
+  const o=await offSource();const pm=new pmtiles.PMTiles(o.src);const h=await pm.getHeader();offPM=pm;offH=h;
   if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer)}
   offLayer=protomapsL.leafletLayer({url:pm,flavor:cfg.day?'light':'dark',lang:'pt',maxDataZoom:h.maxZoom,attribution:'© OpenStreetMap · Protomaps'});
   layersCtl.addBaseLayer(offLayer,'Offline'+(o.label?' ('+o.label+')':''));Object.values(base).forEach(l=>map.removeLayer(l));offLayer.addTo(map);
@@ -347,7 +348,7 @@ async function downloadMap(){if(dlBusy)return;const info=$('#offInfo'),btn=$('#b
 $('#bOffDl').onclick=downloadMap;
 $('#bOffMap').onclick=()=>$('#offIn').click();$('#offIn').onchange=e=>{const f=e.target.files;if(f.length)installOffline(f);e.target.value=''};
 $('#bOffDel').onclick=async()=>{if(dlBusy){toast('Espere o download terminar');return}const d=await opfsDir();let n=0;try{await d.removeEntry('mapa.pmtiles');n++}catch(e){}try{await d.removeEntry('mapa-dl',{recursive:true});n++}catch(e){}
-  if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer);offLayer=null}Object.values(base).forEach(l=>map.removeLayer(l));base['Ruas (OSM)'].addTo(map);$('#offInfo').textContent='Nenhum mapa offline instalado.';toast(n?'Mapa offline removido':'Nada para remover')};
+  offPM=null;offH=null;if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer);offLayer=null}Object.values(base).forEach(l=>map.removeLayer(l));base['Ruas (OSM)'].addTo(map);$('#offInfo').textContent='Nenhum mapa offline instalado.';toast(n?'Mapa offline removido':'Nada para remover')};
 loadOffline();
 let trackLine=null,recLine=L.polyline([],{color:'#e64545',weight:3}).addTo(map),wpLayer=L.layerGroup().addTo(map),follow=true;
 const meIcon=L.divIcon({className:'',html:'<svg width="34" height="34" viewBox="0 0 100 100" id="meSvg"><circle cx="50" cy="50" r="46" fill="#1e9be0" fill-opacity=".25"/><path d="M50 8 L80 86 L50 68 L20 86 Z" fill="#1e9be0" stroke="#fff" stroke-width="5"/></svg>',iconSize:[34,34],iconAnchor:[17,17]});
@@ -475,8 +476,12 @@ function loadGPX(txt,name,src){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.le
   curGpxText=txt;LS.set('gpxPath',src||null);LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){try{localStorage.removeItem('tn_gpx')}catch(_){}}
   drawGPX();drawZones();drawElevation();updateNav();$('#fileName').textContent=name;
   toast((g.or?'OpenRally: ':'GPX carregado: ')+track.length+' pontos, '+wps.filter(w=>!w.auto).length+' waypoints'+(rbNotes.length?', '+rbNotes.length+' notas':''))}
+/* enquadra a trilha só se o mapa tem tamanho (com a aba oculta o zoom vira NaN); senão enquadra quando a aba Mapa aparecer */
+let pendingFit=false;
+function fitTrack(){if(!trackLine||fix)return;const z=map.getSize();if(z.x>50&&z.y>50){map.fitBounds(trackLine.getBounds(),{padding:[20,20]});pendingFit=false}else pendingFit=true}
+function mapShown(){map.invalidateSize();if(pendingFit)fitTrack()}
 function drawGPX(){if(trackLine)map.removeLayer(trackLine);wpLayer.clearLayers();
-  if(track.length){trackLine=L.polyline(track.map(p=>[p.lat,p.lon]),{color:'#f0a020',weight:5,opacity:.85}).addTo(map);if(!fix)map.fitBounds(trackLine.getBounds(),{padding:[20,20]})}
+  if(track.length){trackLine=L.polyline(track.map(p=>[p.lat,p.lon]),{color:'#f0a020',weight:5,opacity:.85}).addTo(map);if(!fix)fitTrack()}
   wps.forEach((w,i)=>{if(w.auto)return;const s=wpState[i];const c=s==='ok'?'#3cc46b':s==='miss'?'#e64545':i===st.wpIdx?'#1e9be0':'#fff';
     L.circleMarker([w.lat,w.lon],{radius:i===st.wpIdx?9:6,color:'#000',weight:1,fillColor:c,fillOpacity:1}).bindTooltip(esc(w.name)).addTo(wpLayer)});
   rbNotes.forEach(n=>{if(n.type!=='or'||n.isWp||!(n.lat||n.lon))return;L.circleMarker([n.lat,n.lon],{radius:5,color:'#000',weight:1,fillColor:n.danger?'#f0a020':'#8aa0b2',fillOpacity:1}).bindTooltip(esc((n.labels||[n.name]).join(' · '))).addTo(wpLayer)})}
@@ -500,16 +505,16 @@ $('#fileIn').onchange=async e=>{for(const f of e.target.files){if(/\.gpx$/i.test
 /* ---------- navegação ---------- */
 function curWp(){return wps[st.wpIdx]}
 function setWp(i,mark){if(!wps.length)return;if(mark&&wpState[st.wpIdx]==null)wpState[st.wpIdx]=mark;st.wpIdx=Math.max(0,Math.min(wps.length-1,i));LS.set('wpState',wpState);saveOdo();drawGPX();updateNav();renderWpList()}
-function updateNav(){const w=curWp();if(!w){$('#cap').textContent='---';$('#wpDist').textContent='—';$('#wpLabel').textContent='—';return}
-  $('#wpLabel').textContent=w.name+' ('+(st.wpIdx+1)+'/'+wps.length+')';
+function updateNav(){const w=curWp(),g=rtGuide();if(!w&&!g){$('#cap').textContent='---';$('#wpDist').textContent='—';$('#wpLabel').textContent='—';return}
+  $('#wpLabel').textContent=g?'↩ VOLTAR À TRILHA':w.name+' ('+(st.wpIdx+1)+'/'+wps.length+')';
   if(!fix){$('#cap').textContent='---';return}
-  const b=brg(fix,w),d=hav(fix,w);$('#cap').textContent=String(Math.round(b)).padStart(3,'0')+'°';
+  const b=brg(fix,g||w),d=g?g.remain:hav(fix,w);$('#cap').textContent=String(Math.round(b)).padStart(3,'0')+'°';
   $('#wpDist').textContent=d<1000?Math.round(d)+' m':(d/1000).toFixed(2)+' km';
   const rel=heading==null?b:b-heading;$('#capArrow').style.transform='rotate('+rel+'deg)';
-  if(cfg.auto&&d<=(w.clear||cfg.wpR)&&wpState[st.wpIdx]!=='ok'){wpState[st.wpIdx]='ok';const ex=onWpValidated(st.wpIdx);beep(1200,120);setTimeout(()=>beep(1500,160),160);vib([80,60,80]);toast('✅ '+w.name+' validado'+(ex?' · '+ex:''),ex?5000:1800);if(st.wpIdx<wps.length-1)setWp(st.wpIdx+1);else{LS.set('wpState',wpState);drawGPX();renderWpList()}}}
+  if(w&&cfg.auto&&hav(fix,w)<=(w.clear||cfg.wpR)&&wpState[st.wpIdx]!=='ok'){wpState[st.wpIdx]='ok';const ex=onWpValidated(st.wpIdx);beep(1200,120);setTimeout(()=>beep(1500,160),160);vib([80,60,80]);toast('✅ '+w.name+' validado'+(ex?' · '+ex:''),ex?5000:1800);if(st.wpIdx<wps.length-1)setWp(st.wpIdx+1);else{LS.set('wpState',wpState);drawGPX();renderWpList()}}}
 function banner(t){const b=$('#banner');if(t){b.textContent=t;b.style.display='block'}else b.style.display='none'}
 function checkAlerts(){let msg='';const now=fix?fix.t:Date.now();
-  if(cfg.off>0&&track.length>1&&fix){const r=distToTrack(fix);if(r&&r.d>cfg.off){msg='FORA DA TRILHA '+Math.round(r.d)+' m';if(!offAlert){offAlert=true;beep(440,400);vib([300,100,300]);say('Fora da trilha',true)}}else{if(offAlert)say('De volta à trilha');offAlert=false}}
+  if(cfg.off>0&&track.length>1&&fix){const r=distToTrack(fix);if(r&&r.d>cfg.off){msg='FORA DA TRILHA '+Math.round(r.d)+' m';if(!offAlert){offAlert=true;beep(440,400);vib([300,100,300]);say('Fora da trilha',true);if(!rtBack)toast('Toque em ↩️ Voltar para traçar o caminho de volta à trilha',4500)}}else{if(offAlert)say('De volta à trilha');offAlert=false}}
   /* zona de velocidade: entrada, saída, aviso antecipado e excesso */
   const z=cfg.zoneOn&&prog?zoneAt(prog.km):null;
   if(z!==curZone){if(z){toast('Zona de velocidade: limite '+z.limit+' km/h',3000);beep(800,120)}else if(curZone){say('Fim da zona de velocidade');toast('Fim da zona de velocidade')}curZone=z}
@@ -600,6 +605,98 @@ function copilot(){if(!prog)return;const lead=Math.max(150,speedKmh/3.6*cfg.lead
   for(const ev of events){const dm=(ev.km-prog.km)*1000;
     if(evDone.has(ev.id)){if(dm>Math.max(600,(ev.lead||0)*1.5,lead*2))evDone.delete(ev.id);continue}
     if(dm<-30)continue;if(dm<=(ev.lead||lead)){evDone.add(ev.id);say((dm<40?'Agora, ':'Em '+round50(dm)+' metros, ')+(typeof ev.say==='function'?ev.say():ev.say))}}}
+/* ---------- rota offline de volta à trilha ---------- */
+/* Sem internet: lê os tiles em volta (camada "roads" do mapa offline, PMTiles), monta o grafo de estradas e acha o menor caminho até a trilha (Dijkstra). Sem mapa offline ou sem estrada por perto, aponta em linha reta. */
+let rtBack=null,rtLayer=null,rtBusy=false,rtLastT=0,rtSeq=0;
+/* decodificador mínimo de tile vetorial (MVT/protobuf): só linhas da camada "roads" */
+function mvtRoads(buf){const u=new Uint8Array(buf),td=new TextDecoder(),out=[];let p=0;
+  const vint=()=>{let r=0,m=1,b;do{b=u[p++];r+=(b&127)*m;m*=128}while(b&128);return r};
+  const skip=w=>{if(w===0)vint();else if(w===1)p+=8;else if(w===2)p+=vint();else if(w===5)p+=4};
+  while(p<u.length){const tag=vint(),f=Math.floor(tag/8),w=tag&7;if(f!==3||w!==2){skip(w);continue}
+    const end=vint()+p;let name='',ext=4096;const keys=[],vals=[],feats=[];
+    while(p<end){const t=vint(),ff=Math.floor(t/8),ww=t&7;
+      if(ff===1&&ww===2){const l=vint();name=td.decode(u.subarray(p,p+l));p+=l}
+      else if(ff===2&&ww===2){const l=vint();feats.push([p,p+l]);p+=l}
+      else if(ff===3&&ww===2){const l=vint();keys.push(td.decode(u.subarray(p,p+l)));p+=l}
+      else if(ff===4&&ww===2){const e2=vint()+p;let v=null;while(p<e2){const t2=vint(),f2=Math.floor(t2/8),w2=t2&7;
+          if(f2===1&&w2===2){const l2=vint();v=td.decode(u.subarray(p,p+l2));p+=l2}else if(f2===7&&w2===0)v=!!vint();else if((f2===4||f2===5)&&w2===0)v=vint();else skip(w2)}vals.push(v);p=e2}
+      else if(ff===5&&ww===0)ext=vint();else skip(ww)}
+    p=end;if(name!=='roads')continue;
+    for(const [a,b] of feats){p=a;let type=0,tags=[],geom=[];
+      while(p<b){const t=vint(),ff=Math.floor(t/8),ww=t&7;if(ff===3&&ww===0)type=vint();
+        else if((ff===2||ff===4)&&ww===2){const e2=vint()+p,arr=[];while(p<e2)arr.push(vint());p=e2;if(ff===2)tags=arr;else geom=arr}else skip(ww)}
+      if(type!==2)continue;const props={};for(let i=0;i+1<tags.length;i+=2)props[keys[tags[i]]]=vals[tags[i+1]];
+      let x=0,y=0,i=0,cur=null;const lines=[];
+      while(i<geom.length){const c=geom[i++],cmd=c&7,n=(c-cmd)/8;for(let k=0;k<n;k++){if(cmd===7)continue;const dx=geom[i++],dy=geom[i++];x+=dx%2?-(dx+1)/2:dx/2;y+=dy%2?-(dy+1)/2:dy/2;if(cmd===1){cur=[[x,y]];lines.push(cur)}else if(cur)cur.push([x,y])}}
+      out.push({props,lines,ext})}}
+  return out}
+const t2ll=(z,x,y,px,py,e)=>{const n=2**z;return [deg(Math.atan(Math.sinh(Math.PI*(1-2*(y+py/e)/n)))),(x+px/e)/n*360-180]};
+const ll2t=(lat,lon,z)=>{const n=2**z;return {x:Math.floor((lon+180)/360*n),y:Math.floor((1-Math.asinh(Math.tan(rad(lat)))/Math.PI)/2*n)}};
+/* fator de custo por tipo de via (0 = não passa) */
+const RT_SKIP=new Set(['rail','ferry','aerialway','aeroway','runway','taxiway','racetrack','steps']);
+function roadFactor(kind,det){if(RT_SKIP.has(kind)||RT_SKIP.has(det))return 0;
+  if(det==='motorway'||det==='trunk'||det==='motorway_link'||det==='trunk_link')return 2.5;
+  if(det==='footway'||det==='pedestrian'||det==='cycleway')return 2;if(kind==='path'||det==='path'||det==='bridleway')return 1.35;
+  if(det==='track')return 1.1;if(kind==='other')return 1.15;return 1}
+/* grafo: vértices a menos de 1,5 m viram um nó só; ponta solta (recorte na borda do tile) que encosta no meio de outra via divide a via ali */
+function buildRoadGraph(polys,lat0,lon0){const kx=Math.cos(rad(lat0))*R*Math.PI/180,ky=R*Math.PI/180,nd=[],grid=new Map(),CELL=2;
+  const nodeAt=(lat,lon)=>{const x=(lon-lon0)*kx,y=(lat-lat0)*ky,cx=Math.floor(x/CELL),cy=Math.floor(y/CELL);let best=-1,bd=1.5;
+    for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const l=grid.get((cx+a)+','+(cy+b));if(l)for(const id of l){const d=Math.hypot(nd[id].x-x,nd[id].y-y);if(d<bd){bd=d;best=id}}}
+    if(best>=0)return best;const id=nd.length;nd.push({x,y,lat,lon});const k=cx+','+cy;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(id);return id};
+  const E=[],seen=new Map();
+  for(const pl of polys){let prev=-1;for(const [la,lo] of pl.pts){const id=nodeAt(la,lo);if(prev>=0&&id!==prev){const k=prev<id?prev+'_'+id:id+'_'+prev,i=seen.get(k);if(i!=null){if(pl.f<E[i].f)E[i].f=pl.f}else{seen.set(k,E.length);E.push({a:prev,b:id,f:pl.f})}}prev=id}}
+  const deg=new Uint16Array(nd.length);E.forEach(e=>{deg[e.a]++;deg[e.b]++});
+  const SC=30,sg=new Map();E.forEach((e,i)=>{const A=nd[e.a],B=nd[e.b];for(let cx=Math.floor((Math.min(A.x,B.x)-3)/SC);cx<=Math.floor((Math.max(A.x,B.x)+3)/SC);cx++)for(let cy=Math.floor((Math.min(A.y,B.y)-3)/SC);cy<=Math.floor((Math.max(A.y,B.y)+3)/SC);cy++){const k=cx+','+cy;if(!sg.has(k))sg.set(k,[]);sg.get(k).push(i)}});
+  const splits=new Map();
+  for(let n=0;n<nd.length;n++){if(deg[n]!==1)continue;const P=nd[n],l=sg.get(Math.floor(P.x/SC)+','+Math.floor(P.y/SC));if(!l)continue;
+    for(const i of l){const e=E[i];if(e.a===n||e.b===n)continue;const A=nd[e.a],B=nd[e.b],dx=B.x-A.x,dy=B.y-A.y,L2=dx*dx+dy*dy;if(!L2)continue;const t=((P.x-A.x)*dx+(P.y-A.y)*dy)/L2;if(t<=0.001||t>=0.999)continue;
+      if(Math.hypot(A.x+t*dx-P.x,A.y+t*dy-P.y)<=2.5){if(!splits.has(i))splits.set(i,[]);splits.get(i).push({t,n});break}}}
+  const adj=nd.map(()=>[]),link=(a,b,f)=>{const c=Math.hypot(nd[a].x-nd[b].x,nd[a].y-nd[b].y)*f;adj[a].push({to:b,c});adj[b].push({to:a,c})};
+  E.forEach((e,i)=>{const sp=splits.get(i);if(!sp){link(e.a,e.b,e.f);return}sp.sort((p,q)=>p.t-q.t);let a=e.a;for(const q of sp){link(a,q.n,e.f);a=q.n}link(a,e.b,e.f)});
+  return {nd,adj}}
+function heapPush(h,k,v){h.push([k,v]);let i=h.length-1;while(i>0){const p=(i-1)>>1;if(h[p][0]<=h[i][0])break;[h[p],h[i]]=[h[i],h[p]];i=p}}
+function heapPop(h){const top=h[0],last=h.pop();if(h.length){h[0]=last;let i=0;for(;;){const l=2*i+1,r=l+1;let m=i;if(l<h.length&&h[l][0]<h[m][0])m=l;if(r<h.length&&h[r][0]<h[m][0])m=r;if(m===i)break;[h[m],h[i]]=[h[i],h[m]];i=m}}return top}
+const trackPt=r=>{const A=track[r.i],B=track[r.i+1];return {lat:A.lat+(B.lat-A.lat)*r.t,lon:A.lon+(B.lon-A.lon)*r.t}};
+function mkRoute(pts){const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+hav(pts[i-1],pts[i]);return {pts,cum,len:cum[cum.length-1]}}
+async function offlineRoute(p){if(!offPM||!offH)return null;const T=projTrack(p);if(!T)return null;const z=Math.min(offH.maxZoom,14);if(z<12)return null;
+  const tp=trackPt(T),dist=hav(p,tp),mg=Math.max(700,dist*0.8)/111194.9,lat0=(p.lat+tp.lat)/2,lon0=(p.lon+tp.lon)/2,mgLon=mg/Math.cos(rad(lat0));
+  const a=ll2t(Math.max(p.lat,tp.lat)+mg,Math.min(p.lon,tp.lon)-mgLon,z),b=ll2t(Math.min(p.lat,tp.lat)-mg,Math.max(p.lon,tp.lon)+mgLon,z);
+  if((b.x-a.x+1)*(b.y-a.y+1)>40)return null;
+  const polys=[],jobs=[];for(let x=a.x;x<=b.x;x++)for(let y=a.y;y<=b.y;y++)jobs.push((async()=>{try{const r=await offPM.getZxy(z,x,y);if(!r)return;
+    for(const f of mvtRoads(r.data)){const fac=roadFactor(f.props.kind,f.props.kind_detail);if(!fac)continue;for(const ln of f.lines)if(ln.length>1)polys.push({f:fac,pts:ln.map(([px,py])=>t2ll(z,x,y,px,py,f.ext))})}}catch(e){}})());
+  await Promise.all(jobs);if(!polys.length)return null;
+  const {nd,adj}=buildRoadGraph(polys,lat0,lon0);
+  const near=nd.map((n,i)=>({i,d:hav(p,n)})).filter(o=>o.d<=250).sort((u,v)=>u.d-v.d).slice(0,12);if(!near.length)return null;
+  let tb={s:90,n:-90,w:180,e:-180};track.forEach(q=>{tb.s=Math.min(tb.s,q.lat);tb.n=Math.max(tb.n,q.lat);tb.w=Math.min(tb.w,q.lon);tb.e=Math.max(tb.e,q.lon)});const gm=160/111194.9,gml=gm/Math.cos(rad(tb.s));
+  const goal=n=>{if(n.lat<tb.s-gm||n.lat>tb.n+gm||n.lon<tb.w-gml||n.lon>tb.e+gml)return null;const r=projTrack(n);return r&&r.d<=150?1.5*r.d:null};
+  const dist2=new Float64Array(nd.length).fill(Infinity),prev=new Int32Array(nd.length).fill(-1),h=[];near.forEach(o=>{dist2[o.i]=1.5*o.d;heapPush(h,1.5*o.d,o.i)});
+  let best=Infinity,bestN=-1;
+  while(h.length){const [g,u]=heapPop(h);if(g>dist2[u])continue;if(g>=best)break;const gc=goal(nd[u]);if(gc!=null&&g+gc<best){best=g+gc;bestN=u}
+    for(const e of adj[u]){const ng=g+e.c;if(ng<dist2[e.to]){dist2[e.to]=ng;prev[e.to]=u;heapPush(h,ng,e.to)}}}
+  if(bestN<0)return null;
+  const path=[];for(let u=bestN;u>=0;u=prev[u])path.push({lat:nd[u].lat,lon:nd[u].lon});path.reverse();
+  return mkRoute([{lat:p.lat,lon:p.lon},...path,trackPt(projTrack(nd[bestN]))])}
+function rtTurns(rt){const out=[];for(let i=1;i<rt.pts.length-1;i++){const a=rt.pts[i-1],b=rt.pts[i],c=rt.pts[i+1];if(hav(a,b)<12||hav(b,c)<12)continue;const A=angDiff(brg(b,c),brg(a,b));
+  if(Math.abs(A)>=40)out.push({along:rt.cum[i],say:(Math.abs(A)>=120?'retorno':Math.abs(A)>=75?'vire':'curva')+' à '+(A>0?'direita':'esquerda'),done:false})}return out}
+function projPoly(rt,p){const k=Math.cos(rad(p.lat))*R*Math.PI/180,m=R*Math.PI/180;let best=Infinity,bi=0,bt=0;
+  for(let i=0;i<rt.pts.length-1;i++){const a=rt.pts[i],b=rt.pts[i+1],ax=(a.lon-p.lon)*k,ay=(a.lat-p.lat)*m,bx=(b.lon-p.lon)*k,by=(b.lat-p.lat)*m,dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy,d=x*x+y*y;if(d<best){best=d;bi=i;bt=t}}
+  return {d:Math.sqrt(best),i:bi,along:rt.cum[bi]+bt*(rt.cum[bi+1]-rt.cum[bi])}}
+function rtAt(rt,m){m=Math.max(0,Math.min(rt.len,m));let i=0;while(i<rt.pts.length-2&&rt.cum[i+1]<m)i++;const s=rt.cum[i+1]-rt.cum[i],t=s?(m-rt.cum[i])/s:0;return {lat:rt.pts[i].lat+(rt.pts[i+1].lat-rt.pts[i].lat)*t,lon:rt.pts[i].lon+(rt.pts[i+1].lon-rt.pts[i].lon)*t}}
+function rtGuide(){if(!rtBack||!fix||!rtBack.q)return null;const q=rtBack.q,t=rtAt(rtBack,q.along+Math.max(40,speedKmh/3.6*5));return {lat:t.lat,lon:t.lon,remain:Math.max(0,rtBack.len-q.along)+q.d}}
+function rtClear(){rtBack=null;if(rtLayer){map.removeLayer(rtLayer);rtLayer=null}$('#bBack').classList.remove('on');updateNav()}
+function drawRoute(){if(rtLayer)map.removeLayer(rtLayer);rtLayer=L.polyline(rtBack.pts.map(q=>[q.lat,q.lon]),{color:'#00d1ff',weight:6,opacity:.9,dashArray:'10 8'}).addTo(map);$('#bBack').classList.add('on')}
+function rtCheck(){if(!rtBack||!fix)return;const t=distToTrack(fix);if(t&&t.d<=30){rtClear();say('De volta à trilha');toast('✅ De volta à trilha');return}
+  const q=projPoly(rtBack,fix);rtBack.q=q;if(q.d>80&&!rtBusy&&fix.t-rtLastT>15000){routeBack(true);return}
+  const lead=Math.max(60,speedKmh/3.6*8);for(const tn of rtBack.turns){const dm=tn.along-q.along;if(!tn.done&&dm>=0&&dm<=lead){tn.done=true;say((dm<30?'Agora, ':'Em '+round50(dm)+' metros, ')+tn.say)}}}
+async function routeBack(auto){if(rtBusy)return;if(!fix){toast('Sem GPS');return}if(track.length<2){toast('Carregue um GPX para voltar à trilha');return}
+  const T=projTrack(fix);if(T.d<=30){if(!auto)toast('Você já está na trilha');rtClear();return}
+  rtBusy=true;rtLastT=fix.t;if(!auto)toast('Calculando o caminho de volta…',20000);
+  try{let r=null;try{r=await offlineRoute(fix)}catch(e){r=null}const mode=r?'mapa':'reta';if(!r)r=mkRoute([{lat:fix.lat,lon:fix.lon},trackPt(T)]);
+    rtBack=Object.assign(r,{mode,q:null,id:++rtSeq});rtBack.turns=mode==='mapa'?rtTurns(rtBack):[];drawRoute();rtCheck();updateNav();
+    const txt='caminho de volta à trilha: '+(rtBack.len<1000?Math.round(rtBack.len)+' metros':(rtBack.len/1000).toFixed(1)+' quilômetros')+(mode==='reta'?', em linha reta (sem estrada no mapa offline)':'');
+    say(auto?'Rota recalculada':txt.charAt(0).toUpperCase()+txt.slice(1));toast('↩ '+txt,5000)}finally{rtBusy=false}}
+$('#bBack').onclick=()=>{if(rtBack){rtClear();toast('Retorno cancelado')}else routeBack(false)};
+
 /* ---------- GPS ---------- */
 let lastT=0;
 function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.now();const cur={lat:c.latitude,lon:c.longitude,ele:c.altitude,acc:c.accuracy,t:now};
@@ -614,7 +711,7 @@ function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.
   $('#speed').textContent=Math.round(speedKmh);if(speedKmh>=15)learnComp();applyHeading();
   if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
-  if(first)autoTheme();renderOdo();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
+  if(first)autoTheme();renderOdo();rtCheck();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
 let watchId=null;function startGPS(){if(cfg.sim)return startSim();if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
 function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;stopSim()}
@@ -814,7 +911,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 startGPS();keepAwake();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={st,cfg,onPos,loadGPX,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={st,cfg,onPos,loadGPX,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
