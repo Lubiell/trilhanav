@@ -37,17 +37,17 @@ Referência de lógica de tripmaster: mattogodoy/open-rally-computer (GPL-3: nã
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && for t in t t2 t3 t4 t5 t6 t7 t8 t9 t10 t11; do python3 $t.py; done
+cd dev && for t in t t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12; do python3 $t.py; done
 ```
 
 Precisa do pacote Python `playwright` (os testes usam `/usr/bin/google-chrome`) e de Pillow nos testes t9. Fixtures que **não** ficam no repositório (gerar e colocar em `dev/` antes de rodar; apagar depois):
 
-- `rb.pdf` (t2, t8): um PDF qualquer.
-- `small.pmtiles` e `small.pmtiles.part1..3` (t3, t7): mapa pequeno em 3 partes (`split -b 2M --numeric-suffixes=1 -a 1`).
+- `rb.pdf` (t2, t8, t12): um PDF qualquer.
+- `small.pmtiles` e `small.pmtiles.part1..3` (t3, t7, t12): mapa pequeno em 3 partes (`split -b 2M --numeric-suffixes=1 -a 1`).
 - `dl/` (t4): `manifest.json` (`id`, `label`, `size`, `parts[{f,size,sha256}]`) + as 3 partes.
 - `roads.pmtiles` (t10): z14 com uma malha de estradas, um rio e uma só ponte, tiles recortados com buffer de 64 (como o Planetiler).
 
-`t5` bússola/odômetro, `t6` copiloto/zonas, `t7` rotação/altimetria, `t8` OpenRally/roadbook automático, `t9` gerenciador/notas/tema, `t10` rota de volta, `t11` integração do APK (Capacitor simulado).
+`t5` bússola/odômetro, `t6` copiloto/zonas, `t7` rotação/altimetria, `t8` OpenRally/roadbook automático, `t9` gerenciador/notas/tema, `t10` rota de volta, `t11` integração do APK (Capacitor simulado), `t12` correções das revisões (backup malicioso, teclas ao digitar, MVT malformado, GPX por pasta, etc.).
 
 ## Mapa offline de Minas Gerais
 

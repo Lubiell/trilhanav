@@ -104,6 +104,17 @@ async def main():
         check('trilha 440 m ao norte: caminho de ~440 m pela estrada', rt and rt['mode'] == 'mapa' and 420 <= rt['len'] <= 520, str(rt))
         await pg.context.close()
 
+        # ========== trilho enorme: a rota não pode travar ==========
+        pg, errs = await newpage(b)
+        n = 50000; lon0, lon1 = -44.010, -43.950
+        big = '<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg>' + ''.join(f'<trkpt lat="-20.020" lon="{lon0 + (lon1 - lon0) * i / n:.7f}"/>' for i in range(n + 1)) + '</trkseg></trk></gpx>'
+        await pg.evaluate('(x)=>TN.loadGPX(x,"gigante.gpx")', big); await pg.wait_for_timeout(1500)
+        await pg.evaluate(ONPOS, [-20.004, -44.000, t0]); await pg.evaluate(ONPOS, [-20.004, -44.000, t0 + 1000])
+        ms = await pg.evaluate('async()=>{const t=performance.now();await TN.routeBack(false);return performance.now()-t}')
+        rt = await pg.evaluate('TN.rtBack&&{mode:TN.rtBack.mode,len:TN.rtBack.len}')
+        check('trilho de 50 mil pontos: rota calculada em menos de 4 s', rt and rt['mode'] == 'mapa' and 3600 <= rt['len'] <= 4300 and ms < 4000, f'{ms:.0f} ms {rt}')
+        await pg.context.close()
+
         # ========== sem mapa offline: linha reta ==========
         pg, errs = await newpage(b, offline=False)
         await pg.evaluate('(x)=>TN.loadGPX(x,"trilha-sul.gpx")', trail(-20.020, -44.010, -43.950)); await pg.wait_for_timeout(300)

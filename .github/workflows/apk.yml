@@ -1,4 +1,7 @@
 name: APK
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
@@ -8,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

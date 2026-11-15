@@ -22,8 +22,9 @@ ANDROID_HOME=$HOME/android-sdk bash build-apk.sh        # gera trilhanav-<versã
 bash build-apk.sh --www-only                            # só monta www/ (não precisa de SDK)
 ```
 
-O APK sai assinado com a chave de **depuração**: instala direto no celular (permita "instalar apps desconhecidos"),
-mas não serve para a Play Store. Para publicar numa loja é preciso uma chave de assinatura própria.
+O APK sai assinado com a chave de **depuração** e com a flag `debuggable`: serve para instalar no seu celular (permita
+"instalar apps desconhecidos"), não para distribuir a outras pessoas nem para a Play Store. Cada compilação no GitHub gera uma
+chave de depuração nova, então atualizar por cima exige desinstalar antes (e isso apaga trilhas, notas e o mapa offline do app). Para publicar numa loja é preciso uma chave de assinatura própria.
 
 Também dá para compilar no GitHub: **Actions → APK → Run workflow**; o APK fica nos artefatos da execução.
 

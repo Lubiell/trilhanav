@@ -212,9 +212,9 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 </div></dialog>
 
 <dialog id="dlgZones"><div class="hd"><b>Zonas de velocidade</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
-  <div class="small">Aparecem sozinhas quando o GPX tem waypoints chamados "VEL 40" (ou "LIMITE 30", "ZV 50") até um "FIM". Aqui você cria as suas, em km do roadbook.</div>
-  <label>Início (km) <span><input type="number" step="0.01" id="zFrom"> <button class="btn g" data-here="zFrom">aqui</button></span></label>
-  <label>Fim (km) <span><input type="number" step="0.01" id="zTo"> <button class="btn g" data-here="zTo">aqui</button></span></label>
+  <div class="small">Aparecem sozinhas quando o GPX tem waypoints chamados "VEL 40" (ou "LIMITE 30", "ZV 50") até um "FIM". Aqui você cria as suas, em km do trilho (o botão "aqui" usa a sua posição).</div>
+  <label>Início (km do trilho) <span><input type="number" step="0.01" id="zFrom"> <button class="btn g" data-here="zFrom">aqui</button></span></label>
+  <label>Fim (km do trilho) <span><input type="number" step="0.01" id="zTo"> <button class="btn g" data-here="zTo">aqui</button></span></label>
   <label>Limite (km/h) <input type="number" id="zLim" value="40"></label>
   <div style="padding:8px 0"><button class="btn" id="zAdd">Adicionar zona</button></div>
   <div id="zList"></div>
@@ -316,7 +316,7 @@ async function loadOffline(){try{if(!navigator.storage||!navigator.storage.getDi
   const o=await offSource();const pm=new pmtiles.PMTiles(o.src);const h=await pm.getHeader();offPM=pm;offH=h;
   if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer)}
   offLayer=protomapsL.leafletLayer({url:pm,flavor:cfg.day?'light':'dark',lang:'pt',maxDataZoom:h.maxZoom,attribution:'© OpenStreetMap · Protomaps'});
-  layersCtl.addBaseLayer(offLayer,'Offline'+(o.label?' ('+o.label+')':''));Object.values(base).forEach(l=>map.removeLayer(l));offLayer.addTo(map);
+  layersCtl.addBaseLayer(offLayer,'Offline'+(o.label?' ('+esc(o.label)+')':''));Object.values(base).forEach(l=>map.removeLayer(l));offLayer.addTo(map);
   $('#offInfo').textContent='Instalado'+(o.label?' ('+o.label+')':'')+': '+mb(o.size)+' MB · zoom até '+h.maxZoom+' · área '+h.minLon.toFixed(1)+','+h.minLat.toFixed(1)+' a '+h.maxLon.toFixed(1)+','+h.maxLat.toFixed(1);return true}
   catch(e){if(!offLayer)base['Ruas (OSM)'].addTo(map);const s=await dlState();if(s&&s.bytes&&!dlBusy)$('#offInfo').textContent='Download incompleto: '+mb(s.bytes)+' de '+mb(s.man.size)+' MB. Toque em "Baixar" para continuar de onde parou.';return false}}
 async function installOffline(files){files=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
@@ -450,7 +450,8 @@ function orParse(x){let units='metric',found=false;const kids=e=>[...e.children]
     ents.push(o)}
   return found?{units,ents}:null}
 function parseGPX(txt){const x=new DOMParser().parseFromString(txt,'application/xml');const pt=e=>({lat:+e.getAttribute('lat'),lon:+e.getAttribute('lon'),ele:e.querySelector('ele')?+e.querySelector('ele').textContent:null,name:(e.querySelector('name')||{}).textContent||''});
-  let trk=[...x.getElementsByTagName('trkpt')].map(pt);const rte=[...x.getElementsByTagName('rtept')].map(pt);let w=[...x.getElementsByTagName('wpt')].map(pt);
+  const ok=p=>isFinite(p.lat)&&isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180;
+  let trk=[...x.getElementsByTagName('trkpt')].map(pt).filter(ok);const rte=[...x.getElementsByTagName('rtept')].map(pt).filter(ok);let w=[...x.getElementsByTagName('wpt')].map(pt).filter(ok);
   if(!trk.length)trk=rte;if(!w.length&&rte.length)w=rte.filter(p=>p.name);if(!w.length&&rte.length)w=rte;
   let or=null;try{or=orParse(x)}catch(e){}
   return {trk,wps:w,or}}
@@ -472,7 +473,8 @@ function orNote(e){const L=[],S=[];const dang=e.danger?'⚠ '+'!'.repeat(e.dange
 
 let rbNotes=[],orInfo=null;
 let curGpxText=null;
-function loadGPX(txt,name,src){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.length&&!(g.or&&g.or.ents.length)){toast('GPX sem pontos');return}
+function loadGPX(txt,name,src){const g=parseGPX(txt);const gkey=(src?src.parts.join('/')+'/'+name:name)+'#'+txt.length;if(!g.trk.length&&!g.wps.length&&!(g.or&&g.or.ents.length)){toast('GPX sem pontos');return}
+  if(rtBack)rtClear();
   orInfo=g.or;track=g.trk;rbNotes=[];
   if(g.or){const ents=g.or.ents.map(orNote).sort((a,b)=>(a.km==null)-(b.km==null)||a.km-b.km);rbNotes=ents;
     if(!track.length){track=ents.filter(n=>n.lat||n.lon).map(n=>({lat:n.lat,lon:n.lon,ele:null,name:n.name}))}
@@ -480,9 +482,12 @@ function loadGPX(txt,name,src){const g=parseGPX(txt);if(!g.trk.length&&!g.wps.le
     wps.forEach((w,i)=>{if(!w.name)w.name='WP '+(i+1)})}
   else wps=g.wps.map((p,i)=>({...p,name:p.name||('WP '+(i+1))}));
   if(!wps.length&&track.length){const step=Math.max(1,Math.floor(track.length/40));wps=track.filter((p,i)=>i%step===0||i===track.length-1).map((p,i)=>({...p,name:'Ponto '+(i+1),auto:true}))}
-  buildCum();assignWpKm();buildRb();snapWarned=false;progI=0;prog=null;loadZones(name);
-  if(LS.get('gpxName')!==name){wpState=wps.map(()=>null);st.wpIdx=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0}
-  curGpxText=txt;LS.set('gpxPath',src||null);LS.set('gpxName',name);try{localStorage.setItem('tn_gpx',txt)}catch(e){try{localStorage.removeItem('tn_gpx')}catch(_){}}
+  buildCum();assignWpKm();buildRb();snapWarned=false;progI=0;prog=null;loadZones(gkey);
+  if(LS.get('gpxKey')!==gkey){wpState=wps.map(()=>null);st.wpIdx=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0}
+  curGpxText=txt;LS.set('gpxPath',src||null);LS.set('gpxName',name);LS.set('gpxKey',gkey);
+  try{localStorage.setItem('tn_gpx',txt)}catch(e){try{localStorage.removeItem('tn_gpx')}catch(_){}
+    /* grande demais para o localStorage: guarda no aparelho (OPFS) para o app reabrir com ele */
+    if(!src&&navigator.storage&&navigator.storage.getDirectory){const nm=cleanName(name);fsWrite(['gpx','Abertos'],nm,txt).then(()=>LS.set('gpxPath',{parts:['gpx','Abertos'],name:nm})).catch(()=>{})}}
   drawGPX();drawZones();drawElevation();updateNav();$('#fileName').textContent=name;
   toast((g.or?'OpenRally: ':'GPX carregado: ')+track.length+' pontos, '+wps.filter(w=>!w.auto).length+' waypoints'+(rbNotes.length?', '+rbNotes.length+' notas':''))}
 /* enquadra a trilha só se o mapa tem tamanho (com a aba oculta o zoom vira NaN); senão enquadra quando a aba Mapa aparecer */
@@ -499,7 +504,7 @@ function drawGPX(){if(trackLine)map.removeLayer(trackLine);wpLayer.clearLayers()
 if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 let pdfDoc=null;
 async function loadPDF(buf,name){const rb=$('#rb');rb.innerHTML='';$('#rbEmpty').style.display='none';
-  try{pdfDoc=await pdfjsLib.getDocument({data:buf}).promise}catch(e){toast('Erro ao abrir PDF');return}
+  try{pdfDoc=await pdfjsLib.getDocument({data:buf,isEvalSupported:false}).promise}catch(e){toast('Erro ao abrir PDF');return}
   const w=rb.clientWidth||600;const io=new IntersectionObserver(es=>es.forEach(async en=>{if(en.isIntersecting&&!en.target.dataset.done){en.target.dataset.done=1;const pg=await pdfDoc.getPage(+en.target.dataset.p);const vp0=pg.getViewport({scale:1});const sc=(w*(devicePixelRatio||1))/vp0.width;const vp=pg.getViewport({scale:sc});const c=en.target;c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}}),{root:rb,rootMargin:'1500px'});
   for(let i=1;i<=pdfDoc.numPages;i++){const pg=await pdfDoc.getPage(i);const vp=pg.getViewport({scale:1});const c=document.createElement('canvas');c.dataset.p=i;c.style.aspectRatio=vp.width+'/'+vp.height;rb.appendChild(c);io.observe(c)}
   rb.scrollTop=LS.get('rbScroll_'+name,0);rb.onscroll=()=>LS.set('rbScroll_'+name,rb.scrollTop);
@@ -569,7 +574,7 @@ let snapWarned=false;
 const corrTxt=d=>Math.abs(d)>=0.005?'odômetro '+(d>=0?'+':'')+d.toFixed(2)+' km':'';
 function alignTotal(km){const diff=km-st.total;st.total=km;st.snapKm=km;st.snapTot=km;st.corr+=diff;st.nCorr++;saveOdo();renderOdo();return diff}
 /* devolve um texto curto para juntar ao aviso de "waypoint validado" (o toast é um só) */
-function onWpValidated(i){const w=wps[i];if(!w||w.auto||w.km==null||!cfg.snap)return '';
+function onWpValidated(i){const w=wps[i];if(!w||w.auto||w.km==null||!isFinite(w.km)||!cfg.snap)return '';
   const diff=w.km-st.total;if(Math.abs(diff)>Math.max(0.5,w.km*0.08)){if(snapWarned)return '';snapWarned=true;return 'TOTAL difere do roadbook em '+diff.toFixed(2)+' km: não corrigi (zere o TOTAL na largada ou use "Alinhar TOTAL" em Waypoints)'}
   if(cfg.learn&&st.snapKm!=null&&st.snapTot!=null){const exp=w.km-st.snapKm,got=st.total-st.snapTot;if(exp>1&&got>0.5){const r=exp/got;if(Math.abs(r-1)<0.15){cfg.mult=+(cfg.mult*(1+(r-1)*0.5)).toFixed(4);saveCfg()}}}
   return corrTxt(alignTotal(w.km))}
@@ -588,7 +593,7 @@ function updateProg(){prog=null;if(!fix||track.length<2)return;
 /* zonas: waypoints "VEL 40" ... "FIM" no GPX + zonas criadas à mão (guardadas por GPX) */
 const ZRE=/(?:vel(?:ocidade)?|zv|lim(?:ite)?|speed|zona)[^0-9a-z]*(\d{2,3})/i,ZEND=/^\s*(?:fim|end|livre|free)/i,isZoneWp=w=>ZRE.test(w.name||'')||(ZEND.test(w.name||'')&&zones.some(z=>z.src==='gpx'&&z.to===w.tkm));
 function zonesFromWps(){const out=[],L=tcum.length?tcum[tcum.length-1]/1000:null;let open=null;
-  wps.forEach(w=>{if(w.auto||w.tkm==null||w.type==='or')return;const m=ZRE.exec(w.name||'');
+  [...wps].sort((a,b)=>(a.tkm==null)-(b.tkm==null)||a.tkm-b.tkm).forEach(w=>{if(w.auto||w.tkm==null||w.type==='or')return;const m=ZRE.exec(w.name||'');
     if(m){if(open){open.to=w.tkm;out.push(open)}open={from:w.tkm,to:L!=null?L:w.tkm+1,limit:+m[1],name:w.name,src:'gpx'}}
     else if(open&&ZEND.test(w.name||'')){open.to=w.tkm;out.push(open);open=null}});
   if(open)out.push(open);return out}
@@ -620,10 +625,10 @@ function copilot(){if(!prog)return;const lead=Math.max(150,speedKmh/3.6*cfg.lead
 let rtBack=null,rtLayer=null,rtBusy=false,rtLastT=0,rtSeq=0;
 /* decodificador mínimo de tile vetorial (MVT/protobuf): só linhas da camada "roads" */
 function mvtRoads(buf){const u=new Uint8Array(buf),td=new TextDecoder(),out=[];let p=0;
-  const vint=()=>{let r=0,m=1,b;do{b=u[p++];r+=(b&127)*m;m*=128}while(b&128);return r};
-  const skip=w=>{if(w===0)vint();else if(w===1)p+=8;else if(w===2)p+=vint();else if(w===5)p+=4};
+  const vint=()=>{let r=0,m=1,b;do{if(p>=u.length)throw new Error('tile truncado');b=u[p++];r+=(b&127)*m;m*=128}while(b&128);return r};
+  const skip=w=>{if(w===0)vint();else if(w===1)p+=8;else if(w===2){const l=vint();p+=l}else if(w===5)p+=4};
   while(p<u.length){const tag=vint(),f=Math.floor(tag/8),w=tag&7;if(f!==3||w!==2){skip(w);continue}
-    const end=vint()+p;let name='',ext=4096;const keys=[],vals=[],feats=[];
+    const end=vint()+p;if(end>u.length)throw new Error('tile inválido');let name='',ext=4096;const keys=[],vals=[],feats=[];
     while(p<end){const t=vint(),ff=Math.floor(t/8),ww=t&7;
       if(ff===1&&ww===2){const l=vint();name=td.decode(u.subarray(p,p+l));p+=l}
       else if(ff===2&&ww===2){const l=vint();feats.push([p,p+l]);p+=l}
@@ -637,8 +642,9 @@ function mvtRoads(buf){const u=new Uint8Array(buf),td=new TextDecoder(),out=[];l
         else if((ff===2||ff===4)&&ww===2){const e2=vint()+p,arr=[];while(p<e2)arr.push(vint());p=e2;if(ff===2)tags=arr;else geom=arr}else skip(ww)}
       if(type!==2)continue;const props={};for(let i=0;i+1<tags.length;i+=2)props[keys[tags[i]]]=vals[tags[i+1]];
       let x=0,y=0,i=0,cur=null;const lines=[];
-      while(i<geom.length){const c=geom[i++],cmd=c&7,n=(c-cmd)/8;for(let k=0;k<n;k++){if(cmd===7)continue;const dx=geom[i++],dy=geom[i++];x+=dx%2?-(dx+1)/2:dx/2;y+=dy%2?-(dy+1)/2:dy/2;if(cmd===1){cur=[[x,y]];lines.push(cur)}else if(cur)cur.push([x,y])}}
-      out.push({props,lines,ext})}}
+      while(i<geom.length){const c=geom[i++],cmd=c&7;let n=(c-cmd)/8;if(cmd!==7)n=Math.min(n,Math.floor((geom.length-i)/2));for(let k=0;k<n;k++){if(cmd===7)continue;const dx=geom[i++],dy=geom[i++];x+=dx%2?-(dx+1)/2:dx/2;y+=dy%2?-(dy+1)/2:dy/2;if(cmd===1){cur=[[x,y]];lines.push(cur)}else if(cur)cur.push([x,y])}}
+      out.push({props,lines,ext})}
+    p=end}
   return out}
 const t2ll=(z,x,y,px,py,e)=>{const n=2**z;return [deg(Math.atan(Math.sinh(Math.PI*(1-2*(y+py/e)/n)))),(x+px/e)/n*360-180]};
 const ll2t=(lat,lon,z)=>{const n=2**z;return {x:Math.floor((lon+180)/360*n),y:Math.floor((1-Math.asinh(Math.tan(rad(lat)))/Math.PI)/2*n)}};
@@ -677,8 +683,13 @@ async function offlineRoute(p){if(!offPM||!offH)return null;const T=projTrack(p)
   await Promise.all(jobs);if(!polys.length)return null;
   const {nd,adj}=buildRoadGraph(polys,lat0,lon0);
   const near=nd.map((n,i)=>({i,d:hav(p,n)})).filter(o=>o.d<=250).sort((u,v)=>u.d-v.d).slice(0,12);if(!near.length)return null;
-  let tb={s:90,n:-90,w:180,e:-180};track.forEach(q=>{tb.s=Math.min(tb.s,q.lat);tb.n=Math.max(tb.n,q.lat);tb.w=Math.min(tb.w,q.lon);tb.e=Math.max(tb.e,q.lon)});const gm=160/111194.9,gml=gm/Math.cos(rad(tb.s));
-  const goal=n=>{if(n.lat<tb.s-gm||n.lat>tb.n+gm||n.lon<tb.w-gml||n.lon>tb.e+gml)return null;const r=projTrack(n);return r&&r.d<=150?1.5*r.d:null};
+  let sb={s:90,n:-90,w:180,e:-180};nd.forEach(q=>{sb.s=Math.min(sb.s,q.lat);sb.n=Math.max(sb.n,q.lat);sb.w=Math.min(sb.w,q.lon);sb.e=Math.max(sb.e,q.lon)});
+  const g1=200/111194.9,g2=g1/Math.cos(rad(lat0)),subs=[];
+  for(let i=0;i<track.length-1;i++){const A=track[i],B=track[i+1];if(Math.max(A.lat,B.lat)<sb.s-g1||Math.min(A.lat,B.lat)>sb.n+g1||Math.max(A.lon,B.lon)<sb.w-g2||Math.min(A.lon,B.lon)>sb.e+g2)continue;subs.push(i)}
+  if(!subs.length)return null;
+  const goal=n=>{const k=Math.cos(rad(n.lat))*R*Math.PI/180,m=R*Math.PI/180;let best=Infinity;
+    for(const i of subs){const A=track[i],B=track[i+1],ax=(A.lon-n.lon)*k,ay=(A.lat-n.lat)*m,dx=(B.lon-A.lon)*k,dy=(B.lat-A.lat)*m,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));const x=ax+t*dx,y=ay+t*dy,d=x*x+y*y;if(d<best)best=d}
+    const d=Math.sqrt(best);return d<=150?1.5*d:null};
   const dist2=new Float64Array(nd.length).fill(Infinity),prev=new Int32Array(nd.length).fill(-1),h=[];near.forEach(o=>{dist2[o.i]=1.5*o.d;heapPush(h,1.5*o.d,o.i)});
   let best=Infinity,bestN=-1;
   while(h.length){const [g,u]=heapPop(h);if(g>dist2[u])continue;if(g>=best)break;const gc=goal(nd[u]);if(gc!=null&&g+gc<best){best=g+gc;bestN=u}
@@ -776,7 +787,7 @@ function renderWpList(){const ok=wpState.filter(s=>s==='ok').length,miss=wpState
   $('#wpList').querySelectorAll('[data-i]').forEach(e=>e.onclick=()=>setWp(+e.dataset.i))}
 $('#bWp').onclick=()=>{renderWpList();$('#dlgWp').showModal()};
 $('#bValWp').onclick=()=>{const w=curWp();if(!w){toast('Sem waypoint');return}wpState[st.wpIdx]='ok';const ex=onWpValidated(st.wpIdx);beep(1200,120);toast('✅ '+w.name+' validado'+(ex?' · '+ex:''),ex?5000:1800);setWp(Math.min(st.wpIdx+1,wps.length-1))};
-$('#bAlignWp').onclick=()=>{const w=curWp();if(!w||w.km==null){toast('Este waypoint não tem km de roadbook');return}const d=alignTotal(w.km);toast('TOTAL alinhado a '+w.km.toFixed(2)+' km'+(Math.abs(d)>=0.005?' ('+corrTxt(d)+')':''))};
+$('#bAlignWp').onclick=()=>{const w=curWp();if(!w||w.km==null||!isFinite(w.km)){toast('Este waypoint não tem km de roadbook');return}const d=alignTotal(w.km);toast('TOTAL alinhado a '+w.km.toFixed(2)+' km'+(Math.abs(d)>=0.005?' ('+corrTxt(d)+')':''))};
 $('#bNextWp').onclick=()=>setWp(st.wpIdx+1,'miss');$('#bPrevWp').onclick=()=>setWp(st.wpIdx-1);
 $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}wps.splice(st.wpIdx,0,{lat:fix.lat,lon:fix.lon,name:'Marcado '+new Date().toTimeString().slice(0,5)});wpState.splice(st.wpIdx,0,'ok');setWp(st.wpIdx+1)};
 
@@ -797,14 +808,16 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('di
 $('#bExport').onclick=exportGPX;
 $('#bBackup').onclick=()=>download('trilhanav_ajustes.json',JSON.stringify({cfg,keys,odo:st},null,1),'application/json');
 $('#bRestore').onclick=()=>$('#restoreIn').click();
-$('#restoreIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());Object.assign(cfg,j.cfg||{});keys=Object.assign({},DEFKEYS,j.keys||{});saveCfg();LS.set('keys',keys);fillSet();renderOdo();toast('Ajustes restaurados')}catch(err){toast('Arquivo inválido')}};
+/* só entram chaves que o app conhece, do mesmo tipo e com tamanho razoável (um backup compartilhado não pode injetar nada) */
+const saneObj=(src,ref)=>{const o={};if(src&&typeof src==='object')for(const k of Object.keys(ref)){const v=src[k];if(typeof v===typeof ref[k]&&(typeof v!=='number'||isFinite(v))&&(typeof v!=='string'||v.length<=30))o[k]=v}return o};
+$('#restoreIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());Object.assign(cfg,saneObj(j.cfg,DEF));keys=Object.assign({},DEFKEYS,saneObj(j.keys,DEFKEYS));saveCfg();LS.set('keys',keys);fillSet();renderOdo();toast('Ajustes restaurados')}catch(err){toast('Arquivo inválido')}};
 
 /* ---------- zonas de velocidade: tela ---------- */
 function renderZones(){$('#zList').innerHTML=zones.length?zones.map((z,i)=>'<div class="lr"><span>'+z.limit+' km/h · km '+z.from.toFixed(2)+' a '+z.to.toFixed(2)+(z.src!=='user'?' <span class="small">(do GPX)</span>':'')+'</span>'+(z.src==='user'?'<button class="btn r" data-rm="'+i+'">remover</button>':'')+'</div>').join(''):'<div class="small" style="padding:8px 0">Nenhuma zona neste GPX.</div>';
-  $('#zList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const z=zones[+b.dataset.rm];zonesUser=zonesUser.filter(u=>!(u.from===z.from&&u.to===z.to&&u.limit===z.limit));LS.set('zones_'+LS.get('gpxName',''),zonesUser);rebuildZones()})}
+  $('#zList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const z=zones[+b.dataset.rm];zonesUser=zonesUser.filter(u=>!(u.from===z.from&&u.to===z.to&&u.limit===z.limit));LS.set('zones_'+LS.get('gpxKey',''),zonesUser);rebuildZones()})}
 document.querySelectorAll('[data-here]').forEach(b=>b.onclick=()=>{if(!prog){toast('Sem posição no trilho');return}$('#'+b.dataset.here).value=prog.km.toFixed(2)});
 $('#zAdd').onclick=()=>{const f=parseFloat($('#zFrom').value),t=parseFloat($('#zTo').value),l=parseFloat($('#zLim').value);if(!(f>=0&&t>f&&l>=5&&l<=200)){toast('Confira início, fim (maior que o início) e limite');return}
-  zonesUser.push({from:f,to:t,limit:l});LS.set('zones_'+LS.get('gpxName',''),zonesUser);rebuildZones();toast('Zona adicionada')};
+  zonesUser.push({from:f,to:t,limit:l});LS.set('zones_'+LS.get('gpxKey',''),zonesUser);rebuildZones();toast('Zona adicionada')};
 $('#bZones').onclick=()=>{$('#dlgSet').close();renderZones();$('#dlgZones').showModal()};
 $('#bVoiceTest').onclick=()=>say('Copiloto ligado. Em duzentos metros, curva à direita.',true);
 
@@ -864,16 +877,17 @@ function drawNotes(){if(!noteLayer)noteLayer=L.layerGroup().addTo(map);noteLayer
     L.marker([n.lat,n.lon],{icon:L.divIcon({className:'',html:'<div style="font-size:24px;line-height:24px">📝</div>',iconSize:[24,24],iconAnchor:[4,22]})}).bindPopup(el).addTo(noteLayer)});
   if($('#dlgNote').open)renderNoteList()}
 function renderNoteList(){$('#noteList').innerHTML=rnotes.length?rnotes.map((n,i)=>'<div class="lr"><span>'+(i+1)+'. '+esc(n.text||'(sem texto)')+(n.photo?' 📷':'')+' <span class="small">'+new Date(n.t).toTimeString().slice(0,5)+'</span></span><button class="btn g" data-rm="'+esc(n.id)+'">Apagar</button></div>').join(''):'<div class="small">Nenhuma nota ainda.</div>';
+  if(rnotes.length)$('#noteList').insertAdjacentHTML('beforeend','<div class="small" style="padding-top:8px">As notas ficam guardadas até você usar "Limpar gravação" em Ajustes › Dados.</div>');
   $('#noteList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=async()=>{const n=rnotes.find(x=>x.id===b.dataset.rm);if(!n)return;try{await fsDel(['notas',recSession],n.id+'.json');if(n.photo)await fsDel(['notas',recSession],n.photo)}catch(e){}if(n.url)URL.revokeObjectURL(n.url);rnotes=rnotes.filter(x=>x!==n);drawNotes()})}
 async function photoBlob(file){const bmp=await createImageBitmap(file),k=Math.min(1,1280/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
   return await new Promise(r=>c.toBlob(r,'image/jpeg',0.8))}
 $('#bNote').onclick=()=>{$('#noteWhere').textContent=fix?'Posição: '+fix.lat.toFixed(5)+', '+fix.lon.toFixed(5)+' (±'+Math.round(fix.acc)+' m)':'Sem GPS: a nota precisa de uma posição.';$('#noteTx').value='';notePhoto=null;$('#notePhInfo').textContent='';renderNoteList();$('#dlgNote').showModal()};
 $('#notePhoto').onclick=()=>$('#notePhIn').click();
 $('#notePhIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{notePhoto=await photoBlob(f);$('#notePhInfo').textContent='Foto pronta ('+Math.round(notePhoto.size/1024)+' KB)'}catch(err){notePhoto=null;$('#notePhInfo').textContent='Não consegui ler a foto'}};
-$('#noteSave').onclick=async()=>{if(!fix){toast('Sem GPS: não dá para marcar a posição');return}const text=$('#noteTx').value.trim();if(!text&&!notePhoto){toast('Escreva algo ou tire uma foto');return}
-  if(!recSession)newSession();const id='n'+Date.now().toString(36),n={id,t:Date.now(),lat:fix.lat,lon:fix.lon,text,photo:notePhoto?id+'.jpg':null};
-  try{if(notePhoto){await fsWrite(['notas',recSession],id+'.jpg',notePhoto);n.url=URL.createObjectURL(notePhoto)}await fsWrite(['notas',recSession],id+'.json',JSON.stringify({id,t:n.t,lat:n.lat,lon:n.lon,text,photo:n.photo}))}catch(e){toast('Não consegui guardar a nota: '+(e.message||e),4000);return}
-  rnotes.push(n);notePhoto=null;$('#noteTx').value='';$('#notePhInfo').textContent='';drawNotes();toast('Nota salva')};
+$('#noteSave').onclick=async()=>{const bt=$('#noteSave');if(bt.disabled)return;if(!fix){toast('Sem GPS: não dá para marcar a posição');return}const text=$('#noteTx').value.trim();if(!text&&!notePhoto){toast('Escreva algo ou tire uma foto');return}
+  bt.disabled=true;if(!recSession)newSession();const id='n'+Date.now().toString(36),n={id,t:Date.now(),lat:fix.lat,lon:fix.lon,text,photo:notePhoto?id+'.jpg':null};
+  try{if(notePhoto){await fsWrite(['notas',recSession],id+'.jpg',notePhoto);n.url=URL.createObjectURL(notePhoto)}await fsWrite(['notas',recSession],id+'.json',JSON.stringify({id,t:n.t,lat:n.lat,lon:n.lon,text,photo:n.photo}))}catch(e){toast('Não consegui guardar a nota: '+(e.message||e),4000);bt.disabled=false;return}
+  rnotes.push(n);notePhoto=null;$('#noteTx').value='';$('#notePhInfo').textContent='';drawNotes();bt.disabled=false;toast('Nota salva')};
 $('#bNewRec').onclick=async()=>{if(!(await ask({title:'Limpar gravação',msg:'Apagar o trilho gravado e as notas e fotos desta gravação? Exporte antes se quiser guardar.',ok:'Limpar',danger:true})))return;
   rec=[];recLine.setLatLngs([]);rnotes.forEach(n=>n.url&&URL.revokeObjectURL(n.url));if(recSession){try{await fsDel(['notas'],recSession)}catch(e){}}recSession=null;LS.set('recSession',null);rnotes=[];drawNotes();toast('Gravação limpa')};
 
@@ -899,12 +913,12 @@ setInterval(autoTheme,60000);
 
 /* ---------- teclas / controle remoto ---------- */
 let learning=null;
-function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':keys[a]||'—')+'</button></label>').join('');
+function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':esc(keys[a])||'—')+'</button></label>').join('');
   $('#keyList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{learning=b.dataset.a;renderKeys()})}
 $('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
 const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous')};
 addEventListener('keydown',e=>{if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
-  if(e.target.tagName==='INPUT')return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a){e.preventDefault();if(e.repeat&&!['totPlus','totMinus','rbDown','rbUp'].includes(a))return;ACT[a]()}});
+  if(!e.code||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')))return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a){e.preventDefault();if(e.repeat&&!['totPlus','totMinus','rbDown','rbUp'].includes(a))return;ACT[a]()}});
 
 /* ---------- trava de toque, tela, tema ---------- */
 const shield=document.createElement('div');shield.style.cssText='position:fixed;inset:40px 0 0 0;z-index:1500;display:none';document.body.appendChild(shield);
