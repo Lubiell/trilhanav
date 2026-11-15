@@ -26,7 +26,7 @@ App de navegação off-road no estilo do DMD2 (roadbook PDF/OpenRally, GPX, odô
 ## Pendências
 
 1. **Publicado** em https://lubiell.github.io/trilhanav/ (só por esse link https o GPS e o mapa offline funcionam). O Pages publica o branch **`gh-pages`**; a sessão do Claude só alcança o repositório por git push (sem API de Pages/Releases).
-2. **Testar em celular real**: nada disto foi feito (bússola, GPS em segundo plano, voz, mídia, APK, mapa em tela real). O APK de depuração `trilhanav-2.0.0.apk` foi compilado em 15/11/2026 e está no Drive; conferi manifest, assinatura, classes e assets, mas ele nunca rodou num aparelho. Pode haver diferenças entre aparelhos, principalmente na bússola.
+2. **Testar em celular real**: nada disto foi feito (bússola, GPS em segundo plano, voz, mídia, APK, mapa em tela real). O APK de depuração `trilhanav-2.0.0.apk` foi compilado em 15/11/2026 e está no branch órfão **`apk`** (baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.0.0.apk; SHA-256 no README desse branch). O Drive não aceita arquivo acima de ~3 MB por chamada. Conferi manifest, assinatura, classes e assets, mas ele nunca rodou num aparelho. Pode haver diferenças entre aparelhos, principalmente na bússola.
 3. **Backup**: toda modificação vai também para o Google Drive dele (`trilhanav_backup_AAAA-MM-DD_vX.Y.zip`).
 4. **Licença**: as libs GPL-3.0 obrigam manter o código aberto; o repositório ainda não tem `LICENSE` próprio (decisão do dono).
 5. Ideias ainda não feitas: busca de endereço offline, controle de câmeras GoPro/Insta360 pelo guidão, exportar o roadbook automático como OpenRally, preferir menos curvas no caminho de volta.

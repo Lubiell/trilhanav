@@ -26,6 +26,7 @@ O APK sai assinado com a chave de **depuração** e com a flag `debuggable`: ser
 "instalar apps desconhecidos"), não para distribuir a outras pessoas nem para a Play Store. Cada compilação no GitHub gera uma
 chave de depuração nova, então atualizar por cima exige desinstalar antes (e isso apaga trilhas, notas e o mapa offline do app). Para publicar numa loja é preciso uma chave de assinatura própria.
 
+O APK já compilado fica no branch órfão `apk` (link de download e SHA-256 no README dele).
 Também dá para compilar no GitHub: **Actions → APK → Run workflow**; o APK fica nos artefatos da execução.
 
 ## Permissões
