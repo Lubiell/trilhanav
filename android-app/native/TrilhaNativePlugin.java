@@ -158,6 +158,25 @@ public class TrilhaNativePlugin extends Plugin {
         call.resolve();
     }
 
+    /** Abre um link https em outro app (Waze, Google Maps) ou no navegador. Só aceita https. */
+    @PluginMethod
+    public void openUrl(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null || !url.startsWith("https://") || url.length() > 2000) {
+            call.reject("link inválido");
+            return;
+        }
+        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(i);
+        } catch (Exception e) {
+            call.reject("nenhum app abre este link");
+            return;
+        }
+        call.resolve();
+    }
+
     /**
      * Entrega um arquivo gerado pelo app (GPX, ZIP, backup): grava no cache e abre a tela de compartilhar,
      * de onde dá para salvar em Arquivos, mandar para o Drive, WhatsApp etc.
