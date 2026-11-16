@@ -1174,14 +1174,32 @@ function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
   if(first)autoTheme();renderOdo();rtCheck();navUpdate();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
-let watchId=null,bgId=null;
-/* APK: serviço de localização em primeiro plano (notificação fixa), segue com a tela apagada */
-async function startNativeGPS(){try{try{await NP.nat.requestNotifications()}catch(e){}
-  bgId=await NP.bg.addWatcher({backgroundTitle:'TrilhaNav',backgroundMessage:'Navegando: GPS ativo com a tela apagada',requestPermissions:true,stale:false,distanceFilter:0},(l,err)=>{
-    if(err){$('#gpsDot').className='dot';$('#gpsTxt').textContent=err.code==='NOT_AUTHORIZED'?'GPS sem permissão':'GPS ---';if(err.code==='NOT_AUTHORIZED')toast('Permita a localização "o tempo todo" nas configurações do app',6000);return}
-    onPos({timestamp:l.time||Date.now(),coords:{latitude:l.latitude,longitude:l.longitude,altitude:l.altitude,accuracy:l.accuracy,speed:l.speed,heading:l.bearing}})})}catch(e){onErr({code:0})}}
-function startGPS(){if(cfg.sim)return startSim();if(NATIVE){startNativeGPS();return}if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
-function stopGPS(){if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;if(NATIVE&&bgId!=null){try{NP.bg.removeWatcher({id:bgId}).catch(()=>{})}catch(e){}bgId=null}stopSim()}
+let watchId=null,bgId=null,natT=0,natTry=0,natSeq=0,natTimer=null,fbTimer=null;
+const gpsTxt=(t,cls)=>{$('#gpsDot').className='dot'+(cls?' '+cls:'');$('#gpsTxt').textContent=t};
+/* APK: serviço de localização em primeiro plano (notificação fixa), segue com a tela apagada.
+   O plugin responde "Service not running." se for chamado antes de o serviço nativo ligar (logo ao abrir o app), e vários
+   erros dele são silenciosos: por isso tenta de novo e, se em 25 s não chegar posição nenhuma, usa também o GPS do WebView. */
+async function startNativeGPS(){gpsTxt('GPS: ligando…');
+  try{await Promise.race([NP.nat.requestNotifications(),new Promise(r=>setTimeout(r,8000))])}catch(e){}
+  addNativeWatcher();clearTimeout(fbTimer);fbTimer=setTimeout(()=>{if(!natT)startWebGPS()},window.__gpsFallbackMs||25000)}
+function addNativeWatcher(){const my=++natSeq;clearTimeout(natTimer);
+  if(bgId!=null){try{NP.bg.removeWatcher({id:bgId}).catch(()=>{})}catch(e){}bgId=null}
+  const fail=err=>{if(my!==natSeq)return;const m=String((err&&err.message)||err||''),c=err&&err.code;
+    if(/disabled/i.test(m)){gpsTxt('GPS desligado no celular');toast('Ligue a localização do celular',5000)}
+    else if(c==='NOT_AUTHORIZED'){gpsTxt('GPS sem permissão');toast('Permita a localização "o tempo todo" nas configurações do app',6000)}
+    else gpsTxt('GPS: '+(m||'erro').slice(0,30));
+    if(natTry++<20)natTimer=setTimeout(()=>{if(my===natSeq&&!natT)addNativeWatcher()},natTry<4?2000:8000)};
+  try{const p=NP.bg.addWatcher({backgroundTitle:'TrilhaNav',backgroundMessage:'Navegando: GPS ativo com a tela apagada',requestPermissions:true,stale:false,distanceFilter:0},(l,err)=>{
+      if(err){fail(err);return}if(!l)return;natT=Date.now();natTry=0;
+      if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null}   /* o nativo voltou: larga o GPS reserva */
+      onPos({timestamp:l.time||Date.now(),coords:{latitude:l.latitude,longitude:l.longitude,altitude:l.altitude,accuracy:l.accuracy,speed:l.speed,heading:l.bearing}})});
+    Promise.resolve(p).then(id=>{if(my===natSeq)bgId=id;else{try{NP.bg.removeWatcher({id}).catch(()=>{})}catch(e){}}}).catch(fail)}catch(e){fail(e)}}
+/* GPS do próprio WebView: no navegador é o único; no APK, reserva (só com o app na tela) enquanto o serviço nativo não manda posição */
+function startWebGPS(){if(watchId!=null)return;if(!navigator.geolocation||!window.isSecureContext){onErr({code:0});return}
+  if(NATIVE)toast('GPS do serviço não respondeu: usando o GPS do app (só com a tela ligada)',5000);
+  watchId=navigator.geolocation.watchPosition(p=>{if(NATIVE&&natT&&Date.now()-natT<10000)return;onPos(p)},onErr,{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
+function startGPS(){if(cfg.sim)return startSim();if(NATIVE){startNativeGPS();return}startWebGPS()}
+function stopGPS(){natSeq++;clearTimeout(natTimer);clearTimeout(fbTimer);if(watchId!=null)navigator.geolocation.clearWatch(watchId);watchId=null;if(NATIVE&&bgId!=null){try{NP.bg.removeWatcher({id:bgId}).catch(()=>{})}catch(e){}bgId=null}stopSim()}
 
 /* ---------- simulação ---------- */
 let simT=null,simI=0,simPos=null;
