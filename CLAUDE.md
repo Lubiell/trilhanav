@@ -25,7 +25,7 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet e pdf.js vêm do cdnjs (no APK vão locais). `window.TN` expõe internos para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 e `elevation/` (leaflet-elevation 3.0.1, só handlers Distance/Altitude/Slope, carregados por `import()` relativo a `dist/`: a estrutura `lib/elevation/{dist,src/handlers,images}` não pode mudar). As duas últimas são **GPL-3.0**: ver `NOTICE.md`.
-- `sw.js`: cache offline do app (`trilhanav-vN`, hoje `v6`) e dos tiles online já vistos (`trilhanav-tiles`). Rede primeiro; guarda em tempo de uso os arquivos do próprio app, do cdnjs e as fontes do Google. Subir `N` a cada release e listar aqui qualquer arquivo novo de `lib/`.
+- `sw.js`: cache offline do app (`trilhanav-vN`, hoje `v7`) e dos tiles online já vistos (`trilhanav-tiles`). Rede primeiro; guarda em tempo de uso os arquivos do próprio app, do cdnjs e as fontes do Google. Subir `N` a cada release e listar aqui qualquer arquivo novo de `lib/`.
 - `manifest.json`, `icon.svg`, `icon-192.png`, `icon-512.png`.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, plugin Java `native/TrilhaNativePlugin.java` + `native/TrilhaNotifService.java` (acesso a notificações), `patch-android.py`, ver o README dele). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml`: compila o APK no GitHub (Actions → APK → Run workflow, ou tag `v*`); `permissions: contents: read`, sem credencial persistida.
