@@ -99,7 +99,7 @@ body.navOn #banner{top:96px}
 #callBox .row{justify-content:center;gap:12px}#callBox .btn{font-size:20px;padding:16px 22px;min-width:130px;border-radius:14px}.btn.ok{background:#1f9d55}
 #waCard{position:fixed;left:10px;bottom:76px;z-index:1650;display:none;max-width:min(420px,90vw);background:var(--panel);border:1px solid var(--line);border-left:6px solid #25d366;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #0008;cursor:pointer}
 #waCard.on{display:block}#waT{font-weight:700}#waX{font-size:15px;max-height:4.2em;overflow:hidden;white-space:pre-wrap;word-break:break-word}
-#bVoice.on{background:#c62828;color:#fff}#bVoice.on .ic{color:#fff}
+#bVoice.live .ic{color:#1f9d55}#bVoice.live span{color:#1f9d55}#bVoice.on{background:#c62828;color:#fff}#bVoice.on .ic{color:#fff}
 #mNow{text-align:center;font-weight:600;padding:2px 0 10px;min-height:1.2em}
 .nvr{cursor:pointer}.nvsel{background:var(--card);box-shadow:inset 4px 0 0 var(--acc);padding-left:8px!important}
 .b.on{background:var(--card);box-shadow:inset 0 -3px 0 var(--acc)}
@@ -248,7 +248,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.2.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.3.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -274,13 +274,17 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn" id="phReq">Permitir telefone, agenda e microfone</button><button class="btn" id="phNotif">Liberar acesso a notificações</button><button class="btn g" id="phApp">Informações do app</button></div>
   <div class="small" id="phHint"></div>
   <h3>Favoritos</h3><div id="phFavs"></div>
-  <h3>Ligar</h3>
-  <div class="nvf"><input id="phQ" placeholder="Buscar na agenda (nome)" autocomplete="off" enterkeyhint="search"></div><div id="phRes"></div>
+  <h3>Agenda</h3>
+  <div class="nvf"><input id="phQ" placeholder="Filtrar por nome" autocomplete="off" enterkeyhint="search"><button class="btn g" id="phRefresh">Atualizar contatos</button></div>
+  <div class="small" id="phCount"></div><div id="phRes"></div>
   <div class="nvf"><input id="phNum" type="tel" placeholder="Ou digite o número" autocomplete="off"><button class="btn ok" id="phDial">Ligar</button></div>
   <h3>Mensagens do WhatsApp (desta viagem)</h3><div id="phWa"></div>
+  <div class="small" id="phDiag" style="padding-top:6px"></div>
   <label>Ler mensagens em voz alta <select id="sWaRead"><option value="nada">não</option><option value="nome">só quem mandou</option><option value="tudo">quem mandou e o texto</option></select></label>
   <label>Ligação: escutar "atender" ou "recusar" <input type="checkbox" id="sCallVoice"></label>
   <h3>Comandos de voz</h3>
+  <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
+  <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, atender", "Trilha, ligar para Maria", "Trilha, próxima música". Com a ligação tocando, basta "atender" ou "recusar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
   <div class="small">Toque em <b>Voz</b> (ou na tecla do guidão configurada em Ajustes) e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
   <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
 </div></dialog>
@@ -335,7 +339,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,waRead:'nome',callVoice:true,updAuto:true};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
@@ -1078,7 +1082,8 @@ function getFavs(){return (LS.get('phFav',[])||[]).filter(f=>f&&typeof f.name===
 async function callByName(who){const n=normTxt(who);if(!n){say('Não entendi o nome');return}
   const fav=getFavs().filter(f=>{const fn=normTxt(f.name);return fn===n||fn.split(' ')[0]===n||fn.includes(n)});
   if(fav.length===1)return dial(fav[0]);
-  let list=[];try{list=((await nat('findContacts',{q:who}))||{}).list||[]}catch(e){if(!fav.length){say('Não consegui ler a agenda');toast(errTxt(e),4000);return}}
+  let list=[];if(contactsAll){list=contactsAll.filter(c=>{const cn=normTxt(c.name);return n.split(' ').every(w=>cn.split(' ').includes(w)||cn.includes(w))})}
+  else try{list=((await nat('findContacts',{q:who}))||{}).list||[]}catch(e){if(!fav.length){say('Não consegui ler a agenda');toast(errTxt(e),4000);return}}
   if(fav.length>1)list=fav;
   const names=[...new Set(list.map(c=>normTxt(c.name)))];
   if(!list.length){say('Não achei '+who+' na agenda');return}
@@ -1089,14 +1094,16 @@ async function runCmd(c){if(!c)return;const st=callSt.state;
     case 'answer':if(st!=='ringing'){say('Nenhuma ligação tocando');return}nat('answerCall').then(()=>toast('Atendida')).catch(e=>{say('Não consegui atender');toast(errTxt(e),5000)});return;
     case 'none':case 'end':if(dialT){clearTimeout(dialT);dialT=null;hideCall();callCtx=null;say('Ligação cancelada');return}if(c.a==='none')return;if(st==='idle'){say('Nenhuma ligação');return}
       nat('endCall').then(()=>{if(st==='ringing')toast('Recusada')}).catch(e=>{say('Não consegui encerrar');toast(errTxt(e),5000)});return;
-    case 'call':return callByName(c.who);
+    case 'call':return /^(|para|pra|pro|a|o|ao)$/.test(normTxt(c.who))?askName():callByName(c.who);
     case 'pause':return media('pause');case 'next':return media('next');case 'prev':return media('previous');
     case 'volup':return nat('volume',{dir:'up'}).catch(()=>{});case 'voldown':return nat('volume',{dir:'down'}).catch(()=>{});
     case 'play':if(nowPlay&&nowPlay.active)return media('play');return nat('spotifyPlay').catch(()=>toast('Spotify não respondeu'));
     case 'read':return readMsgs();
     default:return}}
 function readMsgs(){const m=waMsgs.slice(0,3);if(!m.length){say('Nenhuma mensagem nova');return}say(m.map(x=>'Mensagem de '+x.title+': '+x.text.slice(0,200)).join('. '),true)}
-async function voiceCmd(fromCall){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}if(voiceBusy)return;voiceBusy=true;$('#bVoice').classList.add('on');
+async function voiceCmd(fromCall){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}
+  if(voiceLive()){if(fromCall)return;vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
+  if(voiceBusy)return;voiceBusy=true;$('#bVoice').classList.add('on');
   if(!fromCall)toast('Fale agora…',4000);beep(1000,90);
   try{const r=await nat('listen',{ms:fromCall?6000:7000}),texts=(r&&r.texts||[]).map(String);let c=null;for(const t of texts){c=parseCmd(t);if(c)break}
     if(fromCall&&c&&c.a!=='answer'&&c.a!=='end')c=null;
@@ -1116,23 +1123,25 @@ function onMedia(o){o=o||{};const prev=nowPlay;nowPlay={active:!!o.active,pkg:St
   const p=nowPlay,an=appName(p.pkg);$('#mNow').textContent=p.active?(p.playing?'▶ ':'⏸ ')+([p.title,p.artist].filter(Boolean).join(' — ')||'sem título')+(an?' ('+an+')':''):'Nada tocando';
   if(p.active&&p.playing&&p.title&&(!prev||prev.title!==p.title))toast('♪ '+[p.title,p.artist].filter(Boolean).join(' — ').slice(0,80),3000)}
 /* tela do telefone */
-async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCallVoice').checked=cfg.callVoice;
-  renderFavs();renderWa();if(results)renderRes(results);await renderPerm()}
+async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCallVoice').checked=cfg.callVoice;$('#sVoiceAlways').checked=cfg.voiceAlways;
+  renderFavs();renderWa();if(results)renderRes(results);else renderAgenda();const st=await renderPerm();if(st&&st.contacts&&!contactsAll)loadContacts(false)}
 async function renderPerm(){let s={};try{s=await nat('phoneStatus')||{}}catch(e){}
   const it=[['Telefone (atender, recusar, ligar)',s.phone],['Agenda (nome de quem liga)',s.contacts],['Microfone (comandos de voz)',s.mic],['Acesso a notificações (WhatsApp e música)',s.notifAccess]];
   $('#phPerm').innerHTML=it.map(([l,ok])=>'<div class="lr"><span>'+l+'</span><b class="'+(ok?'wpok':'wpmiss')+'">'+(ok?'liberado':'falta')+'</b></div>').join('')+(s.speech===false?'<div class="small" style="padding-top:6px">Este aparelho não tem reconhecimento de voz (instale ou ative o app Google).</div>':'');
   $('#phReq').style.display=s.phone&&s.contacts&&s.mic?'none':'';$('#phNotif').style.display=s.notifAccess?'none':'';
+  const d=s.notif||{};$('#phDiag').textContent=s.notifAccess?'Diagnóstico: serviço de notificações '+(d.connected?'conectado':'NÃO conectado (desligue e ligue de novo o acesso do TrilhaNav)')+' · notificações vistas: '+(d.seen|0)+' · do WhatsApp: '+(d.seenWa|0)+' · mostradas: '+(d.sentWa|0)+(d.lastSkip?' · última ignorada: '+d.lastSkip:'')+((d.lastPkgs||[]).length?' · últimos apps: '+d.lastPkgs.slice(0,4).join(', '):''):'';
   $('#phHint').textContent=!s.notifAccess&&s.sdk>=33?'Android 13 ou mais novo: se o TrilhaNav aparecer apagado na lista de acesso a notificações, abra "Informações do app", toque nos três pontinhos lá em cima e em "Permitir configurações restritas"; depois volte e libere.':'';return s}
 function renderFavs(){const f=getFavs();$('#phFavs').innerHTML=f.length?f.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-call="'+i+'">Ligar</button><button class="btn g" data-unfav="'+i+'">✕</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhum favorito: busque na agenda e toque em ☆.</div>';
   $('#phFavs').querySelectorAll('[data-call]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(f[+b.dataset.call])});
   $('#phFavs').querySelectorAll('[data-unfav]').forEach(b=>b.onclick=()=>{const c=f[+b.dataset.unfav];LS.set('phFav',getFavs().filter(x=>!(x.name===c.name&&x.number===c.number)));renderFavs()})}
 function renderRes(list){list=(list||[]).slice(0,20);$('#phRes').innerHTML=list.length?list.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-rcall="'+i+'">Ligar</button><button class="btn g" data-fav="'+i+'" title="Favorito">☆</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Ninguém com esse nome.</div>';
   $('#phRes').querySelectorAll('[data-rcall]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(list[+b.dataset.rcall])});
-  $('#phRes').querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const c=list[+b.dataset.fav],f=getFavs();if(!f.some(x=>x.number===c.number))f.push({name:String(c.name).slice(0,80),number:String(c.number).slice(0,30)});LS.set('phFav',f.slice(0,30));renderFavs();toast('Favorito: '+c.name)})}
+  $('#phRes').querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const c=list[+b.dataset.fav],f=getFavs();if(!f.some(x=>x.number===c.number))f.push({name:String(c.name).slice(0,80),number:String(c.number).slice(0,30)});LS.set('phFav',f.slice(0,30));renderFavs();voiceWords();toast('Favorito: '+c.name)})}
 function renderWa(){$('#phWa').innerHTML=waMsgs.length?waMsgs.map(m=>'<div class="lr"><span><b>'+esc(m.title)+'</b> <span class="small">'+new Date(m.t).toTimeString().slice(0,5)+'</span><br>'+esc(m.text)+'</span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhuma mensagem desde que o app abriu.</div>'}
-let phT=null;$('#phQ').oninput=e=>{clearTimeout(phT);const q=e.target.value.trim();if(q.length<2){$('#phRes').innerHTML='';return}phT=setTimeout(()=>nat('findContacts',{q}).then(r=>renderRes((r||{}).list)).catch(err=>{$('#phRes').innerHTML='<div class="small">'+esc(errTxt(err))+'</div>'}),400)};
+let phT=null;$('#phQ').oninput=()=>{clearTimeout(phT);phT=setTimeout(renderAgenda,200)};
+$('#phRefresh').onclick=()=>loadContacts(true);
 $('#phDial').onclick=()=>{const n=fmtNum($('#phNum').value);if(n.length<2){toast('Digite o número');return}$('#dlgPhone').close();dial({name:'',number:n})};
-$('#phReq').onclick=()=>nat('requestPhone').then(renderPerm).catch(e=>toast(errTxt(e)));
+$('#phReq').onclick=()=>nat('requestPhone').then(async()=>{const st=await renderPerm();if(st.contacts)loadContacts(false);if(st.mic&&cfg.voiceAlways)voiceAlwaysStart(true)}).catch(e=>toast(errTxt(e)));
 $('#phNotif').onclick=()=>nat('openNotifAccess').catch(e=>toast(errTxt(e)));
 $('#phApp').onclick=()=>nat('openAppSettings').catch(e=>toast(errTxt(e)));
 $('#sWaRead').onchange=e=>{cfg.waRead=e.target.value;saveCfg()};
@@ -1142,6 +1151,37 @@ $('#mVolDn').onclick=()=>runCmd({a:'voldown'});$('#mVolUp').onclick=()=>runCmd({
 /* a tela volta ao app quando ele é reaberto (permissões liberadas lá fora) */
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('#dlgPhone').open)renderPerm()});
 /* atualização: versao.json no branch apk (versão, link do APK, SHA-256); o APK baixado só é instalado se o SHA-256 conferir */
+
+/* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
+var contactsAll=null,voiceSt='off',vArmedT=0;
+const VBASE='trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
+const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
+function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<800)w.add(x)});
+  getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));return [...w]}
+function voiceWords(){if(NATIVE&&voiceLive())nat('voiceWords',{words:voiceVocab()}).catch(()=>{})}
+async function voiceAlwaysStart(manual){if(!NATIVE||!cfg.voiceAlways)return;let st={};try{st=await nat('phoneStatus')||{}}catch(e){}
+  if(!st.mic){if(manual)toast('Permita o microfone em Telefone para o assistente de voz',5000);return}
+  nat('voiceStart',{words:voiceVocab()}).catch(e=>{if(manual)toast(errTxt(e),5000)})}
+function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off'].includes(o.state)?o.state:'off';
+  $('#bVoice').classList.toggle('live',voiceSt==='on');$('#bVoice span').textContent=voiceSt==='on'?'Ouvindo':voiceSt==='paused'?'Voz (pausa)':'Voz';
+  if(voiceSt==='error')toast('Assistente de voz: '+String(o.msg||'erro').slice(0,80),5000)}
+/* o que o assistente ouviu: só age com "trilha" na frase, ou logo depois de armado (botão Voz / "trilha" sozinho), ou atender/recusar com a ligação tocando */
+function onHeard(o){const raw=String((o&&o.text)||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();if(!raw)return;
+  const i=raw.search(/\btrilha\b/),ringing=callSt.state==='ringing',armed=Date.now()<vArmedT;let rest;
+  if(i>=0)rest=raw.slice(i+6).trim();else if(armed||ringing)rest=raw;else return;
+  if(!rest){vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
+  const c=parseCmd(rest);
+  if(!c){if(i>=0||armed)say('Não entendi');return}
+  if(i<0&&!armed&&ringing&&c.a!=='answer'&&c.a!=='end')return;
+  vArmedT=0;toast('🎤 '+rest.slice(0,60),2500);runCmd(c)}
+async function askName(){say('Para quem?',true);await new Promise(r=>setTimeout(r,1300));
+  try{const r=await nat('listen',{ms:6000}),t=((r&&r.texts)||[])[0];if(t)return callByName(String(t).slice(0,60));say('Não entendi o nome')}catch(e){say('Não entendi o nome')}}
+async function loadContacts(manual){if(!NATIVE)return;if(manual)toast('Lendo a agenda…',3000);
+  try{const r=await nat('listContacts');contactsAll=((r&&r.list)||[]).map(c=>({name:String(c.name||'').slice(0,80),number:String(c.number||'').slice(0,30)})).filter(c=>c.name&&c.number);
+    renderAgenda();voiceWords();if(manual)toast(contactsAll.length+' contatos',2500)}catch(e){if(manual)toast(errTxt(e),4000)}}
+function renderAgenda(){const el=$('#phRes');if(!el)return;if(!contactsAll){$('#phCount').textContent='';el.innerHTML='<div class="small" style="padding:6px 0">Agenda ainda não carregada: permita a agenda acima e toque em Atualizar contatos.</div>';return}
+  const q=normTxt($('#phQ').value),list=q?contactsAll.filter(c=>normTxt(c.name).includes(q)||fmtNum(c.number).includes(q.replace(/\D/g,'')||'§')):contactsAll;
+  $('#phCount').textContent=contactsAll.length+' contatos'+(q?' · '+list.length+' com "'+$('#phQ').value.trim().slice(0,30)+'"':'')+(list.length>80?' (mostrando 80; filtre pelo nome)':'');renderRes(list.slice(0,80))}
 const UPD_URL='https://raw.githubusercontent.com/Lubiell/trilhanav/apk/versao.json';
 async function updInfo(){if(!NATIVE)return;try{const me=await nat('appInfo');$('#updInfo').textContent='Versão instalada: '+String(me.version).slice(0,20)}catch(e){}}
 async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização automática só no app (APK)');return}
@@ -1154,9 +1194,11 @@ async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização au
   if(!ok)return;toast('Baixando a atualização…',120000);
   try{await nat('installApk',{url:v.apk,sha256:String(v.sha256).toLowerCase()});toast('Toque em "Atualizar" na tela do Android',8000)}catch(e){toast(errTxt(e),7000)}}
 $('#bUpd').onclick=()=>checkUpdate(true);
-if(NATIVE){try{NP.nat.addListener('call',onCall);NP.nat.addListener('whatsapp',onWa);NP.nat.addListener('media',onMedia);
+if(NATIVE){try{NP.nat.addListener('call',onCall);NP.nat.addListener('whatsapp',onWa);NP.nat.addListener('media',onMedia);NP.nat.addListener('heard',onHeard);NP.nat.addListener('voice',onVoiceState);
     NP.nat.addListener('update',p=>{if(p&&p.pct>=0)toast('Baixando a atualização… '+p.pct+'%',120000)})}catch(e){}
-  if(cfg.updAuto&&Date.now()-(+LS.get('updT',0)||0)>12*3600e3)setTimeout(()=>checkUpdate(false),8000)}
+  if(cfg.updAuto&&Date.now()-(+LS.get('updT',0)||0)>12*3600e3)setTimeout(()=>checkUpdate(false),8000);
+  /* agenda (nomes para o assistente) e assistente sempre ligado: o serviço de microfone só pode começar com o app na tela */
+  setTimeout(async()=>{let st={};try{st=await nat('phoneStatus')||{}}catch(e){}if(st.contacts)await loadContacts(false);voiceAlwaysStart(false)},1500)}
 
 /* ---------- GPS ---------- */
 let lastT=0;
@@ -1256,11 +1298,11 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}const m={i:Math.min(
 
 /* ---------- ajustes ---------- */
 const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sCallVoice','callVoice'],['sUpdAuto','updAuto']];
+const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sTheme').value=cfg.dayMode;
   radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
-binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
+binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
 $('#sTotal').onchange=e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){st.total=v;saveOdo();renderOdo()}};
 $('#bCal').onclick=()=>{const a=parseFloat($('#sCalRb').value),b=parseFloat($('#sCalApp').value);if(a>0&&b>0){cfg.mult=+(cfg.mult*a/b).toFixed(4);saveCfg();$('#sMult').value=cfg.mult;renderOdo();toast('Multiplicador: '+cfg.mult)}else toast('Preencha as duas distâncias')};
 $('#sNoteMin').addEventListener('change',()=>buildEvents());
@@ -1407,7 +1449,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const V='trilhanav-v7';
+const V='trilhanav-v8';
 const CORE=['./','index.html','manifest.json','icon.svg','lib/pmtiles.js','lib/protomaps-leaflet.js','lib/leaflet-rotate.js','lib/elevation/dist/leaflet-elevation.min.js','lib/elevation/dist/leaflet-elevation.min.css','lib/elevation/src/handlers/distance.js','lib/elevation/src/handlers/altitude.js','lib/elevation/src/handlers/slope.js','lib/elevation/images/elevation-position.svg','lib/elevation/images/elevation-pushpin.svg',
 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
