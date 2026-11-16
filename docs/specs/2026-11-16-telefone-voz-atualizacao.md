@@ -1,5 +1,7 @@
 # Spec — Telefone, WhatsApp, Spotify, comandos de voz e atualização (v2.2)
-Data: 2026-11-16 · Estado: **aguardando ok do dono**
+Data: 2026-11-16 · Estado: **aprovada (opção A: APK novo) e implementada na v2.2.0**
+
+Na implementação: ao chegar uma ligação o app fecha qualquer diálogo aberto (o diálogo modal ficava por cima e bloqueava Atender/Recusar); "cancelar" nos 3 s antes de ligar também cancela; com a tela apagada o anúncio por voz funciona, mas o Android não deixa usar o microfone em segundo plano (o serviço é de localização), então "atender/recusar" por voz só com o app na tela.
 
 ## Problema
 Pilotando, não dá para tirar a mão do guidão para atender ligação, ver mensagem ou trocar música, e cada versão nova do APK
