@@ -36,6 +36,8 @@ async def main():
         async def vjson(route):
             await route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps(ver['v']))
         await ctx.route('https://raw.githubusercontent.com/Lubiell/trilhanav/apk/versao.json**', vjson)
+        # no pacote do APK (www/) o capacitor.js de verdade carregaria por cima do simulado
+        await ctx.route('**/lib/capacitor.js', lambda r: r.fulfill(status=200, content_type='application/javascript', body=''))
         pg = await ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(URL); await pg.wait_for_timeout(1200)
