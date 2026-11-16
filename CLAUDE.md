@@ -6,14 +6,14 @@ App de navegação off-road no estilo do DMD2 (roadbook PDF/OpenRally, GPX, odô
 
 Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (merge commit `4de6888`). **Nada disto rodou em celular real.**
 
-**v2.0.1 (15/11/2026, caça a erros):** 11 erros confirmados por reprodução e corrigidos, cada um com teste em `dev/t14.py` (ver "Armadilhas já encontradas"). Os 14 testes (`dev/t.py` … `t14.py`) passam em Chrome headless. Enquanto o PR da v2.0.1 não for mergeado e publicado, o site (`gh-pages`) e o APK do branch `apk` continuam na v2.0.
+**v2.0.1 (15/11/2026, caça a erros):** 11 erros confirmados por reprodução e corrigidos, cada um com teste em `dev/t14.py` (ver "Armadilhas já encontradas"). Os 14 testes (`dev/t.py` … `t14.py`) passam em Chrome headless. O **APK 2.0.1 já está publicado** no branch `apk`; o site (`gh-pages`) e a `main` continuam na v2.0 até o PR #2 ser mergeado e publicado. A revisão independente destas correções não terminou (o agente revisor parou por limite de uso): estão verificadas por teste, não por segunda leitura.
 
 | Onde | O que tem |
 |---|---|
 | `main` | o código da v2.0 |
 | `gh-pages` (`79860a0`) | o que o Pages serve em https://lubiell.github.io/trilhanav/. O runtime (`index.html`, `sw.js`, `manifest.json`, `lib/`) é idêntico ao da `main`; só docs, testes e `android-app/` diferem |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.0.0.apk` (depuração), `SHA256SUMS`, README. Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.0.0.apk. SHA-256 `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437` |
+| `apk` (órfão) | `trilhanav-2.0.1.apk` (atual, depuração) e `trilhanav-2.0.0.apk`, `SHA256SUMS`, README. Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.0.1.apk. SHA-256 `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`. Os dois têm a mesma chave de depuração (certificado `16acb7ad…8029`), então o 2.0.1 atualiza por cima do 2.0.0 |
 | `ccr-6d2015d5-vi9zyo` | branch de trabalho das sessões do Claude; reiniciada a partir da `main` a cada PR |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (snapshots do código via `git archive`); pasta `trilhanav/` com o bundle git e referências |
 
@@ -53,7 +53,7 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 
 ## Pendências
 
-0. **Publicar a v2.0.1** (só a pedido do dono): merge do PR, `git push origin origin/main:gh-pages`, recompilar o APK 2.0.1 e publicar no branch `apk`.
+0. **Publicar a v2.0.1 no site** (só a pedido do dono): merge do PR #2 e `git push origin origin/main:gh-pages`. O APK 2.0.1 já está no branch `apk`. Antes ou depois do merge, vale passar o diff `f370a03..3ae9f0d` pelo `reviewer` (a revisão não terminou).
 1. **Testar em celular real**: bússola (a declinação é aprendida pelo GPS; pode variar entre aparelhos), GPS com a tela apagada, voz nativa, controle de música, o APK e o mapa em tela real. O APK foi conferido por dentro (manifest, permissões, assinatura, classes, assets sem CDN), nunca em uso. Em especial, só um aparelho mostra: se a tela de compartilhar abre ao exportar no APK, se o seletor de arquivos do Android deixa escolher `.gpx`/`.pmtiles`, e se o odômetro anda sozinho parado com sinal ruim (o filtro é: desloca ≥3 m ou velocidade >3 km/h).
 2. **Licença**: as libs GPL-3.0 obrigam manter o código aberto; o repositório ainda não tem `LICENSE` próprio (decisão do dono).
 3. **Segurança, do relatório de 15/11 e ainda não aplicado**: CSP por `<meta>`; SRI (ou cópia local) para o Leaflet/pdf.js do cdnjs e Google Fonts no PWA; cache de tiles do service worker guarda resposta opaca sem limite de tamanho; `window.TN` exposto em produção; `distributionSha256Sum` no Gradle wrapper e ações do workflow por SHA. O pdf.js 3.11 é vulnerável (CVE-2024-4367) e está só mitigado com `isEvalSupported:false`; migrar para 4.2.67+ exige adaptar a carga (ESM).
