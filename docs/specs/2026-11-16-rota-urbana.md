@@ -1,5 +1,15 @@
 # Spec — Rota urbana (modo "tipo Waze")
-Data: 2026-11-16 · Estado: **aguardando ok do dono**
+Data: 2026-11-16 · Estado: **aprovada e implementada na v2.1.0** (o dono aprovou e pediu mais: alertas de radar, interface e ícones)
+
+## O que entrou na v2.1.0 (além do plano abaixo)
+- **Radares**: `highway=speed_camera` do OpenStreetMap, via Overpass (espelho `maps.mail.ru`, o único que respondeu nos testes).
+  Baixados por quadrados de 0,25° ao redor de onde se anda e ao longo da rota, guardados no OPFS (`radares.json`, 30 dias).
+  Aviso por voz e placa (limite + distância) a até 600 m (ajustável), faixa vermelha e placa piscando acima do limite + tolerância (7 km/h),
+  um aviso por radar a cada 3 min; marcar radar à mão (só no aparelho). Não há base oficial aberta de radares no Brasil: a do OSM é colaborativa.
+- Ordem das rotas pelo tempo (o Valhalla ordena pelo custo dele); rotatória e frases que o Valhalla deixa em inglês viram português.
+- "De" opcional (partir de outro lugar: o app guia até o início da rota), favoritos, evitar pedágio/rodovias, Google Maps além do Waze.
+- Interface: ícones SVG na barra, "Ir para" ao lado de "Mapa", alvos de toque ≥ 40 px nos diálogos, tulipas de largada/chegada,
+  altimetria redesenhada ao girar a tela.
 
 ## Problema
 O mapa só segue um GPX pronto: não dá para digitar um destino e ser guiado pela cidade.

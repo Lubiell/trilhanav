@@ -16,6 +16,18 @@ do conjunto sob a mesma licença. Enquanto o repositório do TrilhaNav for públ
 publique o app (nem o APK) em loja ou em repositório fechado sem rever isso. O repositório ainda não tem um
 arquivo `LICENSE` próprio: a escolha da licença é do dono do projeto.
 
+## Dados e serviços externos (modo cidade e radares)
+
+Usados só quando o usuário busca um endereço, pede uma rota ou liga os radares (o app mostra um aviso antes do primeiro uso).
+
+| Serviço | Uso | Termos |
+|---|---|---|
+| OpenStreetMap (dados) | ruas, endereços, radares (`highway=speed_camera`) | © colaboradores do OpenStreetMap, ODbL 1.0 (crédito no mapa e nos Ajustes) |
+| Photon (komoot), photon.komoot.io | busca de endereço | serviço público gratuito, uso moderado; sem garantia |
+| Valhalla (FOSSGIS), valhalla1.openstreetmap.de | rota para moto em pt-BR | máx. 1 pedido/s, sem garantia de disponibilidade |
+| Overpass API (espelho mail.ru) | radares por área | serviço público; os radares ficam guardados no aparelho |
+| Waze / Google Maps | só abre o app deles com o destino (link universal) | nenhum dado é enviado pelo TrilhaNav |
+
 ## Formatos
 
 - **OpenRally** (cross-country, v1.0.x): o TrilhaNav lê arquivos nesse formato (`<wpt><extensions>` no namespace
