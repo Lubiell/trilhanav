@@ -1,0 +1,5 @@
+# capturas de tela e fixtures geradas pelos testes (ver CLAUDE.md, "Como testar")
+dev/*.png
+dev/rb.pdf
+dev/small.pmtiles*
+dev/dl/
