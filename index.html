@@ -94,6 +94,13 @@ body.navOn #banner{top:96px}
 @keyframes pisca{50%{background:#ffd200}}
 .radmk{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #d11;color:#111;font:700 10px/20px sans-serif;text-align:center;box-shadow:0 1px 4px #0008}
 .nvf{display:flex;gap:8px;align-items:center;padding:4px 0}.nvf .small{width:34px}.nvf input{flex:1;width:auto!important;font-size:16px}
+#callBox{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1700;display:none;width:min(440px,92vw);background:var(--panel);border:2px solid var(--acc);border-radius:18px;padding:16px;box-shadow:0 10px 40px #000a;text-align:center}
+#callBox.on{display:block}#callWho{font-size:26px;font-weight:800;line-height:1.15;word-break:break-word}#callNum{color:var(--mut);margin:4px 0 2px}#callSt{font-size:14px;color:var(--mut);margin-bottom:12px}
+#callBox .row{justify-content:center;gap:12px}#callBox .btn{font-size:20px;padding:16px 22px;min-width:130px;border-radius:14px}.btn.ok{background:#1f9d55}
+#waCard{position:fixed;left:10px;bottom:76px;z-index:1650;display:none;max-width:min(420px,90vw);background:var(--panel);border:1px solid var(--line);border-left:6px solid #25d366;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #0008;cursor:pointer}
+#waCard.on{display:block}#waT{font-weight:700}#waX{font-size:15px;max-height:4.2em;overflow:hidden;white-space:pre-wrap;word-break:break-word}
+#bVoice.on{background:#c62828;color:#fff}#bVoice.on .ic{color:#fff}
+#mNow{text-align:center;font-weight:600;padding:2px 0 10px;min-height:1.2em}
 .nvr{cursor:pointer}.nvsel{background:var(--card);box-shadow:inset 4px 0 0 var(--acc);padding-left:8px!important}
 .b.on{background:var(--card);box-shadow:inset 0 -3px 0 var(--acc)}
 .b:active{background:var(--line)}
@@ -118,7 +125,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-rb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol><symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></symbol><symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></symbol><symbol id="i-elev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l5-8 4 4 4-9 5 7"/><path d="M3 21h18"/></symbol><symbol id="i-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/></symbol><symbol id="i-nav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 19-7-4-7 4z"/></symbol><symbol id="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-lib" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol><symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol><symbol id="i-chrono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M12 2v3"/></symbol><symbol id="i-rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol><symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol><symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol><symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol><symbol id="i-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-set" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2" fill="var(--panel)"/><circle cx="15" cy="12" r="2.2" fill="var(--panel)"/><circle cx="7" cy="18" r="2.2" fill="var(--panel)"/></symbol><symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-rb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol><symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></symbol><symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></symbol><symbol id="i-elev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l5-8 4 4 4-9 5 7"/><path d="M3 21h18"/></symbol><symbol id="i-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/></symbol><symbol id="i-nav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 19-7-4-7 4z"/></symbol><symbol id="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-lib" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol><symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol><symbol id="i-chrono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M12 2v3"/></symbol><symbol id="i-rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol><symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol><symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol><symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol><symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol><symbol id="i-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-set" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2" fill="var(--panel)"/><circle cx="15" cy="12" r="2.2" fill="var(--panel)"/><circle cx="7" cy="18" r="2.2" fill="var(--panel)"/></symbol><symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol></svg>
 <div id="app">
   <div id="top">
     <span id="bat">🔋 --</span>
@@ -166,6 +173,8 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <button class="b" id="bBack"><svg class="ic"><use href="#i-back"/></svg><span>Voltar</span></button>
     <button class="b" id="bResetP"><svg class="ic"><use href="#i-reset"/></svg><span>Zerar parc.</span></button>
     <button class="b" id="bSpot"><svg class="ic"><use href="#i-music"/></svg><span>Spotify</span></button>
+    <button class="b" id="bPhone"><svg class="ic"><use href="#i-phone"/></svg><span>Telefone</span></button>
+    <button class="b" id="bVoice"><svg class="ic"><use href="#i-mic"/></svg><span>Voz</span></button>
     <i class="sep"></i>
     <button class="b" id="bDay"><svg class="ic"><use href="#i-moon"/></svg><span>Dia/Noite</span></button>
     <button class="b" id="bFull"><svg class="ic"><use href="#i-full"/></svg><span>Tela cheia</span></button>
@@ -174,6 +183,9 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 </div>
 <input type="file" id="fileIn" accept=".pdf,.gpx,application/pdf,application/gpx+xml" multiple hidden>
 <div id="toast"></div>
+<div id="callBox" role="dialog" aria-live="assertive"><div id="callWho"></div><div id="callNum"></div><div id="callSt"></div>
+  <div class="row"><button class="btn ok" id="callAns">Atender</button><button class="btn r" id="callEnd">Recusar</button></div></div>
+<div id="waCard" title="Toque para fechar"><div class="small" id="waApp"></div><div id="waT"></div><div id="waX"></div></div>
 
 <dialog id="dlgSet"><div class="hd"><b>Ajustes</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
   <h3>Odômetro</h3>
@@ -228,17 +240,23 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <h3>Simulação</h3>
   <label>Simular GPS seguindo o GPX <input type="checkbox" id="sSim"></label>
   <label>Velocidade simulada (km/h) <input type="number" id="sSimV"></label>
+  <h3>Atualização</h3>
+  <div class="small" id="updInfo">Atualização automática só no app (APK).</div>
+  <label>Procurar atualização ao abrir (1 vez a cada 12 h) <input type="checkbox" id="sUpdAuto"></label>
+  <div style="padding:8px 0"><button class="btn g" id="bUpd">Procurar atualização agora</button></div>
   <h3>Dados</h3>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.1.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.2.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div id="mNow">Nada tocando</div>
   <div style="display:flex;gap:10px;justify-content:center;padding:6px 0 14px"><button class="btn g" id="mPrev" style="font-size:26px;padding:12px 20px">⏮</button><button class="btn" id="mPlay" style="font-size:26px;padding:12px 24px">⏯</button><button class="btn g" id="mNext" style="font-size:26px;padding:12px 20px">⏭</button></div>
-  <div style="display:flex;justify-content:center"><button class="btn g" id="mOpen">Abrir o Spotify</button></div>
-  <div class="small" style="padding-top:10px;text-align:center">Os botões mandam o comando de mídia para o player que estiver tocando (Spotify, YouTube Music…).</div>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding-bottom:8px"><button class="btn g" id="mVolDn">Volume −</button><button class="btn g" id="mVolUp">Volume +</button></div>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn" id="mSpotBg">Tocar no Spotify (sem sair daqui)</button><button class="btn g" id="mOpen">Abrir o Spotify</button></div>
+  <div class="small" style="padding-top:10px;text-align:center">O Spotify continua tocando em segundo plano. Os botões mandam o comando para o player que estiver tocando (Spotify, YouTube Music…). A música atual aparece quando o acesso a notificações está liberado (em Telefone).</div>
 </div></dialog>
 
 <dialog id="dlgNav"><div class="hd"><b>Ir para (rota por ruas)</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -250,6 +268,21 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <h3>Favoritos e recentes</h3><div id="navRecent"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="navRadMark">Marcar radar aqui</button></div>
   <div class="small">Busca: Photon (komoot) · Rota para moto: Valhalla (FOSSGIS) · Radares e ruas © colaboradores do OpenStreetMap. Precisa de internet para buscar e calcular; sem ela, use Voltar (rota à trilha) ou abra no Waze.</div>
+</div></dialog>
+<dialog id="dlgPhone"><div class="hd"><b>Telefone, WhatsApp e voz</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div id="phPerm"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn" id="phReq">Permitir telefone, agenda e microfone</button><button class="btn" id="phNotif">Liberar acesso a notificações</button><button class="btn g" id="phApp">Informações do app</button></div>
+  <div class="small" id="phHint"></div>
+  <h3>Favoritos</h3><div id="phFavs"></div>
+  <h3>Ligar</h3>
+  <div class="nvf"><input id="phQ" placeholder="Buscar na agenda (nome)" autocomplete="off" enterkeyhint="search"></div><div id="phRes"></div>
+  <div class="nvf"><input id="phNum" type="tel" placeholder="Ou digite o número" autocomplete="off"><button class="btn ok" id="phDial">Ligar</button></div>
+  <h3>Mensagens do WhatsApp (desta viagem)</h3><div id="phWa"></div>
+  <label>Ler mensagens em voz alta <select id="sWaRead"><option value="nada">não</option><option value="nome">só quem mandou</option><option value="tudo">quem mandou e o texto</option></select></label>
+  <label>Ligação: escutar "atender" ou "recusar" <input type="checkbox" id="sCallVoice"></label>
+  <h3>Comandos de voz</h3>
+  <div class="small">Toque em <b>Voz</b> (ou na tecla do guidão configurada em Ajustes) e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
+  <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
 </div></dialog>
 <dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px"><button class="btn g" id="askNo">Cancelar</button><button class="btn" id="askOk">OK</button></div></div></dialog>
@@ -302,11 +335,11 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,waRead:'nome',callVoice:true,updAuto:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
-const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior'};
-const DEFKEYS={rbDown:'ArrowDown',rbUp:'ArrowUp',totPlus:'ArrowRight',totMinus:'ArrowLeft',resetPartial:'Enter',nextWp:'PageDown',prevWp:'PageUp',chrono:'KeyC',zoomIn:'Equal',zoomOut:'Minus',nextPane:'Tab',lock:'KeyL',mediaPlay:'',mediaNext:'',mediaPrev:''};
+const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
+const DEFKEYS={rbDown:'ArrowDown',rbUp:'ArrowUp',totPlus:'ArrowRight',totMinus:'ArrowLeft',resetPartial:'Enter',nextWp:'PageDown',prevWp:'PageUp',chrono:'KeyC',zoomIn:'Equal',zoomOut:'Minus',nextPane:'Tab',lock:'KeyL',mediaPlay:'',mediaNext:'',mediaPrev:'',voice:'',answer:'',hangup:''};
 let keys=Object.assign({},DEFKEYS,LS.get('keys',{}));
 
 /* ---------- estado ---------- */
@@ -1003,6 +1036,128 @@ $('#bRadArea').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('
 $('#bRadDel').onclick=async()=>{if(!await ask({title:'Apagar radares',msg:'Apaga os radares baixados e os marcados por você.',ok:'Apagar',danger:true}))return;radars.clear();radTiles={};radQ=[];radSave();radDraw();radInfo();toast('Radares apagados')};
 radLoad();
 
+/* ---------- telefone, WhatsApp, música atual, comandos de voz e atualização (só no APK) ---------- */
+/* Contatos, ligações e mensagens ficam no aparelho: nada disto vai para a rede. As mensagens ficam só na memória (as últimas 20). */
+var callSt={state:'idle',name:'',number:''},callCtx=null,waMsgs=[],nowPlay=null,dialT=null,voiceBusy=false,waT=null;
+const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const CALLRE=/^(?:por favor )?(?:ligar|ligue|liga|chamar|chama|telefonar|telefona)(?: (?:para|pra|pro|ao|a|o))* (.+)$/;
+function parseCmd(t){const s=normTxt(t);if(!s)return null;
+  if(/\b(atender|atende|atenda|atendo|atendi)\b/.test(s))return {a:'answer'};
+  if(/\b(recusar|recusa|recuse|rejeitar|rejeita|desligar|desliga|desligue|encerrar|encerra)\b/.test(s))return {a:'end'};
+  const raw=String(t).toLowerCase().replace(/[.!?,]+/g,' ').replace(/\s+/g,' ').trim(),m=CALLRE.exec(raw)||CALLRE.exec(s);if(m)return {a:'call',who:m[1].trim().slice(0,60)};
+  if(/\b(pausar|pausa|pause|parar|para a musica)\b/.test(s))return {a:'pause'};
+  if(/\b(proxima|proximo|pular|pula|avancar|avanca)\b/.test(s))return {a:'next'};
+  if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
+  if(/\b(aumentar|aumenta|aumente|mais alto|sobe)\b/.test(s))return {a:'volup'};
+  if(/\b(abaixar|abaixa|abaixe|diminuir|diminui|diminua|mais baixo|baixar)\b/.test(s))return {a:'voldown'};
+  if(/\b(ler|leia|le|mensagem|mensagens|whatsapp|zap)\b/.test(s))return {a:'read'};
+  if(/\b(tocar|toca|toque|play|continuar|continua|spotify|musica)\b/.test(s))return {a:'play'};
+  if(/\b(silencio|cancelar|cancela|nada|esquece)\b/.test(s))return {a:'none'};
+  return null}
+const nat=(fn,o)=>{if(!NATIVE)return Promise.reject(new Error('só no app (APK)'));try{return NP.nat[fn](o||{})}catch(e){return Promise.reject(e)}};
+const errTxt=e=>String((e&&e.message)||e||'erro').slice(0,160);
+const fmtNum=n=>String(n||'').replace(/[^+0-9*#]/g,'');
+/* diálogo aberto (modal) fica por cima de tudo e bloquearia Atender/Recusar: fecha */
+function showCall(mode){document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});const who=(callCtx&&callCtx.name)||callSt.name||fmtNum(callSt.number)||'Número desconhecido';
+  $('#callWho').textContent=who;$('#callNum').textContent=callSt.name||(callCtx&&callCtx.name)?fmtNum((callCtx&&callCtx.number)||callSt.number):'';
+  $('#callSt').textContent=mode==='ringing'?'Ligação chegando'+(cfg.callVoice?' · diga "atender" ou "recusar"':''):mode==='dial'?'Ligando em 3 s…':'Em ligação';
+  $('#callAns').style.display=mode==='ringing'?'':'none';$('#callEnd').textContent=mode==='ringing'?'Recusar':mode==='dial'?'Cancelar':'Desligar';$('#callBox').classList.add('on')}
+function hideCall(){$('#callBox').classList.remove('on')}
+function onCall(o){o=o||{};const st=['ringing','offhook','idle'].includes(o.state)?o.state:'idle',prev=callSt.state;
+  const same=st!=='idle'&&prev!=='idle';   /* tocando → em ligação é a mesma ligação: o Android manda o 2º aviso sem o número */
+  callSt={state:st,name:String(o.name||'').slice(0,80)||(same?callSt.name:''),number:String(o.number||'').slice(0,30)||(same?callSt.number:'')};
+  if(st==='ringing'){if(prev==='ringing')return showCall('ringing');callCtx=null;showCall('ringing');vib([400,200,400]);
+    const who=callSt.name||'número desconhecido',txt='Ligação de '+who+(cfg.callVoice?'. Diga atender ou recusar':'');say(txt,true);
+    if(cfg.callVoice)setTimeout(()=>{if(callSt.state==='ringing')voiceCmd(true)},900+txt.length*65)}
+  else if(st==='offhook'){if(dialT){clearTimeout(dialT);dialT=null}showCall('offhook')}
+  else{hideCall();callCtx=null}}
+function dial(c){if(!c||!fmtNum(c.number)){say('Número inválido');return}if(dialT)clearTimeout(dialT);callCtx={name:String(c.name||'').slice(0,80),number:fmtNum(c.number)};
+  showCall('dial');say('Ligando para '+(callCtx.name||callCtx.number.split('').join(' ')),true);
+  dialT=setTimeout(()=>{dialT=null;nat('placeCall',{number:callCtx.number}).catch(e=>{hideCall();toast('Não consegui ligar: '+errTxt(e),5000);say('Não consegui ligar')})},3500)}
+function getFavs(){return (LS.get('phFav',[])||[]).filter(f=>f&&typeof f.name==='string'&&typeof f.number==='string').slice(0,30)}
+async function callByName(who){const n=normTxt(who);if(!n){say('Não entendi o nome');return}
+  const fav=getFavs().filter(f=>{const fn=normTxt(f.name);return fn===n||fn.split(' ')[0]===n||fn.includes(n)});
+  if(fav.length===1)return dial(fav[0]);
+  let list=[];try{list=((await nat('findContacts',{q:who}))||{}).list||[]}catch(e){if(!fav.length){say('Não consegui ler a agenda');toast(errTxt(e),4000);return}}
+  if(fav.length>1)list=fav;
+  const names=[...new Set(list.map(c=>normTxt(c.name)))];
+  if(!list.length){say('Não achei '+who+' na agenda');return}
+  if(names.length===1)return dial(list[0]);
+  say('Encontrei '+names.length+' contatos com '+who+'. Escolha na tela');openPhone(list)}
+async function runCmd(c){if(!c)return;const st=callSt.state;
+  switch(c.a){
+    case 'answer':if(st!=='ringing'){say('Nenhuma ligação tocando');return}nat('answerCall').then(()=>toast('Atendida')).catch(e=>{say('Não consegui atender');toast(errTxt(e),5000)});return;
+    case 'none':case 'end':if(dialT){clearTimeout(dialT);dialT=null;hideCall();callCtx=null;say('Ligação cancelada');return}if(c.a==='none')return;if(st==='idle'){say('Nenhuma ligação');return}
+      nat('endCall').then(()=>{if(st==='ringing')toast('Recusada')}).catch(e=>{say('Não consegui encerrar');toast(errTxt(e),5000)});return;
+    case 'call':return callByName(c.who);
+    case 'pause':return media('pause');case 'next':return media('next');case 'prev':return media('previous');
+    case 'volup':return nat('volume',{dir:'up'}).catch(()=>{});case 'voldown':return nat('volume',{dir:'down'}).catch(()=>{});
+    case 'play':if(nowPlay&&nowPlay.active)return media('play');return nat('spotifyPlay').catch(()=>toast('Spotify não respondeu'));
+    case 'read':return readMsgs();
+    default:return}}
+function readMsgs(){const m=waMsgs.slice(0,3);if(!m.length){say('Nenhuma mensagem nova');return}say(m.map(x=>'Mensagem de '+x.title+': '+x.text.slice(0,200)).join('. '),true)}
+async function voiceCmd(fromCall){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}if(voiceBusy)return;voiceBusy=true;$('#bVoice').classList.add('on');
+  if(!fromCall)toast('Fale agora…',4000);beep(1000,90);
+  try{const r=await nat('listen',{ms:fromCall?6000:7000}),texts=(r&&r.texts||[]).map(String);let c=null;for(const t of texts){c=parseCmd(t);if(c)break}
+    if(fromCall&&c&&c.a!=='answer'&&c.a!=='end')c=null;
+    if(!c){if(!fromCall)say('Não entendi'+(texts[0]?': '+texts[0].slice(0,60):''));return}
+    toast('🎤 '+(texts[0]||'').slice(0,60),2500);await runCmd(c)}
+  catch(e){if(!fromCall){const m=errTxt(e);say(/permiss/.test(m)?'Permita o microfone em Telefone':'Não entendi');if(/permiss|indispon/.test(m))toast(m,5000)}}
+  finally{voiceBusy=false;$('#bVoice').classList.remove('on')}}
+function onWa(o){o=o||{};const m={app:String(o.app||'WhatsApp').slice(0,30),title:String(o.title||'').slice(0,80),text:String(o.text||'').slice(0,500),t:+o.t||Date.now()};if(!m.title||!m.text)return;
+  if(waMsgs.some(x=>x.title===m.title&&x.text===m.text&&Math.abs(x.t-m.t)<120000))return;
+  waMsgs.unshift(m);waMsgs.length=Math.min(waMsgs.length,20);
+  $('#waApp').textContent=m.app;$('#waT').textContent=m.title;$('#waX').textContent=m.text;$('#waCard').classList.add('on');clearTimeout(waT);waT=setTimeout(()=>$('#waCard').classList.remove('on'),10000);
+  if(callSt.state==='idle'&&cfg.waRead!=='nada'){beep(1300,60);say('Mensagem de '+m.title+(cfg.waRead==='tudo'?': '+m.text.slice(0,200):''))}
+  if($('#dlgPhone').open)renderWa()}
+$('#waCard').onclick=()=>$('#waCard').classList.remove('on');
+const appName=p=>({'com.spotify.music':'Spotify','com.google.android.apps.youtube.music':'YouTube Music','com.deezer.android.app':'Deezer'})[p]||'';
+function onMedia(o){o=o||{};const prev=nowPlay;nowPlay={active:!!o.active,pkg:String(o.pkg||''),title:String(o.title||'').slice(0,120),artist:String(o.artist||'').slice(0,120),playing:!!o.playing};
+  const p=nowPlay,an=appName(p.pkg);$('#mNow').textContent=p.active?(p.playing?'▶ ':'⏸ ')+([p.title,p.artist].filter(Boolean).join(' — ')||'sem título')+(an?' ('+an+')':''):'Nada tocando';
+  if(p.active&&p.playing&&p.title&&(!prev||prev.title!==p.title))toast('♪ '+[p.title,p.artist].filter(Boolean).join(' — ').slice(0,80),3000)}
+/* tela do telefone */
+async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCallVoice').checked=cfg.callVoice;
+  renderFavs();renderWa();if(results)renderRes(results);await renderPerm()}
+async function renderPerm(){let s={};try{s=await nat('phoneStatus')||{}}catch(e){}
+  const it=[['Telefone (atender, recusar, ligar)',s.phone],['Agenda (nome de quem liga)',s.contacts],['Microfone (comandos de voz)',s.mic],['Acesso a notificações (WhatsApp e música)',s.notifAccess]];
+  $('#phPerm').innerHTML=it.map(([l,ok])=>'<div class="lr"><span>'+l+'</span><b class="'+(ok?'wpok':'wpmiss')+'">'+(ok?'liberado':'falta')+'</b></div>').join('')+(s.speech===false?'<div class="small" style="padding-top:6px">Este aparelho não tem reconhecimento de voz (instale ou ative o app Google).</div>':'');
+  $('#phReq').style.display=s.phone&&s.contacts&&s.mic?'none':'';$('#phNotif').style.display=s.notifAccess?'none':'';
+  $('#phHint').textContent=!s.notifAccess&&s.sdk>=33?'Android 13 ou mais novo: se o TrilhaNav aparecer apagado na lista de acesso a notificações, abra "Informações do app", toque nos três pontinhos lá em cima e em "Permitir configurações restritas"; depois volte e libere.':'';return s}
+function renderFavs(){const f=getFavs();$('#phFavs').innerHTML=f.length?f.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-call="'+i+'">Ligar</button><button class="btn g" data-unfav="'+i+'">✕</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhum favorito: busque na agenda e toque em ☆.</div>';
+  $('#phFavs').querySelectorAll('[data-call]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(f[+b.dataset.call])});
+  $('#phFavs').querySelectorAll('[data-unfav]').forEach(b=>b.onclick=()=>{const c=f[+b.dataset.unfav];LS.set('phFav',getFavs().filter(x=>!(x.name===c.name&&x.number===c.number)));renderFavs()})}
+function renderRes(list){list=(list||[]).slice(0,20);$('#phRes').innerHTML=list.length?list.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-rcall="'+i+'">Ligar</button><button class="btn g" data-fav="'+i+'" title="Favorito">☆</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Ninguém com esse nome.</div>';
+  $('#phRes').querySelectorAll('[data-rcall]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(list[+b.dataset.rcall])});
+  $('#phRes').querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const c=list[+b.dataset.fav],f=getFavs();if(!f.some(x=>x.number===c.number))f.push({name:String(c.name).slice(0,80),number:String(c.number).slice(0,30)});LS.set('phFav',f.slice(0,30));renderFavs();toast('Favorito: '+c.name)})}
+function renderWa(){$('#phWa').innerHTML=waMsgs.length?waMsgs.map(m=>'<div class="lr"><span><b>'+esc(m.title)+'</b> <span class="small">'+new Date(m.t).toTimeString().slice(0,5)+'</span><br>'+esc(m.text)+'</span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhuma mensagem desde que o app abriu.</div>'}
+let phT=null;$('#phQ').oninput=e=>{clearTimeout(phT);const q=e.target.value.trim();if(q.length<2){$('#phRes').innerHTML='';return}phT=setTimeout(()=>nat('findContacts',{q}).then(r=>renderRes((r||{}).list)).catch(err=>{$('#phRes').innerHTML='<div class="small">'+esc(errTxt(err))+'</div>'}),400)};
+$('#phDial').onclick=()=>{const n=fmtNum($('#phNum').value);if(n.length<2){toast('Digite o número');return}$('#dlgPhone').close();dial({name:'',number:n})};
+$('#phReq').onclick=()=>nat('requestPhone').then(renderPerm).catch(e=>toast(errTxt(e)));
+$('#phNotif').onclick=()=>nat('openNotifAccess').catch(e=>toast(errTxt(e)));
+$('#phApp').onclick=()=>nat('openAppSettings').catch(e=>toast(errTxt(e)));
+$('#sWaRead').onchange=e=>{cfg.waRead=e.target.value;saveCfg()};
+$('#bPhone').onclick=()=>openPhone();$('#bVoice').onclick=()=>voiceCmd(false);
+$('#callAns').onclick=()=>runCmd({a:'answer'});$('#callEnd').onclick=()=>runCmd({a:'end'});
+$('#mVolDn').onclick=()=>runCmd({a:'voldown'});$('#mVolUp').onclick=()=>runCmd({a:'volup'});$('#mSpotBg').onclick=()=>nat('spotifyPlay').then(()=>toast('Spotify tocando em segundo plano')).catch(()=>toast('Spotify não respondeu (está instalado?)'));
+/* a tela volta ao app quando ele é reaberto (permissões liberadas lá fora) */
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('#dlgPhone').open)renderPerm()});
+/* atualização: versao.json no branch apk (versão, link do APK, SHA-256); o APK baixado só é instalado se o SHA-256 conferir */
+const UPD_URL='https://raw.githubusercontent.com/Lubiell/trilhanav/apk/versao.json';
+async function updInfo(){if(!NATIVE)return;try{const me=await nat('appInfo');$('#updInfo').textContent='Versão instalada: '+String(me.version).slice(0,20)}catch(e){}}
+async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização automática só no app (APK)');return}
+  let me={version:'?',code:0};try{me=await nat('appInfo')}catch(e){}
+  let v=null;try{const r=await fetch(UPD_URL+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);v=await r.json()}catch(e){if(manual)toast('Não consegui procurar atualização (sem internet?)',4000);return}
+  LS.set('updT',Date.now());
+  if(!v||!Number.isFinite(+v.code)||typeof v.apk!=='string'||!/^[0-9a-f]{64}$/i.test(String(v.sha256||''))){if(manual)toast('Arquivo de versão inválido',4000);return}
+  if(+v.code<=+me.code){$('#updInfo').textContent='Versão instalada: '+String(me.version).slice(0,20)+' (a mais nova)';if(manual)toast('Você já tem a versão mais nova');return}
+  const ok=await ask({title:'Atualização: versão '+String(v.version||'').slice(0,20),msg:'Instalada: '+String(me.version).slice(0,20)+'. '+String(v.notes||'').slice(0,600)+' — O app baixa o APK do GitHub, confere o SHA-256 e abre o instalador do Android. Trilhas, notas e mapa ficam.',ok:'Atualizar agora'});
+  if(!ok)return;toast('Baixando a atualização…',120000);
+  try{await nat('installApk',{url:v.apk,sha256:String(v.sha256).toLowerCase()});toast('Toque em "Atualizar" na tela do Android',8000)}catch(e){toast(errTxt(e),7000)}}
+$('#bUpd').onclick=()=>checkUpdate(true);
+if(NATIVE){try{NP.nat.addListener('call',onCall);NP.nat.addListener('whatsapp',onWa);NP.nat.addListener('media',onMedia);
+    NP.nat.addListener('update',p=>{if(p&&p.pct>=0)toast('Baixando a atualização… '+p.pct+'%',120000)})}catch(e){}
+  if(cfg.updAuto&&Date.now()-(+LS.get('updT',0)||0)>12*3600e3)setTimeout(()=>checkUpdate(false),8000)}
+
 /* ---------- GPS ---------- */
 let lastT=0;
 function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.now();const cur={lat:c.latitude,lon:c.longitude,ele:c.altitude,acc:c.accuracy,t:now};
@@ -1083,9 +1238,9 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}const m={i:Math.min(
 
 /* ---------- ajustes ---------- */
 const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy']];
+const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sCallVoice','callVoice'],['sUpdAuto','updAuto']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sTheme').value=cfg.dayMode;
-  radInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
+  radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
 binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
 $('#sTotal').onchange=e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){st.total=v;saveOdo();renderOdo()}};
@@ -1206,7 +1361,7 @@ let learning=null;
 function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':esc(keys[a])||'—')+'</button></label>').join('');
   $('#keyList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{learning=b.dataset.a;renderKeys()})}
 $('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
-const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous')};
+const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,voice:()=>voiceCmd(false),answer:()=>runCmd({a:'answer'}),hangup:()=>runCmd({a:'end'}),mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous')};
 addEventListener('keydown',e=>{if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
   if(!e.code||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')))return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a){e.preventDefault();if(e.repeat&&!['totPlus','totMinus','rbDown','rbUp'].includes(a))return;ACT[a]()}});
 
@@ -1234,7 +1389,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
