@@ -4,20 +4,34 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.2.0.apk`** (atual) | 2.2.0 (versionCode 20200) | commit `bcf2a1a` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 5,4 MB |
+| **`trilhanav-2.3.0.apk`** (atual) | 2.3.0 (versionCode 20300) | commit `9006310` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
+| `trilhanav-2.2.0.apk` | 2.2.0 (versionCode 20200) | commit `bcf2a1a` (PR #2) | 5,4 MB |
 | `trilhanav-2.1.0.apk` | 2.1.0 (versionCode 20100) | commit `48f8b7b` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.2.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.2.0.apk
+**Baixar no celular (2.3.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.3.0.apk
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.3.0: `19c374268dbaed919b28da4e38c2978c35b891d31d6dd0f6d0336c30e9bafef5`
 - 2.2.0: `1ac3818a44d91a843d7bbf48e53e3b43b1d1a6acccc90cc9a8f2be91a77a40f2`
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.3.0
+
+- **GPS:** se o serviço de localização demora a ligar, o app tenta de novo sozinho; mostra o motivo ("GPS desligado no celular",
+  "GPS sem permissão"…) e, se em 25 s não chegar posição, usa o GPS do app como reserva (com a tela ligada).
+- **Assistente de voz sempre ligado, sem internet** (Vosk, modelo de português dentro do APK): diga **"Trilha"** e o comando
+  ("Trilha, atender", "Trilha, ligar para Maria", "Trilha, próxima música"). Com a ligação tocando, basta "atender"/"recusar".
+  Para enquanto o app fala e durante a ligação. Liga/desliga em Telefone. Fica um ícone de microfone na barra do Android.
+- **Agenda completa** em Telefone, com filtro e "Atualizar contatos"; os nomes entram no vocabulário do assistente.
+- **WhatsApp:** leitura do estilo de conversa do WhatsApp e diagnóstico na tela Telefone (se o serviço de notificações está
+  conectado, quantas notificações chegaram e por que alguma foi ignorada).
+- O APK passou a 56 MB por causa do modelo de voz: baixe no Wi-Fi.
 
 ## O que mudou na 2.2.0
 
@@ -55,7 +69,7 @@ nada) e a **tela fica ligada** enquanto o app está aberto.
 
 - É um APK **de depuração** (assinado com a chave de depuração, `debuggable`): serve para instalar no seu celular, não para distribuir a outras pessoas nem para a Play Store.
 - Precisa permitir "instalar apps desconhecidos" para o navegador/gerenciador de arquivos que baixou o APK.
-- O 2.2.0, o 2.1.0, o 2.0.1 e o 2.0.0 têm a mesma chave de depuração (certificado `16acb7ad…8029`), então cada um atualiza por cima do anterior sem perder dados. Se o Android recusar ("app não instalado" / assinatura diferente), desinstale o anterior antes: isso apaga trilhas, notas e o mapa offline guardados no app.
+- O 2.3.0, o 2.2.0, o 2.1.0, o 2.0.1 e o 2.0.0 têm a mesma chave de depuração (certificado `16acb7ad…8029`), então cada um atualiza por cima do anterior sem perder dados. Se o Android recusar ("app não instalado" / assinatura diferente), desinstale o anterior antes: isso apaga trilhas, notas e o mapa offline guardados no app.
 - Ao abrir, permita a localização (escolha "o tempo todo" para a gravação seguir com a tela apagada) e as notificações.
 - **Nunca rodou num aparelho de verdade**: foi conferido por dentro (manifest, permissões, assinatura, classes, assets), não em uso.
 - Contém `leaflet-rotate` e `leaflet-elevation` (GPL-3.0): o código-fonte completo é o do repositório (ver `NOTICE.md`).
