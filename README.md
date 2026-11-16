@@ -4,22 +4,35 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.3.0.apk`** (atual) | 2.3.0 (versionCode 20300) | commit `9006310` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
-| `trilhanav-2.2.0.apk` | 2.2.0 (versionCode 20200) | commit `bcf2a1a` (PR #2) | 5,4 MB |
-| `trilhanav-2.1.0.apk` | 2.1.0 (versionCode 20100) | commit `48f8b7b` (PR #2) | 5,4 MB |
+| **`trilhanav-2.4.0.apk`** (atual) | 2.4.0 (versionCode 20400) | commit `dba6186` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
+| `trilhanav-2.3.0.apk` | 2.3.0 (versionCode 20300) | commit `9006310` (PR #2) | 56 MB |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.3.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.3.0.apk
+**Baixar no celular (2.4.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.4.0.apk
+
+(A 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.4.0: `eec3f92b604936ab2063c9ab68912bcfc8c2c12665b4152ba0608ad1c019c571`
 - 2.3.0: `19c374268dbaed919b28da4e38c2978c35b891d31d6dd0f6d0336c30e9bafef5`
 - 2.2.0: `1ac3818a44d91a843d7bbf48e53e3b43b1d1a6acccc90cc9a8f2be91a77a40f2`
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.4.0
+
+- **Mapa gira sozinho durante o "Ir para"**, como no Waze (rumo para cima), e volta ao norte quando a rota termina.
+  Dá para desligar em Ir para → "Mapa gira com a direção durante a rota".
+- **"Trilha, ir para…"**: diga "Trilha, ir para a Praça da Estação" (ou "vamos para", "me leva para"). O app procura o lugar
+  (primeiro nos recentes) e já começa a rota. Só "Trilha, ir para" → ele pergunta "Para onde?". "Trilha, encerrar rota" para.
+- **Clima**: temperatura na barra de cima (vermelha quando há alerta; toque para ver as próximas 12 horas). Alertas por voz:
+  chuva chegando, tempestade, rajadas de vento, calor forte, frio, neblina (cada um no máximo 1 vez por hora). No "Ir para",
+  avisa se há chuva prevista no destino (e no meio do caminho em rotas longas). "Trilha, clima" fala a previsão.
+  Dados do Open-Meteo, com o MET Norway de reserva; a posição vai arredondada (uns 1 km).
 
 ## O que mudou na 2.3.0
 
@@ -69,7 +82,7 @@ nada) e a **tela fica ligada** enquanto o app está aberto.
 
 - É um APK **de depuração** (assinado com a chave de depuração, `debuggable`): serve para instalar no seu celular, não para distribuir a outras pessoas nem para a Play Store.
 - Precisa permitir "instalar apps desconhecidos" para o navegador/gerenciador de arquivos que baixou o APK.
-- O 2.3.0, o 2.2.0, o 2.1.0, o 2.0.1 e o 2.0.0 têm a mesma chave de depuração (certificado `16acb7ad…8029`), então cada um atualiza por cima do anterior sem perder dados. Se o Android recusar ("app não instalado" / assinatura diferente), desinstale o anterior antes: isso apaga trilhas, notas e o mapa offline guardados no app.
+- Todas as versões têm a mesma chave de depuração (certificado `16acb7ad…8029`), então cada um atualiza por cima do anterior sem perder dados. Se o Android recusar ("app não instalado" / assinatura diferente), desinstale o anterior antes: isso apaga trilhas, notas e o mapa offline guardados no app.
 - Ao abrir, permita a localização (escolha "o tempo todo" para a gravação seguir com a tela apagada) e as notificações.
 - **Nunca rodou num aparelho de verdade**: foi conferido por dentro (manifest, permissões, assinatura, classes, assets), não em uso.
 - Contém `leaflet-rotate` e `leaflet-elevation` (GPL-3.0): o código-fonte completo é o do repositório (ver `NOTICE.md`).

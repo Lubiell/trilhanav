@@ -1,7 +1,7 @@
 {
- "version": "2.3.0",
- "code": 20300,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.3.0.apk",
- "sha256": "19c374268dbaed919b28da4e38c2978c35b891d31d6dd0f6d0336c30e9bafef5",
- "notes": "GPS volta sozinho quando o serviço demora a ligar e mostra o motivo; assistente de voz sempre ligado sem internet (diga \"Trilha\" e o comando); agenda completa em Telefone; leitura do WhatsApp mais robusta com diagnóstico. O APK tem 56 MB (modelo de voz): baixe no Wi-Fi."
+ "version": "2.4.0",
+ "code": 20400,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.4.0.apk",
+ "sha256": "eec3f92b604936ab2063c9ab68912bcfc8c2c12665b4152ba0608ad1c019c571",
+ "notes": "Mapa gira sozinho durante o Ir para; diga \"Trilha, ir para\" e o lugar para começar a rota por voz; temperatura e alertas de clima (chuva chegando, tempestade, vento forte, calor, frio, neblina) e previsão no destino. Baixe no Wi-Fi (56 MB)."
 }
