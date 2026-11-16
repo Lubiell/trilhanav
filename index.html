@@ -99,6 +99,7 @@ body.navOn #banner{top:96px}
 #callBox .row{justify-content:center;gap:12px}#callBox .btn{font-size:20px;padding:16px 22px;min-width:130px;border-radius:14px}.btn.ok{background:#1f9d55}
 #waCard{position:fixed;left:10px;bottom:76px;z-index:1650;display:none;max-width:min(420px,90vw);background:var(--panel);border:1px solid var(--line);border-left:6px solid #25d366;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #0008;cursor:pointer}
 #waCard.on{display:block}#waT{font-weight:700}#waX{font-size:15px;max-height:4.2em;overflow:hidden;white-space:pre-wrap;word-break:break-word}
+#wx{white-space:nowrap;padding:2px 6px;border-radius:8px}#wx.alert{background:var(--bad);color:#fff}
 #bVoice.live .ic{color:#1f9d55}#bVoice.live span{color:#1f9d55}#bVoice.on{background:#c62828;color:#fff}#bVoice.on .ic{color:#fff}
 #mNow{text-align:center;font-weight:600;padding:2px 0 10px;min-height:1.2em}
 .nvr{cursor:pointer}.nvsel{background:var(--card);box-shadow:inset 4px 0 0 var(--acc);padding-left:8px!important}
@@ -133,6 +134,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <span id="recTop" style="color:var(--bad);display:none">● REC</span>
     <span class="sp"></span>
     <span id="fileName" class="small"></span>
+    <span id="wx" title="Clima" style="cursor:pointer;display:none"></span>
     <span id="clock" style="font-family:Orbitron">--:--</span>
     <span id="lockIco" title="Travar toque">🔓</span>
   </div>
@@ -225,6 +227,10 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">Controles Bluetooth funcionam como teclado. Toque em "Definir" e aperte o botão do controle.</div>
   <div id="keyList"></div>
   <div style="padding:8px 0"><button class="btn g" id="bKeyDef">Restaurar teclas padrão</button></div>
+  <h3>Clima</h3>
+  <label>Mostrar temperatura e alertas de clima <input type="checkbox" id="sWx"></label>
+  <label>Avisar por voz (chuva chegando, tempestade, vento forte, calor, frio, neblina) <input type="checkbox" id="sWxVoice"></label>
+  <div class="small">Previsão do Open-Meteo (reserva: MET Norway), atualizada a cada 15 min ou a cada 10 km, e no destino quando você usa Ir para. Toque na temperatura lá em cima para ver as próximas horas.</div>
   <h3>Radares</h3>
   <label>Avisar de radares (OpenStreetMap) <input type="checkbox" id="sRadar"></label>
   <label>Avisar a partir de (m) <input type="number" step="50" id="sRadarDist"></label>
@@ -248,7 +254,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.3.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.4.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -265,6 +271,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div id="navRes"></div><div id="navRoutes"></div>
   <label>Evitar pedágio <input type="checkbox" id="sNavToll"></label>
   <label>Evitar rodovias <input type="checkbox" id="sNavHwy"></label>
+  <label>Mapa gira com a direção durante a rota (como no Waze) <input type="checkbox" id="sNavRot"></label>
   <h3>Favoritos e recentes</h3><div id="navRecent"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="navRadMark">Marcar radar aqui</button></div>
   <div class="small">Busca: Photon (komoot) · Rota para moto: Valhalla (FOSSGIS) · Radares e ruas © colaboradores do OpenStreetMap. Precisa de internet para buscar e calcular; sem ela, use Voltar (rota à trilha) ou abra no Waze.</div>
@@ -287,6 +294,11 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, atender", "Trilha, ligar para Maria", "Trilha, próxima música". Com a ligação tocando, basta "atender" ou "recusar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
   <div class="small">Toque em <b>Voz</b> (ou na tecla do guidão configurada em Ajustes) e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
   <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
+</div></dialog>
+<dialog id="dlgWx"><div class="hd"><b>Clima</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div id="wxNow" style="font-size:18px;font-weight:700;padding-bottom:6px"></div><div id="wxAl"></div><div id="wxHours"></div>
+  <div style="padding:8px 0"><button class="btn g" id="wxRefresh">Atualizar</button></div>
+  <div class="small" id="wxSrc"></div>
 </div></dialog>
 <dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px"><button class="btn g" id="askNo">Cancelar</button><button class="btn" id="askOk">OK</button></div></div></dialog>
@@ -339,7 +351,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
@@ -678,7 +690,7 @@ function applyHeading(){const cOK=cfg.comp&&compOK(),cH=cOK?norm360(comp.mag+cfg
   heading=useC?cH:(gpsHdg!=null?gpsHdg:cH);
   $('#hdgTxt').textContent='RUMO '+(heading==null?'---':String(Math.round(heading)).padStart(3,'0')+'°')+(heading!=null&&heading===cH?' 🧭':'');
   /* leaflet-rotate: o bearing gira o mapa no sentido horário; "rumo para cima" = 360 - rumo */
-  const want=cfg.rot&&heading!=null?norm360(360-heading):0,cur=map.getBearing?norm360(map.getBearing()):0;
+  const want=(cfg.rot||(nav&&cfg.navRot))&&heading!=null?norm360(360-heading):0,cur=map.getBearing?norm360(map.getBearing()):0;
   if(map.setBearing&&Math.abs(angDiff(want,cur))>=2)map.setBearing(want);
   const s=document.getElementById('meSvg');if(s)s.style.transform='rotate('+norm360((heading||0)+(map.getBearing?map.getBearing():0))+'deg)'}
 addEventListener('deviceorientationabsolute',onOrient,true);addEventListener('deviceorientation',onOrient,true);
@@ -906,8 +918,8 @@ function manIcon(m){if(!m)return tulipSvg(0);if(m.type===26||m.type===27)return 
 function navStart(rt,to,from){nav={rt,to,from:from||'',custom:!!from,joined:!from,q:null,mi:-1,said:{},off:0,lastRe:0,busy:false,arrived:false};navPlan=null;
   document.body.classList.add('navOn');showPane('paneMap');map.invalidateSize();follow=true;navDraw();
   if(fix&&!from)map.setView([fix.lat,fix.lon],Math.max(map.getZoom(),16),{animate:false});else if($('#map').clientWidth>0)map.fitBounds(L.latLngBounds(rt.pts.map(q=>[q.lat,q.lon])),{padding:[40,40]});
-  say('Rota para '+to.name+': '+spokenDist(rt.len)+', cerca de '+sayMin(rt.time),true);radRoute(rt);navUpdate();navRender();updateNav()}
-function navStop(why){if(!nav)return;nav=null;document.body.classList.remove('navOn');navDraw();$('#radBox').classList.remove('on');if(why)toast(why);updateNav()}
+  say('Rota para '+to.name+': '+spokenDist(rt.len)+', cerca de '+sayMin(rt.time),true);radRoute(rt);wxRoute(rt,to);try{applyHeading()}catch(e){}navUpdate();navRender();updateNav()}
+function navStop(why){if(!nav)return;nav=null;document.body.classList.remove('navOn');navDraw();try{applyHeading()}catch(e){}$('#radBox').classList.remove('on');if(why)toast(why);updateNav()}
 function navUpdate(){if(!nav||!fix)return;const rt=nav.rt,lq=nav.q;
   let q=projPoly(rt,fix,lq?Math.max(0,lq.i-40):0,lq?lq.i+600:Infinity);if(lq&&q.d>50){const g=projPoly(rt,fix);if(g.d<q.d-25)q=g}
   nav.q=q;if(!nav.joined){if(q.d<=40)nav.joined=true;else{nav.mi=-1;navRender();return}}
@@ -950,7 +962,7 @@ $('#navCard').onclick=()=>{if(!nav)return;const m=nav.mi>0?nav.rt.man[nav.mi]:nu
 /* ---- tela "Ir para" ---- */
 let navSel={from:null,to:null},navField='to',navSeq=0,navTmr=null,navResults=[];
 async function netOk(){if(LS.get('netOk',false))return true;
-  const r=await ask({title:'Busca e rota pela internet',msg:'Para achar o endereço e calcular a rota, o app envia o texto da busca, a sua posição aproximada e o destino a serviços públicos e gratuitos do OpenStreetMap (Photon/komoot e Valhalla/FOSSGIS). Os radares da sua região vêm do Overpass (OpenStreetMap). Nada disso é enviado sem você usar o modo cidade ou os radares.',ok:'Entendi'});
+  const r=await ask({title:'Busca e rota pela internet',msg:'Para achar o endereço e calcular a rota, o app envia o texto da busca, a sua posição aproximada e o destino a serviços públicos e gratuitos do OpenStreetMap (Photon/komoot e Valhalla/FOSSGIS). Os radares da sua região vêm do Overpass (OpenStreetMap) e o clima do Open-Meteo (ou do MET Norway), com a posição arredondada (uns 1 km). Nada disso é enviado sem você usar o modo cidade ou os radares.',ok:'Entendi'});
   if(r){LS.set('netOk',true);return true}return false}
 function getRecent(){return (LS.get('navRecent',[])||[]).filter(p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,30)}
 function addRecent(p){const all=getRecent(),old=all.find(x=>Math.abs(x.lat-p.lat)<1e-5&&Math.abs(x.lon-p.lon)<1e-5),rest=all.filter(x=>x!==old);
@@ -962,7 +974,7 @@ function renderNavRecent(){const r=getRecent().sort((a,b)=>(b.fav|0)-(a.fav|0)),
   el.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{navField='to';navPick(r[+b.dataset.rc])});
   el.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.fav];LS.set('navRecent',getRecent().map(x=>same(x,p)?Object.assign(x,{fav:!x.fav}):x));renderNavRecent()});
   el.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.rm];LS.set('navRecent',getRecent().filter(x=>!same(x,p)));renderNavRecent()})}
-async function openNavDlg(){$('#navQ').value=navSel.to?navSel.to.name:'';$('#navFrom').value=navSel.from?navSel.from.name:'';$('#sNavToll').checked=cfg.navNoToll;$('#sNavHwy').checked=cfg.navNoHwy;
+async function openNavDlg(){$('#navQ').value=navSel.to?navSel.to.name:'';$('#navFrom').value=navSel.from?navSel.from.name:'';$('#sNavToll').checked=cfg.navNoToll;$('#sNavHwy').checked=cfg.navNoHwy;$('#sNavRot').checked=cfg.navRot;
   $('#navRes').innerHTML='';renderNavRecent();renderNavRoutes();$('#dlgNav').showModal();if(!await netOk()){$('#dlgNav').close();return}$('#navQ').focus()}
 $('#bNav').onclick=()=>{if(nav){ask({title:'Rota em andamento',msg:'Destino: '+nav.to.name,options:[{label:'Escolher outro destino',value:'new'},{label:'Abrir no Waze',value:'waze'},{label:'Abrir no Google Maps',value:'gmaps'},{label:'Encerrar a rota',value:'end'}],ok:'OK'}).then(v=>{
     if(v==='new')openNavDlg();else if(v==='waze')openExt(wazeUrl(nav.to));else if(v==='gmaps')openExt(gmapsUrl(nav.to));else if(v==='end')navStop('Rota encerrada')});return}openNavDlg()};
@@ -1044,11 +1056,15 @@ radLoad();
 /* Contatos, ligações e mensagens ficam no aparelho: nada disto vai para a rede. As mensagens ficam só na memória (as últimas 20). */
 var callSt={state:'idle',name:'',number:''},callCtx=null,waMsgs=[],nowPlay=null,dialT=null,voiceBusy=false,waT=null;
 const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const GORE=/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:me|para|pra|pro|ate|até|ao|a|o))* (.+)$/;
 const CALLRE=/^(?:por favor )?(?:ligar|ligue|liga|chamar|chama|telefonar|telefona)(?: (?:para|pra|pro|ao|a|o))* (.+)$/;
 function parseCmd(t){const s=normTxt(t);if(!s)return null;
   if(/\b(atender|atende|atenda|atendo|atendi)\b/.test(s))return {a:'answer'};
+  if(/\b(rota|navegacao)\b/.test(s)&&/\b(cancelar|cancela|parar|para|encerrar|encerra|sair|terminar|termina)\b/.test(s))return {a:'stopnav'};
   if(/\b(recusar|recusa|recuse|rejeitar|rejeita|desligar|desliga|desligue|encerrar|encerra)\b/.test(s))return {a:'end'};
   const raw=String(t).toLowerCase().replace(/[.!?,]+/g,' ').replace(/\s+/g,' ').trim(),m=CALLRE.exec(raw)||CALLRE.exec(s);if(m)return {a:'call',who:m[1].trim().slice(0,60)};
+  const g=GORE.exec(raw)||GORE.exec(s);if(g)return {a:'go',where:g[1].trim().slice(0,80)};if(/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:para|pra|pro|ate|até|ao|a|o))*$/.test(s))return {a:'go',where:''};
+  if(/\b(clima|tempo|temperatura|previsao|chuva)\b/.test(s))return {a:'wx'};
   if(/\b(pausar|pausa|pause|parar|para a musica)\b/.test(s))return {a:'pause'};
   if(/\b(proxima|proximo|pular|pula|avancar|avanca)\b/.test(s))return {a:'next'};
   if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
@@ -1099,6 +1115,9 @@ async function runCmd(c){if(!c)return;const st=callSt.state;
     case 'volup':return nat('volume',{dir:'up'}).catch(()=>{});case 'voldown':return nat('volume',{dir:'down'}).catch(()=>{});
     case 'play':if(nowPlay&&nowPlay.active)return media('play');return nat('spotifyPlay').catch(()=>toast('Spotify não respondeu'));
     case 'read':return readMsgs();
+    case 'go':return /^(|para|pra|pro|a|o|ao|ate|até)$/.test(normTxt(c.where))?askPlace():goPlace(c.where);
+    case 'stopnav':if(nav){navStop('Rota encerrada');say('Rota encerrada')}else say('Nenhuma rota');return;
+    case 'wx':return wxSay();
     default:return}}
 function readMsgs(){const m=waMsgs.slice(0,3);if(!m.length){say('Nenhuma mensagem nova');return}say(m.map(x=>'Mensagem de '+x.title+': '+x.text.slice(0,200)).join('. '),true)}
 async function voiceCmd(fromCall){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}
@@ -1154,7 +1173,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
+const VBASE='ir vamos leva navegar rota até parar encerrar sair navegação clima tempo temperatura previsão chuva trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
 function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<800)w.add(x)});
   getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));return [...w]}
@@ -1182,6 +1201,68 @@ async function loadContacts(manual){if(!NATIVE)return;if(manual)toast('Lendo a a
 function renderAgenda(){const el=$('#phRes');if(!el)return;if(!contactsAll){$('#phCount').textContent='';el.innerHTML='<div class="small" style="padding:6px 0">Agenda ainda não carregada: permita a agenda acima e toque em Atualizar contatos.</div>';return}
   const q=normTxt($('#phQ').value),list=q?contactsAll.filter(c=>normTxt(c.name).includes(q)||fmtNum(c.number).includes(q.replace(/\D/g,'')||'§')):contactsAll;
   $('#phCount').textContent=contactsAll.length+' contatos'+(q?' · '+list.length+' com "'+$('#phQ').value.trim().slice(0,30)+'"':'')+(list.length>80?' (mostrando 80; filtre pelo nome)':'');renderRes(list.slice(0,80))}
+
+/* ---------- "Trilha, ir para <lugar>": procura o lugar e já começa a rota ---------- */
+async function askPlace(){say('Para onde?',true);await new Promise(r=>setTimeout(r,1200));
+  try{const r=await nat('listen',{ms:7000}),t=((r&&r.texts)||[])[0];if(t)return goPlace(String(t).slice(0,80));say('Não entendi o lugar')}catch(e){say('Não entendi o lugar')}}
+async function goPlace(q){q=String(q||'').trim();if(!q){say('Não entendi o lugar');return}
+  if(!LS.get('netOk',false)){say('Abra o Ir para uma vez e aceite o aviso de internet');toast('Toque em "Ir para" uma vez e aceite o aviso de internet',6000);return}
+  const from=fix?{lat:fix.lat,lon:fix.lon,hdg:speedKmh>8?gpsHdg:null}:null;if(!from){say('Sem GPS para calcular a rota');return}
+  const nq=normTxt(q);let to=getRecent().find(p=>{const n=normTxt(p.name);return n===nq||(nq.length>=4&&n.includes(nq))})||null;
+  toast('Procurando "'+q.slice(0,40)+'"…',5000);
+  try{if(!to){const r=await geoSearch(q);if(!r.length){say('Não achei '+q);return}to=r[0]}
+    const rs=await routeReq(from,to,false);addRecent(to);navStart(rs[0],to,null);toast('Indo para '+to.name+(to.sub?' · '+to.sub:''),6000)}
+  catch(e){say('Não consegui calcular a rota');toast('Rota: '+errTxt(e),5000)}}
+
+/* ---------- clima: temperatura e alertas (Open-Meteo; reserva MET Norway). Posição arredondada a 0,01° ---------- */
+var wxD=null,wxT=0,wxAt=null,wxSaid={},wxBusyF=false;
+const WMOK=c=>c>=95?'storm':(c>=61&&c<=67)||(c>=80&&c<=82)?'rain':(c>=51&&c<=57)?'drizzle':(c===45||c===48)?'fog':(c>=71&&c<=77)||c===85||c===86?'snow':c>=2?'cloud':'clear';
+const METK=s=>{s=String(s||'');return /thunder/.test(s)?'storm':/sleet|rain/.test(s)?'rain':/drizzle/.test(s)?'drizzle':/fog/.test(s)?'fog':/snow/.test(s)?'snow':/cloudy/.test(s)?'cloud':'clear'};
+const WXI={storm:'⛈️',rain:'🌧️',drizzle:'🌦️',fog:'🌫️',snow:'🌨️',cloud:'☁️',clear:'☀️'},WXN={storm:'tempestade',rain:'chuva',drizzle:'garoa',fog:'neblina',snow:'neve',cloud:'nublado',clear:'tempo firme'};
+async function wxFetch(lat,lon){const la=(+lat).toFixed(2),lo=(+lon).toFixed(2);
+  try{const j=await politeFetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+lo+'&current=temperature_2m,apparent_temperature,weather_code,wind_gusts_10m&minutely_15=precipitation&hourly=precipitation_probability,weather_code,temperature_2m,wind_gusts_10m&forecast_hours=12&forecast_minutely_15=8&timezone=auto',null,15000);
+    const c=j.current||{},h=j.hourly||{},m=(j.minutely_15||{}).precipitation||[];if(!Number.isFinite(c.temperature_2m))throw new Error('sem dados');
+    const hours=(h.weather_code||[]).map((w,i)=>({kind:WMOK(w),prob:+((h.precipitation_probability||[])[i])||0,temp:+((h.temperature_2m||[])[i]),gust:+((h.wind_gusts_10m||[])[i])||0}));
+    const r=m.findIndex(v=>v>=0.2);
+    return {src:'Open-Meteo',temp:c.temperature_2m,feels:Number.isFinite(c.apparent_temperature)?c.apparent_temperature:null,kind:WMOK(c.weather_code),gust:+c.wind_gusts_10m||0,rainMin:r>=0?r*15:null,hours,t:Date.now()}}
+  catch(e){/* cota diária do Open-Meteo ou fora do ar: MET Norway */
+    const j=await politeFetch('https://api.met.no/weatherapi/locationforecast/2.0/compact?lat='+la+'&lon='+lo,null,15000),ts=((j.properties||{}).timeseries)||[];if(!ts.length)throw new Error('sem dados');
+    const d0=ts[0].data||{},i0=(d0.instant||{}).details||{},n1=d0.next_1_hours||{};
+    const hours=ts.slice(0,12).map(x=>{const d=x.data||{},n=d.next_1_hours||{};return {kind:METK((n.summary||{}).symbol_code),prob:((n.details||{}).precipitation_amount||0)>=0.5?80:0,temp:+((d.instant||{}).details||{}).air_temperature,gust:(+(((d.instant||{}).details||{}).wind_speed)||0)*3.6*1.5}});
+    if(!Number.isFinite(i0.air_temperature))throw new Error('sem dados');
+    return {src:'MET Norway',temp:i0.air_temperature,feels:null,kind:METK((n1.summary||{}).symbol_code),gust:(+i0.wind_speed||0)*3.6*1.5,rainMin:((n1.details||{}).precipitation_amount||0)>=0.5?30:null,hours,t:Date.now()}}}
+function wxAlerts(d){const out=[],n=d.hours.slice(0,3),wet=['rain','storm','drizzle'].includes(d.kind);
+  if(d.kind==='storm'||n.some(h=>h.kind==='storm'))out.push(['storm','Alerta de tempestade '+(d.kind==='storm'?'agora':'nas próximas horas')]);
+  if(!wet&&d.rainMin!=null)out.push(['rain','Chuva prevista '+(d.rainMin<=15?'em poucos minutos':'em cerca de '+d.rainMin+' minutos')]);
+  else if(!wet&&n[1]&&n[1].prob>=70)out.push(['rain','Chuva provável na próxima hora']);
+  const g=Math.max(d.gust||0,...n.map(h=>h.gust||0));if(g>=60)out.push(['wind','Rajadas de vento de até '+Math.round(g)+' quilômetros por hora']);
+  if(d.temp>=35)out.push(['hot','Calor forte, '+Math.round(d.temp)+' graus. Beba água']);
+  if(d.temp<=5)out.push(['cold','Frio de '+Math.round(d.temp)+' graus. Cuidado com a pista']);
+  if(d.kind==='fog')out.push(['fog','Neblina. Reduza a velocidade']);
+  return out}
+function wxShow(){const el=$('#wx');if(!cfg.wx){el.style.display='none';return}el.style.display='';
+  if(!wxD){el.textContent=LS.get('netOk',false)?'🌡️ …':'🌡️ ?';el.title=LS.get('netOk',false)?'Clima: carregando':'Clima: toque para ligar';el.classList.remove('alert');return}
+  el.textContent=WXI[wxD.kind]+' '+Math.round(wxD.temp)+'°';el.title='Clima: '+WXN[wxD.kind];el.classList.toggle('alert',wxAlerts(wxD).length>0)}
+async function wxUpdate(force){if(!cfg.wx||wxBusyF||!LS.get('netOk',false))return;const p=fix||LS.get('lastPos',null);if(!p||!Number.isFinite(+p.lat))return;
+  if(!force&&wxD&&Date.now()-wxT<15*60e3&&wxAt&&hav(wxAt,p)<10000)return;
+  wxBusyF=true;try{wxD=await wxFetch(p.lat,p.lon);wxT=Date.now();wxAt={lat:+p.lat,lon:+p.lon};wxShow();if($('#dlgWx').open)wxRender();
+    const now=Date.now();for(const [k,txt] of wxAlerts(wxD)){if(wxSaid[k]&&now-wxSaid[k]<60*60e3)continue;wxSaid[k]=now;toast('⚠️ '+txt,7000);beep(700,200);if(cfg.wxVoice&&callSt.state==='idle')say(txt)}}
+  catch(e){if(force)toast('Clima: '+errTxt(e),4000)}finally{wxBusyF=false}}
+/* rota do Ir para: previsão no destino (na hora de chegada) e no meio do caminho, se a rota for longa */
+async function wxRoute(rt,to){if(!cfg.wx||!LS.get('netOk',false))return;
+  const pts=[{p:to,h:rt.time/3600,nome:'no destino'}];if(rt.len>30000)pts.push({p:rtAt(rt,rt.len/2),h:rt.time/7200,nome:'no meio do caminho'});
+  for(const x of pts){try{const d=await wxFetch(x.p.lat,x.p.lon),i=Math.min(d.hours.length-1,Math.max(0,Math.round(x.h))),h=d.hours[i]||{};
+      if(['rain','storm'].includes(h.kind)||h.prob>=70){const at=new Date(Date.now()+x.h*3600e3).toTimeString().slice(0,5),txt=(h.kind==='storm'?'Tempestade':'Chuva')+' prevista '+x.nome+' por volta das '+at;
+        toast('⚠️ '+txt,7000);if(cfg.wxVoice)say(txt);break}}catch(e){}}}
+function wxRender(){const d=wxD;if(!d){$('#wxNow').textContent='Sem dados ainda.';$('#wxAl').innerHTML='';$('#wxHours').innerHTML='';$('#wxSrc').textContent='';return}
+  $('#wxNow').textContent=WXI[d.kind]+' '+Math.round(d.temp)+'° · '+WXN[d.kind]+(d.feels!=null?' · sensação '+Math.round(d.feels)+'°':'')+(d.gust?' · rajadas '+Math.round(d.gust)+' km/h':'');
+  const al=wxAlerts(d);$('#wxAl').innerHTML=al.length?al.map(a=>'<div class="lr" style="color:var(--bad);font-weight:700"><span>⚠️ '+esc(a[1])+'</span></div>').join(''):'<div class="small" style="padding:4px 0">Sem alertas.</div>';
+  const h0=new Date().getHours();$('#wxHours').innerHTML=d.hours.slice(0,12).map((h,i)=>'<div class="lr"><span>'+String((h0+i)%24).padStart(2,'0')+'h</span><span>'+WXI[h.kind]+' '+(Number.isFinite(h.temp)?Math.round(h.temp)+'°':'')+(h.prob?' · chuva '+Math.round(h.prob)+'%':'')+(h.gust>=40?' · vento '+Math.round(h.gust)+' km/h':'')+'</span></div>').join('');
+  $('#wxSrc').textContent='Dados: '+d.src+' (CC BY 4.0), atualizados às '+new Date(d.t).toTimeString().slice(0,5)+'.'}
+function wxSay(){if(!wxD){say('Sem previsão do tempo agora');wxUpdate(true);return}const al=wxAlerts(wxD);say(Math.round(wxD.temp)+' graus, '+WXN[wxD.kind]+(al.length?'. '+al.map(a=>a[1]).join('. '):''))}
+$('#wx').onclick=async()=>{if(!LS.get('netOk',false)&&!await netOk())return;wxShow();$('#dlgWx').showModal();wxRender();if(!wxD||Date.now()-wxT>5*60e3)wxUpdate(true)};
+$('#wxRefresh').onclick=()=>wxUpdate(true);
+setInterval(()=>wxUpdate(false),60e3);setTimeout(()=>{wxShow();wxUpdate(false)},3000);
 const UPD_URL='https://raw.githubusercontent.com/Lubiell/trilhanav/apk/versao.json';
 async function updInfo(){if(!NATIVE)return;try{const me=await nat('appInfo');$('#updInfo').textContent='Versão instalada: '+String(me.version).slice(0,20)}catch(e){}}
 async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização automática só no app (APK)');return}
@@ -1298,11 +1379,11 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}const m={i:Math.min(
 
 /* ---------- ajustes ---------- */
 const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways']];
+const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sNavRot','navRot'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sTheme').value=cfg.dayMode;
   radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
-binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
+binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='wx'){wxShow();if(cfg.wx)wxUpdate(true)}if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
 $('#sTotal').onchange=e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){st.total=v;saveOdo();renderOdo()}};
 $('#bCal').onclick=()=>{const a=parseFloat($('#sCalRb').value),b=parseFloat($('#sCalApp').value);if(a>0&&b>0){cfg.mult=+(cfg.mult*a/b).toFixed(4);saveCfg();$('#sMult').value=cfg.mult;renderOdo();toast('Multiplicador: '+cfg.mult)}else toast('Preencha as duas distâncias')};
 $('#sNoteMin').addEventListener('change',()=>buildEvents());
@@ -1449,7 +1530,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
