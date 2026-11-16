@@ -3,3 +3,4 @@ android/
 www/
 *.apk
 .gradle/
+vosk-model/

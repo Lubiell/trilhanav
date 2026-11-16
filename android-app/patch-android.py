@@ -9,14 +9,14 @@ main = os.path.join(adir, 'app', 'src', 'main')
 # 1) código nativo
 pkg = os.path.join(main, 'java', 'io', 'github', 'lubiell', 'trilhanav')
 os.makedirs(pkg, exist_ok=True)
-for f in ('MainActivity.java', 'TrilhaNativePlugin.java', 'TrilhaNotifService.java'):
+for f in ('MainActivity.java', 'TrilhaNativePlugin.java', 'TrilhaNotifService.java', 'TrilhaVoiceService.java'):
     shutil.copy(os.path.join(here, 'native', f), os.path.join(pkg, f))
 
 # 2) manifest: permissões e visibilidade do Spotify
 mf = os.path.join(main, 'AndroidManifest.xml')
 s = open(mf, encoding='utf-8').read()
 perms = ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK',
-         'READ_PHONE_STATE', 'READ_CALL_LOG', 'ANSWER_PHONE_CALLS', 'CALL_PHONE', 'READ_CONTACTS', 'RECORD_AUDIO', 'REQUEST_INSTALL_PACKAGES']
+         'READ_PHONE_STATE', 'READ_CALL_LOG', 'ANSWER_PHONE_CALLS', 'CALL_PHONE', 'READ_CONTACTS', 'RECORD_AUDIO', 'REQUEST_INSTALL_PACKAGES', 'FOREGROUND_SERVICE_MICROPHONE']
 s = s.replace('android:allowBackup="true"', 'android:allowBackup="false"')   # o Auto Backup levaria trilhas, notas e fotos para a conta Google
 add = ''.join(f'    <uses-permission android:name="android.permission.{p}" />\n' for p in perms if f'android.permission.{p}"' not in s)
 if '<queries>' not in s:
@@ -34,7 +34,22 @@ if 'xmlns:tools=' not in s:
     s = s.replace('<manifest ', '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
 if 'BackgroundGeolocationService' not in s:
     s = s.replace('</application>', '        <service android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService" android:exported="false" tools:replace="android:exported" />\n    </application>')
+# assistente de voz sempre ligado: serviço em primeiro plano do tipo microfone
+if 'TrilhaVoiceService' not in s:
+    s = s.replace('</application>', '        <service android:name=".TrilhaVoiceService" android:exported="false" android:foregroundServiceType="microphone" />\n    </application>')
 open(mf, 'w', encoding='utf-8').write(s)
+
+# Vosk (reconhecimento de voz offline, Apache-2.0) no app
+gf0 = os.path.join(adir, 'app', 'build.gradle')
+g0 = open(gf0, encoding='utf-8').read()
+if 'com.alphacephei:vosk-android' not in g0:
+    g0 = g0.replace("implementation project(':capacitor-android')", "implementation project(':capacitor-android')\n    implementation 'com.alphacephei:vosk-android:0.3.75'", 1)
+    open(gf0, 'w', encoding='utf-8').write(g0)
+# só bibliotecas nativas de celular (ARM): as de emulador (x86) somavam uns 20 MB ao APK
+g0 = open(gf0, encoding='utf-8').read()
+if 'abiFilters' not in g0:
+    g0 = g0.replace('defaultConfig {', "defaultConfig {\n        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }", 1)
+    open(gf0, 'w', encoding='utf-8').write(g0)
 
 # versão do APK = versão do package.json
 import json

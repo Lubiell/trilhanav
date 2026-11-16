@@ -68,7 +68,7 @@ import java.util.Locale;
         @Permission(alias = "mic", strings = { Manifest.permission.RECORD_AUDIO })
     }
 )
-public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sink {
+public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sink, TrilhaVoiceService.Sink {
     private static final String UPDATE_PREFIX = "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/";
     private final Handler main = new Handler(Looper.getMainLooper());
     private BroadcastReceiver phoneRx;
@@ -91,15 +91,26 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     public void load() {
         audio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
         TrilhaNotifService.sink = this;
+        TrilhaVoiceService.sink = this;
+        // depois de atualizar o app o Android às vezes não religa o acesso a notificações: pede para religar
+        try {
+            if (Build.VERSION.SDK_INT >= 24 && NotificationManagerCompat.getEnabledListenerPackages(getContext()).contains(getContext().getPackageName()))
+                android.service.notification.NotificationListenerService.requestRebind(new ComponentName(getContext(), TrilhaNotifService.class));
+        } catch (Exception ignored) {
+        }
         startPhoneWatch();
         tts = new TextToSpeech(getContext(), status -> {
             if (status != TextToSpeech.SUCCESS) return;
             tts.setLanguage(new Locale("pt", "BR"));
             tts.setAudioAttributes(attrs);
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { focusOn(); }
-                @Override public void onDone(String id) { focusOff(); }
-                @Override public void onError(String id) { focusOff(); }
+                // enquanto o app fala, o assistente não escuta (senão ouviria o próprio "diga atender")
+                private final java.util.Set<String> live = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+                private void upd() { TrilhaVoiceService.hold("tts", !live.isEmpty()); }
+                @Override public void onStart(String id) { live.add(id); upd(); focusOn(); }
+                @Override public void onDone(String id) { live.remove(id); main.postDelayed(this::upd, 300); focusOff(); }
+                @Override public void onError(String id) { live.remove(id); upd(); focusOff(); }
+                @Override public void onStop(String id, boolean interrupted) { live.remove(id); upd(); focusOff(); }
             });
             ttsReady = true;
             if (pendingText != null) {
@@ -292,6 +303,7 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
                 // o Android manda o aviso duas vezes (com e sem o número): só repassa o que traz novidade
                 if (s.equals(lastState) && num == null) return;
                 lastState = s;
+                TrilhaVoiceService.hold("call", "offhook".equals(s));   // em ligação o microfone é da ligação
                 JSObject o = new JSObject();
                 o.put("state", s);
                 o.put("number", num == null ? "" : num);
@@ -324,6 +336,8 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         o.put("speech", SpeechRecognizer.isRecognitionAvailable(getContext()));
         o.put("installAllowed", Build.VERSION.SDK_INT < 26 || getContext().getPackageManager().canRequestPackageInstalls());
         o.put("sdk", Build.VERSION.SDK_INT);
+        o.put("voiceOn", TrilhaVoiceService.running());
+        o.put("notif", TrilhaNotifService.diag());
         call.resolve(o);
     }
 
@@ -443,6 +457,7 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
                 });
             }
             listenCall = call;
+            TrilhaVoiceService.hold("listen", true);   // o microfone é de um só por vez
             Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
             i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
             i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR");
@@ -454,6 +469,7 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     }
 
     private void finishListen(ArrayList<String> texts, int err) {
+        TrilhaVoiceService.hold("listen", false);
         PluginCall c = listenCall;
         listenCall = null;
         if (c == null) return;
@@ -464,6 +480,90 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         JSObject o = new JSObject();
         o.put("texts", new JSArray(texts));
         c.resolve(o);
+    }
+
+    // ---------------------------------------------------------------- assistente sempre ligado (Vosk, sem internet)
+
+    private static String grammarOf(PluginCall call) {
+        java.util.LinkedHashSet<String> w = new java.util.LinkedHashSet<>();
+        JSArray a = call.getArray("words", new JSArray());
+        for (int i = 0; i < a.length() && w.size() < 800; i++) {
+            String s = a.optString(i, "").toLowerCase(Locale.ROOT).trim();
+            if (s.matches("[\\p{L}]{1,20}")) w.add(s);
+        }
+        org.json.JSONArray g = new org.json.JSONArray();
+        for (String s : w) g.put(s);
+        g.put("[unk]");
+        return g.toString();
+    }
+
+    @PluginMethod
+    public void voiceStart(PluginCall call) {
+        if (!has("mic")) { call.reject("sem permissão do microfone"); return; }
+        TrilhaVoiceService.setGrammar(grammarOf(call));
+        try {
+            ContextCompat.startForegroundService(getContext(), new Intent(getContext(), TrilhaVoiceService.class));
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("não consegui ligar o assistente: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void voiceStop(PluginCall call) {
+        getContext().stopService(new Intent(getContext(), TrilhaVoiceService.class));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void voiceWords(PluginCall call) {
+        TrilhaVoiceService.setGrammar(grammarOf(call));
+        call.resolve();
+    }
+
+    @Override
+    public void onHeard(String text) {
+        JSObject o = new JSObject();
+        o.put("text", text);
+        notifyListeners("heard", o);
+    }
+
+    @Override
+    public void onVoiceState(String state, String msg) {
+        JSObject o = new JSObject();
+        o.put("state", state);
+        o.put("msg", msg);
+        notifyListeners("voice", o, true);
+    }
+
+    /** a agenda inteira (nome + número), para a lista do app e os nomes do assistente de voz */
+    @PluginMethod
+    public void listContacts(PluginCall call) {
+        if (!has("contacts")) { call.reject("sem permissão da agenda"); return; }
+        new Thread(() -> {
+            JSArray out = new JSArray();
+            java.util.HashSet<String> dup = new java.util.HashSet<>();
+            try (Cursor c = getContext().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    new String[] { ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER },
+                    null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC")) {
+                while (c != null && c.moveToNext() && out.length() < 3000) {
+                    String name = c.getString(0), num = c.getString(1);
+                    if (name == null || num == null) continue;
+                    String key = name + "|" + num.replaceAll("[^+0-9]", "");
+                    if (!dup.add(key)) continue;
+                    JSObject o = new JSObject();
+                    o.put("name", name);
+                    o.put("number", num);
+                    out.put(o);
+                }
+            } catch (Exception e) {
+                call.reject("não consegui ler a agenda");
+                return;
+            }
+            JSObject r = new JSObject();
+            r.put("list", out);
+            call.resolve(r);
+        }).start();
     }
 
     // ---------------------------------------------------------------- música
@@ -591,6 +691,7 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     @Override
     protected void handleOnDestroy() {
         TrilhaNotifService.sink = null;
+        TrilhaVoiceService.sink = null;
         if (phoneRx != null) {
             try { getContext().unregisterReceiver(phoneRx); } catch (Exception ignored) { }
             phoneRx = null;

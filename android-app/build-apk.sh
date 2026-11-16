@@ -35,6 +35,18 @@ python3 make-icons.py android/app/src/main/res
 npx cap sync android
 
 # 3) compilar
+# modelo de voz offline (Vosk, português pequeno, Apache-2.0): baixado uma vez, conferido e posto nos assets do APK
+VM=vosk-model; VZ="$VM/vosk-model-small-pt-0.3.zip"; VSHA=6e1ce909032e1afa7a88e68a3d628ecafff302bdf195befab308826c395e93b7
+mkdir -p "$VM"
+[ -f "$VZ" ] || curl -fsSL -o "$VZ" https://alphacephei.com/vosk/models/vosk-model-small-pt-0.3.zip
+echo "$VSHA  $VZ" | sha256sum -c - >/dev/null || { echo "modelo de voz com SHA-256 errado"; rm -f "$VZ"; exit 1; }
+MA=android/app/src/main/assets/model-pt
+if [ ! -f "$MA/uuid" ] || [ "$(cat "$MA/uuid")" != "$VSHA" ]; then
+  find android/app/src/main/assets -maxdepth 1 -name model-pt -exec rm -r -- {} +
+  mkdir -p "$MA"; TMPX="$(mktemp -d)"; unzip -q "$VZ" -d "$TMPX"; cp -r "$TMPX"/vosk-model-small-pt-0.3/. "$MA"/; rm -r -- "$TMPX"
+  echo "$VSHA" > "$MA/uuid"   # o StorageService do Vosk só recopia o modelo quando o uuid muda
+fi
+
 ( cd android && ./gradlew --no-daemon assembleDebug )
 VER="$(node -p "require('./package.json').version")"
 cp android/app/build/outputs/apk/debug/app-debug.apk "trilhanav-$VER.apk"

@@ -11,7 +11,13 @@ import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
+
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
+
+import java.util.ArrayDeque;
 
 import java.util.List;
 
@@ -27,6 +33,24 @@ public class TrilhaNotifService extends NotificationListenerService {
     }
 
     static volatile Sink sink;
+    // diagnóstico (só contagens e nomes de pacote, nada do conteúdo): mostra no app por que o WhatsApp não aparece
+    static volatile boolean connected = false;
+    static volatile int seen = 0, seenWa = 0, sentWa = 0;
+    static volatile String lastSkip = "";
+    private static final ArrayDeque<String> lastPkgs = new ArrayDeque<>();
+
+    static JSObject diag() {
+        JSObject o = new JSObject();
+        o.put("connected", connected);
+        o.put("seen", seen);
+        o.put("seenWa", seenWa);
+        o.put("sentWa", sentWa);
+        o.put("lastSkip", lastSkip);
+        JSArray a = new JSArray();
+        synchronized (lastPkgs) { for (String p : lastPkgs) a.put(p); }
+        o.put("lastPkgs", a);
+        return o;
+    }
     private MediaSessionManager msm;
     private MediaController current;
     private final MediaController.Callback cb = new MediaController.Callback() {
@@ -38,6 +62,7 @@ public class TrilhaNotifService extends NotificationListenerService {
 
     @Override
     public void onListenerConnected() {
+        connected = true;
         try {
             msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
             ComponentName me = new ComponentName(this, TrilhaNotifService.class);
@@ -49,6 +74,7 @@ public class TrilhaNotifService extends NotificationListenerService {
 
     @Override
     public void onListenerDisconnected() {
+        connected = false;
         try {
             if (msm != null) msm.removeOnActiveSessionsChangedListener(changed);
             if (current != null) current.unregisterCallback(cb);
@@ -101,24 +127,63 @@ public class TrilhaNotifService extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        Sink s = sink;
-        if (s == null || sbn == null) return;
+        if (sbn == null) return;
         String pkg = sbn.getPackageName();
+        seen++;
+        synchronized (lastPkgs) {
+            lastPkgs.remove(pkg);
+            lastPkgs.addFirst(pkg);
+            while (lastPkgs.size() > 6) lastPkgs.removeLast();
+        }
         if (!"com.whatsapp".equals(pkg) && !"com.whatsapp.w4b".equals(pkg)) return;
+        seenWa++;
         Notification n = sbn.getNotification();
-        if (n == null) return;
-        // resumo do grupo ("3 mensagens de 2 conversas") e notificações fixas ("Verificando novas mensagens") não são mensagem
-        if ((n.flags & Notification.FLAG_GROUP_SUMMARY) != 0 || (n.flags & Notification.FLAG_ONGOING_EVENT) != 0) return;
+        if (n == null) { lastSkip = "sem notificação"; return; }
+        // resumo do grupo ("3 mensagens de 2 conversas") e notificação fixa ("Verificando novas mensagens") não são mensagem
+        if ((n.flags & Notification.FLAG_GROUP_SUMMARY) != 0) { lastSkip = "resumo do grupo"; return; }
+        if ((n.flags & Notification.FLAG_ONGOING_EVENT) != 0) { lastSkip = "notificação fixa"; return; }
+        String title = null, text = null;
+        // o WhatsApp usa o estilo de conversa: a última mensagem e quem mandou ficam ali (o texto simples às vezes vem vazio)
+        try {
+            NotificationCompat.MessagingStyle ms = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(n);
+            if (ms != null && !ms.getMessages().isEmpty()) {
+                NotificationCompat.MessagingStyle.Message m = ms.getMessages().get(ms.getMessages().size() - 1);
+                Person who = m.getPerson();
+                CharSequence conv = ms.getConversationTitle();
+                String sender = who != null && who.getName() != null ? who.getName().toString() : null;
+                if (conv != null && sender != null) title = conv + ": " + sender;
+                else if (conv != null) title = conv.toString();
+                else title = sender;
+                if (m.getText() != null) text = m.getText().toString();
+            }
+        } catch (Exception ignored) {
+        }
         Bundle ex = n.extras;
-        if (ex == null) return;
-        CharSequence title = ex.getCharSequence(Notification.EXTRA_TITLE);
-        CharSequence text = ex.getCharSequence(Notification.EXTRA_TEXT);
-        if (title == null || text == null) return;
+        if (ex != null) {
+            if (title == null) {
+                CharSequence t = ex.getCharSequence(Notification.EXTRA_TITLE);
+                if (t != null) title = t.toString();
+            }
+            if (text == null) {
+                CharSequence t = ex.getCharSequence(Notification.EXTRA_TEXT);
+                if (t == null) t = ex.getCharSequence(Notification.EXTRA_BIG_TEXT);
+                if (t == null) {
+                    CharSequence[] lines = ex.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+                    if (lines != null && lines.length > 0) t = lines[lines.length - 1];
+                }
+                if (t != null) text = t.toString();
+            }
+        }
+        if (title == null || text == null || text.isEmpty()) { lastSkip = "sem título ou texto"; return; }
+        Sink s = sink;
+        if (s == null) { lastSkip = "app fechado"; return; }
         JSObject o = new JSObject();
         o.put("app", "com.whatsapp.w4b".equals(pkg) ? "WhatsApp Business" : "WhatsApp");
-        o.put("title", clip(title.toString(), 80));
-        o.put("text", clip(text.toString(), 500));
+        o.put("title", clip(title, 80));
+        o.put("text", clip(text, 500));
         o.put("t", sbn.getPostTime());
+        sentWa++;
+        lastSkip = "";
         s.onWhatsApp(o);
     }
 
