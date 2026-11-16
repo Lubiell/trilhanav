@@ -2,9 +2,11 @@
 
 App de navegação off-road no estilo do DMD2 (roadbook PDF/OpenRally, GPX, odômetro de rali), feito como PWA de um arquivo só, com versão APK (Capacitor). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.3.0, 16/11/2026)
+## Estado (v2.4.0, 16/11/2026)
 
 Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (merge commit `4de6888`). **Nada disto rodou em celular real.**
+
+**v2.4.0 (16/11/2026):** mapa gira sozinho durante o "Ir para" (`cfg.navRot`); "Trilha, ir para <lugar>" por voz (`goPlace`/`askPlace`, "encerrar rota"); clima com temperatura na barra de cima e alertas (Open-Meteo, reserva MET Norway; `t19`). **APK 2.4.0 publicado**; a 2.2.0 e a 2.1.0 saíram do branch `apk` (ficam no histórico do git).
 
 **v2.3.0 (16/11/2026, primeiro retorno do celular real):** o dono instalou a 2.2.0 num Samsung e relatou: GPS em "GPS ---" com o GPS ligado; voz tem de ficar sempre ligada; WhatsApp não aparece; contatos. Correções: GPS com novas tentativas + motivo na tela + GPS do WebView como reserva (`t17`); assistente sempre ligado offline (Vosk, `TrilhaVoiceService`, palavra "Trilha", `t18`); agenda completa; WhatsApp por `MessagingStyle` + diagnóstico + `requestRebind`. **APK 2.3.0 publicado (56 MB)**. A causa real do WhatsApp no aparelho dele ainda não é conhecida: o diagnóstico na tela Telefone vai mostrar.
 
@@ -19,7 +21,7 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 | `main` | o código da v2.0 |
 | `gh-pages` (`79860a0`) | o que o Pages serve em https://lubiell.github.io/trilhanav/. O runtime (`index.html`, `sw.js`, `manifest.json`, `lib/`) é idêntico ao da `main`; só docs, testes e `android-app/` diferem |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.3.0.apk` (atual, depuração, 56 MB), 2.2.0, 2.1.0, 2.0.1, 2.0.0, `SHA256SUMS`, README e **`versao.json`** (`version`, `code`, `apk`, `sha256`, `notes`: o app ≥2.2.0 lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.3.0.apk. SHA-256 `19c374268dbaed919b28da4e38c2978c35b891d31d6dd0f6d0336c30e9bafef5`. Arquivo >50 MB: o GitHub avisa (limite é 100 MB). Todos têm a mesma chave de depuração (certificado `16acb7ad…8029`, em `~/.android/debug.keystore` do ambiente da sessão), então cada um atualiza por cima do anterior |
+| `apk` (órfão) | `trilhanav-2.4.0.apk` (atual, depuração, 56 MB), 2.3.0, 2.0.1, 2.0.0 (as outras só no histórico), `SHA256SUMS`, README e **`versao.json`** (`version`, `code`, `apk`, `sha256`, `notes`: o app ≥2.2.0 lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.4.0.apk. SHA-256 `eec3f92b604936ab2063c9ab68912bcfc8c2c12665b4152ba0608ad1c019c571`. Arquivo >50 MB: o GitHub avisa (limite é 100 MB). Todos têm a mesma chave de depuração (certificado `16acb7ad…8029`, em `~/.android/debug.keystore` do ambiente da sessão), então cada um atualiza por cima do anterior |
 | `ccr-6d2015d5-vi9zyo` | branch de trabalho das sessões do Claude; reiniciada a partir da `main` a cada PR |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (snapshots do código via `git archive`); pasta `trilhanav/` com o bundle git e referências |
 
@@ -27,7 +29,7 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet e pdf.js vêm do cdnjs (no APK vão locais). `window.TN` expõe internos para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 e `elevation/` (leaflet-elevation 3.0.1, só handlers Distance/Altitude/Slope, carregados por `import()` relativo a `dist/`: a estrutura `lib/elevation/{dist,src/handlers,images}` não pode mudar). As duas últimas são **GPL-3.0**: ver `NOTICE.md`.
-- `sw.js`: cache offline do app (`trilhanav-vN`, hoje `v8`) e dos tiles online já vistos (`trilhanav-tiles`). Rede primeiro; guarda em tempo de uso os arquivos do próprio app, do cdnjs e as fontes do Google. Subir `N` a cada release e listar aqui qualquer arquivo novo de `lib/`.
+- `sw.js`: cache offline do app (`trilhanav-vN`, hoje `v9`) e dos tiles online já vistos (`trilhanav-tiles`). Rede primeiro; guarda em tempo de uso os arquivos do próprio app, do cdnjs e as fontes do Google. Subir `N` a cada release e listar aqui qualquer arquivo novo de `lib/`.
 - `manifest.json`, `icon.svg`, `icon-192.png`, `icon-512.png`.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, plugin Java `native/TrilhaNativePlugin.java` + `native/TrilhaNotifService.java` (acesso a notificações), `native/TrilhaVoiceService.java` (assistente Vosk; o `build-apk.sh` baixa o modelo pt para `android-app/vosk-model/`, confere o SHA-256 e põe em `assets/model-pt` com o arquivo `uuid`; só ABIs ARM), `patch-android.py`, ver o README dele). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml`: compila o APK no GitHub (Actions → APK → Run workflow, ou tag `v*`); `permissions: contents: read`, sem credencial persistida.
@@ -47,6 +49,8 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 - 8) **Modo cidade (v2.1, botão "Ir para")**: busca de endereço (Photon/komoot; aceita `lat, lon`), rota para moto em pt-BR com até 3 alternativas ordenadas por tempo (Valhalla/FOSSGIS, `costing: motorcycle`, evitar pedágio/rodovias), cartão de manobra no topo (seta, distância, rua, hora de chegada), voz curva a curva (aviso antecipado + na hora), recálculo após 3 posições fora da rota (mín. 8 s entre pedidos), chegada, "De" opcional (guia até o início), favoritos/recentes, Abrir no Waze / Google Maps (APK: `TrilhaNative.openUrl`, só https). O CAP do painel lateral segue a rota. Aviso de privacidade antes do 1º pedido (`tn_netOk`).
 - 10) **Telefone, WhatsApp, música e voz (v2.2, só APK)**: `TrilhaNative` ganhou `phoneStatus`, `requestPhone`, `openNotifAccess`, `openAppSettings`, `answerCall`, `endCall` (Android 9+), `placeCall`, `findContacts`, `listen` (SpeechRecognizer pt-BR), `volume`, `spotifyPlay` (MEDIA_BUTTON direto para o pacote do Spotify), `appInfo`, `installApk` (só URL do branch `apk`, confere SHA-256, abre o instalador) e eventos `call` (ringing/offhook/idle + nome da agenda), `whatsapp`, `media`, `update`. No app: `#callBox` (fecha diálogos abertos), `#waCard`, `dlgPhone`, `parseCmd` (intérprete de frases) + `runCmd`, teclas `voice`/`answer`/`hangup`. Mensagens só na memória (20).
 - 11) **Assistente de voz sempre ligado (v2.3, só APK)**: `voiceStart/voiceStop/voiceWords`, eventos `heard`/`voice`; gramática = `VBASE` + palavras dos nomes dos favoritos e da agenda (≤800). Age só com "trilha" na frase, logo depois de armado (botão Voz / "trilha" sozinho, 6 s) ou atender/recusar tocando; "ligar para" sem nome → `askName` (Google). Pausas nativas por motivo (`tts`, `call`, `listen`). `cfg.voiceAlways` (padrão ligado). Agenda: `listContacts` → `contactsAll` (só na memória).
+- 12) **Mapa gira na rota e "ir para" por voz (v2.4)**: `applyHeading` gira com `cfg.rot || (nav && cfg.navRot)`; `parseCmd` → `go` (`GORE`: ir/vamos/leva/navegar + lugar), `stopnav` ("encerrar/cancelar rota|navegação", checado antes de "encerrar" = desligar), `wx`; `goPlace` usa recentes antes do Photon e começa a rota direto.
+- 13) **Clima (v2.4)**: `wxFetch` (Open-Meteo `current`/`minutely_15`/`hourly`, 12 h; se falhar, MET Norway `compact`), posição a 0,01°, a cada 15 min ou 10 km (`wxUpdate`), `wxAlerts` (tempestade, chuva chegando, rajadas ≥60 km/h, ≥35°, ≤5°, neblina; 1 vez/hora por tipo), `wxRoute` (destino na hora de chegada e meio da rota >30 km), `#wx` na barra de cima, `dlgWx`. Só com `tn_netOk`. `cfg.wx`, `cfg.wxVoice`.
 - 9) **Radares (v2.1)**: `highway=speed_camera` do OSM via Overpass (`maps.mail.ru`), por quadrados de 0,25° ao redor da posição e ao longo da rota, guardados 30 dias; placa (limite + distância) e voz a até `radarDist` m, faixa e placa piscando acima de limite + `radarTol`; na rota mede pela rota, sem rota usa um cone de ±30° e ≤45 m de lado no rumo do GPS; marcar radar à mão. Marcadores no mapa (zoom ≥12).
 
 ### Onde o app guarda coisas
@@ -75,6 +79,8 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 Referência de lógica de tripmaster: mattogodoy/open-rally-computer (GPL-3: não copiar código sem manter o nosso aberto).
 
 ## Armadilhas já encontradas
+
+- **Open-Meteo** limita por IP por dia: daqui (IP do proxy compartilhado) responde 429 "Daily API request limit exceeded"; no celular cada um tem o seu. Por isso o MET Norway de reserva (CORS `*`, funciona com o User-Agent do navegador). Os avisos oficiais do INMET (`apiprevmet3.inmet.gov.br`) não responderam daqui: não usados.
 
 - **Plugin de GPS em segundo plano** (`@capacitor-community/background-geolocation` 1.3.1): chamado antes de o serviço ligar responde "Service not running."; localização desligada vem como `NOT_AUTHORIZED` com a mensagem "Location services disabled."; vários erros são silenciosos. O app tenta de novo e tem o GPS do WebView como reserva (`t17`).
 - **Vosk sem palavra de ativação** transforma conversa em comandos ("vou passar no posto" → "pausar"): por isso "trilha". O assistente tem de pausar enquanto o app fala (o aviso "diga atender" atenderia sozinho). Teste do reconhecimento: venv no scratchpad com `vosk` + `gTTS` (voz do Google, só as frases de comando) + ffmpeg para ruído.
@@ -108,7 +114,7 @@ Referência de lógica de tripmaster: mattogodoy/open-rally-computer (GPL-3: nã
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && for t in t t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t14 t15 t16 t17 t18; do python3 $t.py; done
+cd dev && for t in t t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t14 t15 t16 t17 t18 t19; do python3 $t.py; done
 ```
 
 Precisa do pacote Python `playwright` (os testes usam `/usr/bin/google-chrome`) e de Pillow nos testes t9. Fixtures que **não** ficam no repositório (gerar e colocar em `dev/` antes de rodar; apagar depois):
@@ -118,7 +124,7 @@ Precisa do pacote Python `playwright` (os testes usam `/usr/bin/google-chrome`) 
 - `dl/` (t4): `manifest.json` (`id`, `label`, `size`, `parts[{f,size,sha256}]`) + as 3 partes.
 - `roads.pmtiles` (t10): z14 com uma malha de estradas, um rio e uma só ponte, tiles recortados com buffer de 64 (como o Planetiler).
 
-`t5` bússola/odômetro, `t6` copiloto/zonas, `t7` rotação/altimetria, `t8` OpenRally/roadbook automático, `t9` gerenciador/notas/tema, `t10` rota de volta, `t11` integração do APK (Capacitor simulado), `t12` correções das revisões (backup malicioso, teclas ao digitar, MVT malformado, GPX por pasta, etc.), `t17` partida do GPS no APK (serviço não pronto, desligado, mudo, notificação travada), `t18` assistente sempre ligado/agenda/diagnóstico do WhatsApp, `t16` telefone/WhatsApp/música/voz/atualização (nativo simulado; também roda no pacote do APK: `python3 t16.py http://localhost:8766/index.html`), `t15` modo cidade e radares (Photon/Valhalla/Overpass simulados; ícones, privacidade, voz, recálculo, chegada, radar na rota e sem rota, OPFS, cartão em retrato/deitado, altimetria ao girar), `t14` os erros da caça de 15/11 (troca de GPX, marcas, paradas no trilho, odômetro, retorno em linha reta, zonas pelo nome, exportação no APK, paisagem em celular e offline real com service worker).
+`t5` bússola/odômetro, `t6` copiloto/zonas, `t7` rotação/altimetria, `t8` OpenRally/roadbook automático, `t9` gerenciador/notas/tema, `t10` rota de volta, `t11` integração do APK (Capacitor simulado), `t12` correções das revisões (backup malicioso, teclas ao digitar, MVT malformado, GPX por pasta, etc.), `t19` mapa girando na rota, "ir para" por voz e clima (Open-Meteo/MET Norway simulados), `t17` partida do GPS no APK (serviço não pronto, desligado, mudo, notificação travada), `t18` assistente sempre ligado/agenda/diagnóstico do WhatsApp, `t16` telefone/WhatsApp/música/voz/atualização (nativo simulado; também roda no pacote do APK: `python3 t16.py http://localhost:8766/index.html`), `t15` modo cidade e radares (Photon/Valhalla/Overpass simulados; ícones, privacidade, voz, recálculo, chegada, radar na rota e sem rota, OPFS, cartão em retrato/deitado, altimetria ao girar), `t14` os erros da caça de 15/11 (troca de GPX, marcas, paradas no trilho, odômetro, retorno em linha reta, zonas pelo nome, exportação no APK, paisagem em celular e offline real com service worker).
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 (`python3 -m http.server 8766` dentro dela) e rodar `python3 t13.py` (também precisa de `rb.pdf` e `t.gpx` em `dev/`).
 
