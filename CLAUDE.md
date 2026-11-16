@@ -81,7 +81,7 @@ Referência de lógica de tripmaster: mattogodoy/open-rally-computer (GPL-3: nã
 
 - **Diálogo modal + tela de ligação**: `<dialog>` aberto com `showModal()` fica na camada de cima e deixa o resto inerte; a `#callBox` fecha os diálogos abertos ao aparecer.
 - **Android manda o estado do telefone duas vezes** (com e sem número); entre tocando → em ligação o nome tem de ser mantido.
-- **Microfone em segundo plano** é bloqueado pelo Android (o serviço em primeiro plano é só de localização): comando de voz só com o app na tela.
+- **Microfone em segundo plano**: o Android só deixa com serviço em primeiro plano do tipo microfone, iniciado com o app na tela. O assistente Vosk (`TrilhaVoiceService`) tem esse serviço; a escuta do Google (`listen`) não, então só funciona com o app na tela.
 - **Testar o pacote do APK (`www/`) com o Capacitor simulado**: o `lib/capacitor.js` real carrega por cima do simulado; o `t16` bloqueia esse arquivo.
 
 - **Valhalla**: devolve as alternativas na ordem do custo dele, não do tempo (ordenar por `time`); o `pt-BR` deixa a rotatória e algumas frases em inglês (`ptTxt` troca pelo texto do tipo da manobra). Os serviços públicos (Photon, Valhalla, Overpass) pedem ≤1 pedido/s: tudo passa por `politeFetch` (fila por host). Nos testes, simular com `page.route` (ver `t15`), nunca bater no serviço real em laço.
