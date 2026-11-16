@@ -1,0 +1,7 @@
+{
+ "version": "2.2.0",
+ "code": 20200,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.2.0.apk",
+ "sha256": "1ac3818a44d91a843d7bbf48e53e3b43b1d1a6acccc90cc9a8f2be91a77a40f2",
+ "notes": "Telefone (atender, recusar e fazer ligações), mensagens do WhatsApp na tela, música atual e Spotify em segundo plano, comandos de voz e atualização pelo próprio app."
+}
