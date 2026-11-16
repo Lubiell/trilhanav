@@ -16,6 +16,14 @@ do conjunto sob a mesma licença. Enquanto o repositório do TrilhaNav for públ
 publique o app (nem o APK) em loja ou em repositório fechado sem rever isso. O repositório ainda não tem um
 arquivo `LICENSE` próprio: a escolha da licença é do dono do projeto.
 
+## Reconhecimento de voz (APK, desde a 2.3.0)
+
+| Componente | Versão | Licença | Uso |
+|---|---|---|---|
+| Vosk (`com.alphacephei:vosk-android`) | 0.3.75 | Apache-2.0 | assistente de voz sempre ligado, sem internet |
+| Modelo `vosk-model-small-pt-0.3` (alphacephei.com) | 0.3 | Apache-2.0 | português, dentro do APK (`assets/model-pt`) |
+| JNA (dependência do Vosk) | 5.18.1 | Apache-2.0 / LGPL-2.1 (dupla) | ponte Java ↔ biblioteca nativa |
+
 ## Dados e serviços externos (modo cidade e radares)
 
 Usados só quando o usuário busca um endereço, pede uma rota ou liga os radares (o app mostra um aviso antes do primeiro uso).

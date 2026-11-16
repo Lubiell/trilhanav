@@ -1,6 +1,8 @@
 # Spec — Telefone, WhatsApp, Spotify, comandos de voz e atualização (v2.2)
 Data: 2026-11-16 · Estado: **aprovada (opção A: APK novo) e implementada na v2.2.0**
 
+**Mudança aprovada depois (v2.3.0):** o dono pediu o assistente "sempre ligado" e escolheu a opção offline: Vosk + modelo pequeno de português (Apache-2.0) no APK (+50 MB), serviço em primeiro plano do tipo microfone, palavra de ativação "Trilha" (no teste com voz sintética, conversa comum nunca gerou "trilha", mas gerou "pausar", "música", "para mãe"), pausa enquanto o app fala e em ligação. Isso tira "ficar escutando o tempo todo" do Fora de escopo.
+
 Na implementação: ao chegar uma ligação o app fecha qualquer diálogo aberto (o diálogo modal ficava por cima e bloqueava Atender/Recusar); "cancelar" nos 3 s antes de ligar também cancela; com a tela apagada o anúncio por voz funciona, mas o Android não deixa usar o microfone em segundo plano (o serviço é de localização), então "atender/recusar" por voz só com o app na tela.
 
 ## Problema
