@@ -9,19 +9,26 @@ main = os.path.join(adir, 'app', 'src', 'main')
 # 1) código nativo
 pkg = os.path.join(main, 'java', 'io', 'github', 'lubiell', 'trilhanav')
 os.makedirs(pkg, exist_ok=True)
-for f in ('MainActivity.java', 'TrilhaNativePlugin.java'):
+for f in ('MainActivity.java', 'TrilhaNativePlugin.java', 'TrilhaNotifService.java'):
     shutil.copy(os.path.join(here, 'native', f), os.path.join(pkg, f))
 
 # 2) manifest: permissões e visibilidade do Spotify
 mf = os.path.join(main, 'AndroidManifest.xml')
 s = open(mf, encoding='utf-8').read()
-perms = ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK']
+perms = ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK',
+         'READ_PHONE_STATE', 'READ_CALL_LOG', 'ANSWER_PHONE_CALLS', 'CALL_PHONE', 'READ_CONTACTS', 'RECORD_AUDIO', 'REQUEST_INSTALL_PACKAGES']
 s = s.replace('android:allowBackup="true"', 'android:allowBackup="false"')   # o Auto Backup levaria trilhas, notas e fotos para a conta Google
 add = ''.join(f'    <uses-permission android:name="android.permission.{p}" />\n' for p in perms if f'android.permission.{p}"' not in s)
 if '<queries>' not in s:
     add += '    <queries>\n        <package android:name="com.spotify.music" />\n        <package android:name="com.google.android.apps.youtube.music" />\n    </queries>\n'
 if add:
     s = s.replace('</manifest>', add + '</manifest>')
+# reconhecimento de voz (Android 11+ só enxerga o serviço de voz se ele estiver declarado em <queries>)
+if 'android.speech.RecognitionService' not in s:
+    s = s.replace('</queries>', '        <intent><action android:name="android.speech.RecognitionService" /></intent>\n    </queries>', 1)
+# acesso a notificações: WhatsApp e a música que está tocando (o sistema só liga o serviço se o usuário permitir)
+if 'TrilhaNotifService' not in s:
+    s = s.replace('</application>', '        <service android:name=".TrilhaNotifService" android:exported="true" android:label="TrilhaNav (WhatsApp e música)" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>\n        </service>\n    </application>')
 # o serviço de GPS do plugin vem com exported=true; só o próprio app o usa, então fecha para outros apps
 if 'xmlns:tools=' not in s:
     s = s.replace('<manifest ', '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
