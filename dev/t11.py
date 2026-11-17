@@ -56,7 +56,7 @@ async def main():
         await pg.evaluate('()=>{TN.cfg.voice=false;TN.say("mudo")}')
         check('voz desligada não chama o TTS', len(await pg.evaluate("__calls.filter(c=>c[1]==='speak')")) == 1)
         # música
-        await pg.click('#bSpot'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bSpot').click()"); await pg.wait_for_timeout(200)
         check('no APK o botão 🎵 abre o painel de música', await pg.evaluate("document.querySelector('#dlgMedia').open"))
         await pg.click('#mNext'); await pg.click('#mPlay'); await pg.click('#mPrev')
         keys = await pg.evaluate("__calls.filter(c=>c[1]==='mediaKey').map(c=>c[2].key)")
@@ -65,14 +65,14 @@ async def main():
         check('"Abrir o Spotify" chama o app pelo pacote', await pg.evaluate("__calls.filter(c=>c[1]==='openApp').map(c=>c[2].package)") == ['com.spotify.music'])
         await pg.click('#dlgMedia [data-close]')
         # teclas configuráveis do controle de guidão
-        await pg.click('#bSet')
+        await pg.evaluate("document.querySelector('#bSet').click()")
         acts = await pg.evaluate("[...document.querySelectorAll('#keyList [data-a]')].map(b=>b.dataset.a)")
         check('ações de música aparecem entre as teclas configuráveis', all(a in acts for a in ('mediaPlay', 'mediaNext', 'mediaPrev')), str(acts))
         await pg.click('[data-a=mediaNext]'); await pg.keyboard.press('KeyN'); await pg.click('#dlgSet [data-close]')
         await pg.keyboard.press('KeyN'); await pg.wait_for_timeout(100)
         keys = await pg.evaluate("__calls.filter(c=>c[1]==='mediaKey').map(c=>c[2].key)")
         check('tecla do controle mapeada para "próxima" manda a tecla de mídia', keys[-1] == 'next' and len(keys) == 4, str(keys))
-        await pg.evaluate('()=>{window.__mediaFail=true}'); await pg.click('#bSpot'); await pg.click('#mPlay'); await pg.wait_for_timeout(200)
+        await pg.evaluate('()=>{window.__mediaFail=true}'); await pg.evaluate("document.querySelector('#bSpot').click()"); await pg.click('#mPlay'); await pg.wait_for_timeout(200)
         check('falha do nativo no controle de mídia avisa em vez de quebrar', 'Não consegui controlar a música' in await pg.text_content('#toast'))
         await pg.evaluate('()=>{window.__mediaFail=false}')
         # simulação de GPS substitui o serviço

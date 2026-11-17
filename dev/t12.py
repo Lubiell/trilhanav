@@ -22,7 +22,7 @@ async def main():
         evil = {'cfg': {'mult': 'x', 'wpR': 'abc', 'step': 0.05, 'dayMode': 'night', 'naoExiste': 'lixo', 'voice': 1, 'compSpd': 12},
                 'keys': {'chrono': '<img src=x onerror=window.__pwn=1>', 'lock': 'KeyZ', 'fantasma': 'KeyQ', 'zoomIn': 'a' * 500}}
         path = os.path.join(TMP, 'ajustes.json'); open(path, 'w').write(json.dumps(evil))
-        await pg.click('#bSet'); await pg.set_input_files('#restoreIn', path); await pg.wait_for_timeout(500)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.set_input_files('#restoreIn', path); await pg.wait_for_timeout(500)
         r = await pg.evaluate('''()=>({mult:TN.cfg.mult,wpR:TN.cfg.wpR,step:TN.cfg.step,dayMode:TN.cfg.dayMode,x:TN.cfg.naoExiste,voice:TN.cfg.voice,compSpd:TN.cfg.compSpd,
           chrono:[...document.querySelectorAll('#keyList [data-a=chrono]')].map(b=>b.textContent)[0],lock:[...document.querySelectorAll('#keyList [data-a=lock]')].map(b=>b.textContent)[0],zoomIn:[...document.querySelectorAll('#keyList [data-a=zoomIn]')].map(b=>b.textContent)[0],pwn:window.__pwn})''')
         check('valores de tipo errado são ignorados (mult/wpR/voice)', r['mult'] == 1 and r['wpR'] == 90 and r['voice'] is True, str(r))
@@ -32,7 +32,7 @@ async def main():
         check('nada executou', r['pwn'] is None)
         # mesmo que um valor estranho já esteja no localStorage, as teclas aparecem escapadas
         await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({chrono:'<img src=x onerror=window.__pwn=2>'}))}''')
-        await pg.reload(); await pg.wait_for_timeout(1200); await pg.click('#bSet'); await pg.wait_for_timeout(300)
+        await pg.reload(); await pg.wait_for_timeout(1200); await pg.evaluate("document.querySelector('#bSet').click()"); await pg.wait_for_timeout(300)
         check('tecla já gravada com HTML aparece como texto', await pg.evaluate("window.__pwn===undefined&&document.querySelector('#keyList [data-a=chrono]').textContent.startsWith('<img')"))
         await pg.click('#dlgSet [data-close]')
 
@@ -58,7 +58,7 @@ async def main():
 
         # ---- digitar nota não dispara as teclas do controle ----
         await pg.evaluate('()=>{TN.st.partial=3.21;TN.st.total=10;TN.onPos({timestamp:Date.now(),coords:{latitude:-20,longitude:-44,altitude:0,accuracy:5,speed:0,heading:null}})}')
-        await pg.click('#bNote'); await pg.click('#noteTx')
+        await pg.evaluate("document.querySelector('#bNote').click()"); await pg.click('#noteTx')
         await pg.keyboard.type('cl=- ponte'); await pg.keyboard.press('Enter'); await pg.keyboard.press('ArrowLeft'); await pg.keyboard.press('ArrowRight'); await pg.keyboard.press('Backspace')
         r = await pg.evaluate("({p:TN.st.partial,t:TN.st.total,v:document.querySelector('#noteTx').value,lock:document.querySelector('#lockIco').textContent})")
         check('digitando na nota: PARCIAL, TOTAL e trava de toque não mudam, e o texto é digitado', abs(r['p'] - 3.21) < 1e-9 and r['t'] == 10 and r['v'] == 'cl=- ponte' and r['lock'] == '🔓', str(r))

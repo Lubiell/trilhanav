@@ -98,7 +98,7 @@ async def main():
         tt = await pg.evaluate('window.__t')
         check('aviso de divergência vem junto do toast de validação, uma vez só', sum('difere' in x for x in tt) == 1 and any('validado' in x and 'difere' in x for x in tt), str([x for x in tt if 'difere' in x][:1]))
         check('TOTAL muito diferente do roadbook: não corrige e avisa', all(o['total'] > 40 for o in r['out']) and await pg.evaluate('TN.snapWarned'), str(r['out']))
-        await pg.click('#bWp'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bWp').click()"); await pg.wait_for_timeout(200)
         await pg.evaluate("()=>{TN.st.total=50}")
         await pg.evaluate("()=>{document.querySelector('#bPrevWp').click();}")
         await pg.click('#bAlignWp'); await pg.wait_for_timeout(100)

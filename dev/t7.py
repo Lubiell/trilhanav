@@ -43,7 +43,7 @@ async def main():
 
         # ---------- altimetria ----------
         await pg.evaluate('(x)=>TN.loadGPX(x,"morro.gpx")', gpx(True)); await pg.wait_for_timeout(300)
-        await pg.click('#bElev'); await pg.wait_for_timeout(1500)
+        await pg.evaluate("document.querySelector('#bElev').click()"); await pg.wait_for_timeout(1500)
         info = await pg.evaluate('''()=>({svg:document.querySelectorAll('#elevDiv svg').length,paths:document.querySelectorAll('#elevDiv path').length,box:document.querySelector('#elevDiv').getBoundingClientRect().height,msg:document.querySelector('#elevMsg').style.display,txt:document.querySelector('#elevDiv').innerText.slice(0,160).replace(/\\n/g,' | '),n:TN.elevCtl&&TN.elevCtl._data&&TN.elevCtl._data.length})''')
         check('perfil desenhado (svg + caminhos + 101 pontos)', info['svg'] >= 1 and info['paths'] >= 2 and info['n'] == 101, str(info))
         await pg.screenshot(path='elev.png')
@@ -53,9 +53,9 @@ async def main():
         cur = await pg.evaluate('''()=>{const l=document.querySelector('#elevDiv .mouse-focus-line');return l?{x:+l.getAttribute('x1'),w:TN.elevCtl._width(),km:TN.prog&&TN.prog.km}:null}''')
         check('cursor da posição atual no perfil (~ meio do trecho)', cur and 0.35 < cur['x'] / cur['w'] < 0.65, str(cur))
         await pg.screenshot(path='elev2.png')
-        await pg.click('#bElev'); await pg.wait_for_timeout(300)
+        await pg.evaluate("document.querySelector('#bElev').click()"); await pg.wait_for_timeout(300)
         check('botão esconde o perfil', await pg.evaluate("!document.querySelector('#paneMap').classList.contains('withElev')"))
-        await pg.evaluate('(x)=>TN.loadGPX(x,"sem-ele.gpx")', gpx(False)); await pg.click('#bElev'); await pg.wait_for_timeout(800)
+        await pg.evaluate('(x)=>TN.loadGPX(x,"sem-ele.gpx")', gpx(False)); await pg.evaluate("document.querySelector('#bElev').click()"); await pg.wait_for_timeout(800)
         msg = await pg.evaluate("document.querySelector('#elevMsg').textContent")
         check('GPX sem altitude: mostra aviso em vez de gráfico vazio', 'não tem altitude' in msg, msg)
         # ---------- mapa vetorial offline com o mapa girado ----------

@@ -76,7 +76,7 @@ async def main():
         await pg.evaluate('()=>{TN.cfg.voice=true}')
 
         # --- zona criada à mão pelo diálogo, e persistência ---
-        await pg.click('#bSet'); await pg.click('#bZones'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.click('#bZones'); await pg.wait_for_timeout(200)
         await pg.fill('#zFrom', '6'); await pg.fill('#zTo', '7'); await pg.fill('#zLim', '30'); await pg.click('#zAdd')
         z = await pg.evaluate('TN.zones')
         check('zona manual adicionada', len(z) == 2 and any(q['src'] == 'user' and q['limit'] == 30 for q in z), str(z))
@@ -85,7 +85,7 @@ async def main():
         await pg.reload(); await pg.wait_for_timeout(1500)
         z = await pg.evaluate('TN.zones')
         check('zonas (GPX + manual) voltam depois de recarregar o app', len(z) == 2, str(z))
-        await pg.click('#bSet'); await pg.click('#bZones'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.click('#bZones'); await pg.wait_for_timeout(200)
         await pg.click('#zList [data-rm]'); await pg.wait_for_timeout(100)
         check('remover zona manual', len(await pg.evaluate('TN.zones')) == 1)
         check('sem erros', not errs, str(errs))

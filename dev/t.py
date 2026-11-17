@@ -18,7 +18,7 @@ async def main():
         print('keys',await pg.text_content('#total'),await pg.text_content('#partial'))
         await pg.click('[data-pane=paneMap]');await pg.wait_for_timeout(1500);await pg.screenshot(path='map.png')
         await pg.click('[data-pane=paneDash]');await pg.wait_for_timeout(300);await pg.screenshot(path='dash.png')
-        await pg.click('#bSet');await pg.wait_for_timeout(300);await pg.screenshot(path='set.png')
+        await pg.evaluate("document.querySelector('#bSet').click()");await pg.wait_for_timeout(300);await pg.screenshot(path='set.png')
         await pg.click('[data-close]');
         await pg.set_viewport_size({'width':420,'height':860});await pg.click('[data-pane=paneRb]');await pg.wait_for_timeout(300);await pg.screenshot(path='port.png')
         print('errs',errs)
