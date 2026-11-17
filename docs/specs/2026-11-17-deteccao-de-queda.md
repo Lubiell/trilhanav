@@ -1,5 +1,5 @@
 # Spec — Detecção de queda com aviso ao contato de emergência
-Data: 2026-11-17 · Estado: **aguardando ok do dono**
+Data: 2026-11-17 · Estado: **aprovada (opção A) e implementada na v2.6.0**
 
 ## Problema
 Numa queda sozinho na estrada ou na trilha, ninguém fica sabendo onde você está. Apps de moto como Detecht, EatSleepRIDE

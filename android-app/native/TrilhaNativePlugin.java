@@ -1,6 +1,11 @@
 package io.github.lubiell.trilhanav;
 
 import android.Manifest;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.telephony.SmsManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.IntentFilter;
@@ -65,7 +70,8 @@ import java.util.Locale;
         @Permission(alias = "phone", strings = { Manifest.permission.READ_PHONE_STATE, Manifest.permission.CALL_PHONE,
             Manifest.permission.ANSWER_PHONE_CALLS, Manifest.permission.READ_CALL_LOG }),
         @Permission(alias = "contacts", strings = { Manifest.permission.READ_CONTACTS }),
-        @Permission(alias = "mic", strings = { Manifest.permission.RECORD_AUDIO })
+        @Permission(alias = "mic", strings = { Manifest.permission.RECORD_AUDIO }),
+        @Permission(alias = "sms", strings = { Manifest.permission.SEND_SMS })
     }
 )
 public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sink, TrilhaVoiceService.Sink {
@@ -76,6 +82,10 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     private SpeechRecognizer rec;
     private PluginCall listenCall;
     private boolean updating = false;
+    private SensorManager sensors;
+    private SensorEventListener impactL;
+    private float impactG = 4f;
+    private long lastImpact = 0;
     private TextToSpeech tts;
     private boolean ttsReady = false;
     private String pendingText = null;
@@ -566,6 +576,86 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         }).start();
     }
 
+    // ---------------------------------------------------------------- aviso de queda (SOS)
+
+    /**
+     * Liga/desliga a escuta do acelerômetro: um pico acima de g (4 = normal, 3 = alta) vira o evento "impact".
+     * A decisão (estava andando? ficou parado?) é do app, que tem o GPS. Funciona com a tela apagada porque o app
+     * já roda serviços em primeiro plano (GPS e voz).
+     */
+    @PluginMethod
+    public void crashArm(PluginCall call) {
+        final boolean on = call.getBoolean("on", false);
+        impactG = Math.max(2f, Math.min(8f, call.getFloat("g", 4f)));
+        main.post(() -> {
+            if (sensors == null) sensors = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
+            if (impactL != null) {
+                sensors.unregisterListener(impactL);
+                impactL = null;
+            }
+            if (!on || sensors == null) return;
+            Sensor acc = sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            if (acc == null) return;
+            impactL = new SensorEventListener() {
+                @Override
+                public void onSensorChanged(SensorEvent e) {
+                    double g = Math.sqrt(e.values[0] * e.values[0] + e.values[1] * e.values[1] + e.values[2] * e.values[2]) / 9.81;
+                    long now = System.currentTimeMillis();
+                    if (g >= impactG && now - lastImpact > 3000) {
+                        lastImpact = now;
+                        JSObject o = new JSObject();
+                        o.put("g", Math.round(g * 10) / 10.0);
+                        o.put("t", now);
+                        notifyListeners("impact", o, true);
+                    }
+                }
+                @Override public void onAccuracyChanged(Sensor s, int a) { }
+            };
+            sensors.registerListener(impactL, acc, SensorManager.SENSOR_DELAY_GAME);
+        });
+        JSObject r = new JSObject();
+        r.put("sensor", ((SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE)).getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void requestSms(PluginCall call) {
+        if (has("sms")) { JSObject r = new JSObject(); r.put("granted", true); call.resolve(r); return; }
+        requestPermissionForAlias("sms", call, "smsCallback");
+    }
+
+    @PermissionCallback
+    private void smsCallback(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("granted", has("sms"));
+        call.resolve(r);
+    }
+
+    /** manda o mesmo SMS para até 3 números (aviso de queda ou o teste) */
+    @PluginMethod
+    public void sendSms(PluginCall call) {
+        if (!has("sms")) { call.reject("sem permissão de SMS"); return; }
+        String text = call.getString("text", "");
+        JSArray nums = call.getArray("numbers", new JSArray());
+        if (text.isEmpty() || text.length() > 480 || nums.length() == 0) { call.reject("mensagem inválida"); return; }
+        try {
+            SmsManager sm = Build.VERSION.SDK_INT >= 31 ? getContext().getSystemService(SmsManager.class) : SmsManager.getDefault();
+            ArrayList<String> parts = sm.divideMessage(text);
+            int sent = 0;
+            for (int i = 0; i < nums.length() && i < 3; i++) {
+                String n = nums.optString(i, "").replaceAll("[^+0-9]", "");
+                if (n.length() < 3 || n.length() > 20) continue;
+                sm.sendMultipartTextMessage(n, null, parts, null, null);
+                sent++;
+            }
+            JSObject r = new JSObject();
+            r.put("sent", sent);
+            call.resolve(r);
+        } catch (Exception e) {
+            call.reject("SMS falhou: " + e.getMessage());
+        }
+    }
+
     // ---------------------------------------------------------------- música
 
     /** volume da música: dir = up | down */
@@ -596,6 +686,22 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     @Override
     public void onWhatsApp(JSObject msg) {
         notifyListeners("whatsapp", msg, true);
+    }
+
+    @Override
+    public void onWaCall(JSObject call) {
+        String st = call.getString("state", "idle");
+        TrilhaVoiceService.hold("call", "offhook".equals(st));   // em ligação o microfone é da ligação
+        notifyListeners("wacall", call, true);
+    }
+
+    /** atende / recusa / desliga a ligação do WhatsApp pelo botão da notificação dela */
+    @PluginMethod
+    public void waCallAction(PluginCall call) {
+        String act = call.getString("act", "");
+        if (!act.matches("answer|decline|hangup")) { call.reject("ação inválida"); return; }
+        String err = TrilhaNotifService.waAct(act);
+        if (err == null) call.resolve(); else call.reject(err);
     }
 
     @Override
@@ -692,6 +798,10 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     protected void handleOnDestroy() {
         TrilhaNotifService.sink = null;
         TrilhaVoiceService.sink = null;
+        if (impactL != null && sensors != null) {
+            sensors.unregisterListener(impactL);
+            impactL = null;
+        }
         if (phoneRx != null) {
             try { getContext().unregisterReceiver(phoneRx); } catch (Exception ignored) { }
             phoneRx = null;

@@ -12,7 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet" crossorigin="anonymous">
 <style>
 :root{--bg:#0d1620;--panel:#12202c;--card:#162837;--line:#24394b;--txt:#e8eef3;--mut:#8aa0b2;--acc:#1e9be0;--ok:#3cc46b;--warn:#f0a020;--bad:#e64545}
-body.day{--bg:#e9eef2;--panel:#fff;--card:#f4f7f9;--line:#c9d4dc;--txt:#0d1620;--mut:#4d6273}
+body.day{--bg:#dfe6eb;--panel:#fff;--card:#fff;--line:#9fb1bf;--txt:#05090d;--mut:#2f4355;--acc:#0b6fb0;--bad:#c41d1d;--ok:#18843e;--warn:#b56d00}
+body.day .big,body.day .mid{font-weight:900}body.day .card{border-width:2px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;overflow:hidden;user-select:none}
 #app{display:grid;grid-template-rows:40px 1fr 64px;height:100%;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
@@ -69,7 +70,12 @@ body.day #rb{background:#ccc}
 #elevDiv{position:absolute;left:0;right:0;bottom:0;height:38%;display:none;background:var(--panel);border-top:1px solid var(--line);overflow:hidden}
 #paneMap.withElev #map{bottom:38%}#paneMap.withElev #elevDiv{display:block}
 #elevMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);padding:12px;text-align:center}
-#dash{padding:10px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-content:start}
+#dash{position:absolute;inset:0;padding:10px 10px 64px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-content:start}
+#dash.big{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}#dash.big .mid{font-size:clamp(32px,7vw,58px)}#dash.big h4{font-size:15px}
+#dashEdit{position:absolute;right:10px;bottom:10px;z-index:5;opacity:.9}
+#dash .card.warn{border-color:var(--warn);box-shadow:inset 0 0 0 2px var(--warn)}
+#sosBox{position:fixed;inset:0;z-index:1750;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#b00c;color:#fff;text-align:center;padding:20px}
+#sosBox.on{display:flex}#sosT{font-size:28px;font-weight:900}#sosN{font:900 96px/1 Orbitron,monospace}#sosMsg{font-size:17px;max-width:520px}#sosOk{font-size:26px;padding:22px 34px;border-radius:16px;min-width:240px}
 #bot{display:flex;align-items:center;gap:4px;padding:0 6px;background:var(--panel);border-top:1px solid var(--line);overflow-x:auto}
 .b{flex:0 0 auto;min-width:58px;height:54px;border:0;border-radius:10px;background:transparent;color:var(--txt);font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 .b span{font-size:10.5px;color:var(--mut);white-space:nowrap}
@@ -167,7 +173,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
       <div class="pane on" id="paneRb"><div id="rb"></div><div id="rbAuto"><div id="rbHead"></div><div id="rbList"></div></div><button class="btn g" id="rbSwitch">PDF ⇄ Notas</button><div id="rbEmpty">Nenhum roadbook carregado<br>Abra um PDF ou GPX em Mais → Arquivos<br>ou toque em Ir para e navegue até um endereço</div></div>
       <div class="pane" id="paneMap"><div id="map"></div><div id="elevDiv"><div id="elevMsg"></div></div></div>
       <div class="pane" id="paneSplit"></div>
-      <div class="pane" id="paneDash"><div id="dash"></div></div>
+      <div class="pane" id="paneDash"><div id="dash"></div><button class="btn g" id="dashEdit">Personalizar</button></div>
     </div>
   </div>
   <div id="bot">
@@ -183,6 +189,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 </div>
 <input type="file" id="fileIn" accept=".pdf,.gpx,application/pdf,application/gpx+xml" multiple hidden>
 <div id="toast"></div>
+<div id="sosBox" role="alertdialog" aria-live="assertive"><div id="sosT">QUEDA DETECTADA</div><div id="sosN">30</div><div id="sosMsg"></div><button class="btn ok" id="sosOk">Estou bem</button></div>
 <div id="callBox" role="dialog" aria-live="assertive"><div id="callWho"></div><div id="callNum"></div><div id="callSt"></div>
   <div class="row"><button class="btn ok" id="callAns">Atender</button><button class="btn r" id="callEnd">Recusar</button></div></div>
 <div id="waCard" title="Toque para fechar"><div class="small" id="waApp"></div><div id="waT"></div><div id="waX"></div></div>
@@ -255,7 +262,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.5.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.6.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -288,6 +295,14 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" id="phDiag" style="padding-top:6px"></div>
   <label>Ler mensagens em voz alta <select id="sWaRead"><option value="nada">não</option><option value="nome">só quem mandou</option><option value="tudo">quem mandou e o texto</option></select></label>
   <label>Ligação: escutar "atender" ou "recusar" <input type="checkbox" id="sCallVoice"></label>
+  <h3>Aviso de queda (SOS)</h3>
+  <label>Detectar queda e avisar meus contatos <input type="checkbox" id="sCrashOn"></label>
+  <label>Sensibilidade <select id="sCrashSens" style="width:auto"><option value="normal">normal (impacto de 4 g)</option><option value="alta">alta (3 g)</option></select></label>
+  <label>Seu nome na mensagem <input id="sCrashName" maxlength="30" style="width:150px"></label>
+  <div id="sosList"></div>
+  <div class="nvf"><input id="sosNm" placeholder="Nome" style="max-width:120px"><input id="sosNum" type="tel" placeholder="Número"><button class="btn g" id="sosAdd">Adicionar</button></div>
+  <div style="padding:6px 0"><button class="btn g" id="sosTestB">Testar (conta 10 s e manda SMS de teste)</button></div>
+  <div class="small">Andando a 25 km/h ou mais, um impacto forte e a moto parada por 15 s: o app conta 30 s (alarme e voz). Sem "Estou bem", "Trilha, cancelar" ou uma tecla do guidão, manda SMS com a sua localização para até 3 contatos e liga para o primeiro. Também dá para adicionar um contato da Agenda abaixo pelo botão SOS. Não é um equipamento certificado: pode falhar ou dar alarme falso.</div>
   <h3>Comandos de voz</h3>
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, atender", "Trilha, ligar para Maria", "Trilha, próxima música". Com a ligação tocando, basta "atender" ou "recusar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
@@ -314,9 +329,21 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <button class="b" id="bFull"><svg class="ic"><use href="#i-full"/></svg><span>Tela cheia</span></button>
   <button class="b" id="bSet"><svg class="ic"><use href="#i-set"/></svg><span>Ajustes</span></button>
 </div></div></dialog>
-<dialog id="dlgFuel"><div class="hd"><b>Postos de combustível</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgFuel"><div class="hd"><b>Combustível</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <h3>Autonomia</h3>
+  <div class="mid" id="rangeInfo" style="text-align:left;padding:4px 0"></div>
+  <label>Tanque (litros) <input type="number" step="0.5" id="sTankL"></label>
+  <label>Consumo (km por litro) <input type="number" step="0.5" id="sKmL"></label>
+  <label>Avisar quando faltarem (km) <input type="number" step="5" id="sReserveKm"></label>
+  <div style="padding:8px 0"><button class="btn" id="bFilled">Abasteci (tanque cheio)</button></div>
+  <h3>Postos perto</h3>
   <div class="small" id="fuelInfo" style="padding-bottom:6px"></div><div id="fuelList"></div>
   <div class="small" style="padding-top:8px">Postos num raio de 8 km, do OpenStreetMap (pode faltar posto ou estar desatualizado). Por voz: "Trilha, posto mais perto".</div>
+</div></dialog>
+<dialog id="dlgDash"><div class="hd"><b>Personalizar o Painel</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <label>Mostradores grandes (menos por linha, números maiores) <input type="checkbox" id="dashBig"></label>
+  <h3>Mostrar</h3><div id="dashItems"></div>
+  <div style="padding:8px 0"><button class="btn g" id="dashAll">Mostrar todos</button></div>
 </div></dialog>
 <dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px"><button class="btn g" id="askNo">Cancelar</button><button class="btn" id="askOk">OK</button></div></div></dialog>
@@ -369,7 +396,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
@@ -1077,12 +1104,15 @@ const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g
 const GORE=/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:me|para|pra|pro|ate|até|ao|a|o))* (.+)$/;
 const CALLRE=/^(?:por favor )?(?:ligar|ligue|liga|chamar|chama|telefonar|telefona)(?: (?:para|pra|pro|ao|a|o))* (.+)$/;
 function parseCmd(t){const s=normTxt(t);if(!s)return null;
+  if(/\b(estou bem|to bem|tudo bem)\b/.test(s))return {a:'none'};
   if(/\b(atender|atende|atenda|atendo|atendi)\b/.test(s))return {a:'answer'};
   if(/\b(rota|navegacao)\b/.test(s)&&/\b(cancelar|cancela|parar|para|encerrar|encerra|sair|terminar|termina)\b/.test(s))return {a:'stopnav'};
   if(/\b(recusar|recusa|recuse|rejeitar|rejeita|desligar|desliga|desligue|encerrar|encerra)\b/.test(s))return {a:'end'};
   const raw=String(t).toLowerCase().replace(/[.!?,]+/g,' ').replace(/\s+/g,' ').trim(),m=CALLRE.exec(raw)||CALLRE.exec(s);if(m)return {a:'call',who:m[1].trim().slice(0,60)};
   const g=GORE.exec(raw)||GORE.exec(s);if(g)return {a:'go',where:g[1].trim().slice(0,80)};if(/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:para|pra|pro|ate|até|ao|a|o))*$/.test(s))return {a:'go',where:''};
   if(/\b(clima|tempo|temperatura|previsao|chuva)\b/.test(s))return {a:'wx'};
+  if(/\babasteci\b/.test(s))return {a:'filled'};
+  if(/\bautonomia\b/.test(s))return {a:'range'};
   if(/\b(posto|gasolina|combustivel|abastecer)\b/.test(s))return {a:'fuel'};
   if(/\bmarcar\b/.test(s)&&/\bradar\b/.test(s))return {a:'radar'};
   if(/\b(pausar|pausa|pause|parar|para a musica)\b/.test(s))return {a:'pause'};
@@ -1100,14 +1130,15 @@ const fmtNum=n=>String(n||'').replace(/[^+0-9*#]/g,'');
 /* diálogo aberto (modal) fica por cima de tudo e bloquearia Atender/Recusar: fecha */
 function showCall(mode){document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});const who=(callCtx&&callCtx.name)||callSt.name||fmtNum(callSt.number)||'Número desconhecido';
   $('#callWho').textContent=who;$('#callNum').textContent=callSt.name||(callCtx&&callCtx.name)?fmtNum((callCtx&&callCtx.number)||callSt.number):'';
-  $('#callSt').textContent=mode==='ringing'?'Ligação chegando'+(cfg.callVoice?' · diga "atender" ou "recusar"':''):mode==='dial'?'Ligando em 3 s…':'Em ligação';
+  $('#callSt').textContent=(callSt.src==='wa'&&mode!=='dial'?(callSt.app||'WhatsApp')+(callSt.video?' (vídeo)':'')+' · ':'')+(mode==='ringing'?'Ligação chegando'+(cfg.callVoice?' · diga "atender" ou "recusar"':''):mode==='dial'?'Ligando em 3 s…':'Em ligação');
   $('#callAns').style.display=mode==='ringing'?'':'none';$('#callEnd').textContent=mode==='ringing'?'Recusar':mode==='dial'?'Cancelar':'Desligar';$('#callBox').classList.add('on')}
 function hideCall(){$('#callBox').classList.remove('on')}
 function onCall(o){o=o||{};const st=['ringing','offhook','idle'].includes(o.state)?o.state:'idle',prev=callSt.state;
   const same=st!=='idle'&&prev!=='idle';   /* tocando → em ligação é a mesma ligação: o Android manda o 2º aviso sem o número */
-  callSt={state:st,name:String(o.name||'').slice(0,80)||(same?callSt.name:''),number:String(o.number||'').slice(0,30)||(same?callSt.number:'')};
+  callSt={state:st,name:String(o.name||'').slice(0,80)||(same?callSt.name:''),number:String(o.number||'').slice(0,30)||(same?callSt.number:''),
+    src:o.src==='wa'?'wa':(same?callSt.src:''),app:String(o.app||'').slice(0,30)||(same?callSt.app:''),video:o.video!=null?!!o.video:(same?callSt.video:false)};
   if(st==='ringing'){if(prev==='ringing')return showCall('ringing');callCtx=null;showCall('ringing');vib([400,200,400]);
-    const who=callSt.name||'número desconhecido',txt='Ligação de '+who+(cfg.callVoice?'. Diga atender ou recusar':'');say(txt,true);
+    const who=callSt.name||'número desconhecido',txt=(callSt.src==='wa'?(callSt.video?'Chamada de vídeo do WhatsApp de ':'Ligação de WhatsApp de '):'Ligação de ')+who+(cfg.callVoice?'. Diga atender ou recusar':'');say(txt,true);
     if(cfg.callVoice)setTimeout(()=>{if(callSt.state==='ringing')voiceCmd(true)},900+txt.length*65)}
   else if(st==='offhook'){if(dialT){clearTimeout(dialT);dialT=null}showCall('offhook')}
   else{hideCall();callCtx=null}}
@@ -1125,11 +1156,11 @@ async function callByName(who){const n=normTxt(who);if(!n){say('Não entendi o n
   if(!list.length){say('Não achei '+who+' na agenda');return}
   if(names.length===1)return dial(list[0]);
   say('Encontrei '+names.length+' contatos com '+who+'. Escolha na tela');openPhone(list)}
-async function runCmd(c){if(!c)return;const st=callSt.state;
+async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&(c.a==='none'||c.a==='end')){sosCancel();return}const st=callSt.state;
   switch(c.a){
-    case 'answer':if(st!=='ringing'){say('Nenhuma ligação tocando');return}nat('answerCall').then(()=>toast('Atendida')).catch(e=>{say('Não consegui atender');toast(errTxt(e),5000)});return;
+    case 'answer':if(st!=='ringing'){say('Nenhuma ligação tocando');return}(callSt.src==='wa'?nat('waCallAction',{act:'answer'}):nat('answerCall')).then(()=>toast('Atendida')).catch(e=>{say('Não consegui atender');toast(errTxt(e),5000)});return;
     case 'none':case 'end':if(dialT){clearTimeout(dialT);dialT=null;hideCall();callCtx=null;say('Ligação cancelada');return}if(c.a==='none')return;if(st==='idle'){say('Nenhuma ligação');return}
-      nat('endCall').then(()=>{if(st==='ringing')toast('Recusada')}).catch(e=>{say('Não consegui encerrar');toast(errTxt(e),5000)});return;
+      (callSt.src==='wa'?nat('waCallAction',{act:st==='ringing'?'decline':'hangup'}):nat('endCall')).then(()=>{if(st==='ringing')toast('Recusada')}).catch(e=>{say('Não consegui encerrar');toast(errTxt(e),5000)});return;
     case 'call':return /^(|para|pra|pro|a|o|ao)$/.test(normTxt(c.who))?askName():callByName(c.who);
     case 'pause':return media('pause');case 'next':return media('next');case 'prev':return media('previous');
     case 'volup':return nat('volume',{dir:'up'}).catch(()=>{});case 'voldown':return nat('volume',{dir:'down'}).catch(()=>{});
@@ -1139,6 +1170,8 @@ async function runCmd(c){if(!c)return;const st=callSt.state;
     case 'stopnav':if(nav){navStop('Rota encerrada');say('Rota encerrada')}else say('Nenhuma rota');return;
     case 'wx':return wxSay();
     case 'fuel':return fuelGo();
+    case 'filled':return fillUp();
+    case 'range':{const r=rangeKm();say(r==null?'Autonomia não configurada':'Autonomia de '+Math.max(0,Math.round(r))+' quilômetros');return}
     case 'radar':return radMarkVoice();
     default:return}}
 function readMsgs(){const m=waMsgs.slice(0,3);if(!m.length){say('Nenhuma mensagem nova');return}say(m.map(x=>'Mensagem de '+x.title+': '+x.text.slice(0,200)).join('. '),true)}
@@ -1164,7 +1197,7 @@ function onMedia(o){o=o||{};const prev=nowPlay;nowPlay={active:!!o.active,pkg:St
   const p=nowPlay,an=appName(p.pkg);$('#mNow').textContent=p.active?(p.playing?'▶ ':'⏸ ')+([p.title,p.artist].filter(Boolean).join(' — ')||'sem título')+(an?' ('+an+')':''):'Nada tocando';
   if(p.active&&p.playing&&p.title&&(!prev||prev.title!==p.title))toast('♪ '+[p.title,p.artist].filter(Boolean).join(' — ').slice(0,80),3000)}
 /* tela do telefone */
-async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCallVoice').checked=cfg.callVoice;$('#sVoiceAlways').checked=cfg.voiceAlways;
+async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCrashOn').checked=cfg.crashOn;$('#sCrashSens').value=cfg.crashSens;$('#sCrashName').value=cfg.crashName;renderSos();$('#sCallVoice').checked=cfg.callVoice;$('#sVoiceAlways').checked=cfg.voiceAlways;
   renderFavs();renderWa();if(results)renderRes(results);else renderAgenda();const st=await renderPerm();if(st&&st.contacts&&!contactsAll)loadContacts(false)}
 async function renderPerm(){let s={};try{s=await nat('phoneStatus')||{}}catch(e){}
   const it=[['Telefone (atender, recusar, ligar)',s.phone],['Agenda (nome de quem liga)',s.contacts],['Microfone (comandos de voz)',s.mic],['Acesso a notificações (WhatsApp e música)',s.notifAccess]];
@@ -1175,8 +1208,9 @@ async function renderPerm(){let s={};try{s=await nat('phoneStatus')||{}}catch(e)
 function renderFavs(){const f=getFavs();$('#phFavs').innerHTML=f.length?f.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-call="'+i+'">Ligar</button><button class="btn g" data-unfav="'+i+'">✕</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhum favorito: busque na agenda e toque em ☆.</div>';
   $('#phFavs').querySelectorAll('[data-call]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(f[+b.dataset.call])});
   $('#phFavs').querySelectorAll('[data-unfav]').forEach(b=>b.onclick=()=>{const c=f[+b.dataset.unfav];LS.set('phFav',getFavs().filter(x=>!(x.name===c.name&&x.number===c.number)));renderFavs()})}
-function renderRes(list){list=(list||[]).slice(0,20);$('#phRes').innerHTML=list.length?list.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-rcall="'+i+'">Ligar</button><button class="btn g" data-fav="'+i+'" title="Favorito">☆</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Ninguém com esse nome.</div>';
+function renderRes(list){list=(list||[]).slice(0,20);$('#phRes').innerHTML=list.length?list.map((c,i)=>'<div class="lr"><span><b>'+esc(c.name)+'</b><br><span class="small">'+esc(c.number)+'</span></span><span style="display:flex;gap:6px"><button class="btn ok" data-rcall="'+i+'">Ligar</button><button class="btn g" data-fav="'+i+'" title="Favorito">☆</button><button class="btn g" data-sos="'+i+'" title="Contato de emergência">SOS</button></span></div>').join(''):'<div class="small" style="padding:6px 0">Ninguém com esse nome.</div>';
   $('#phRes').querySelectorAll('[data-rcall]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(list[+b.dataset.rcall])});
+  $('#phRes').querySelectorAll('[data-sos]').forEach(b=>b.onclick=()=>sosAddC(list[+b.dataset.sos]));
   $('#phRes').querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const c=list[+b.dataset.fav],f=getFavs();if(!f.some(x=>x.number===c.number))f.push({name:String(c.name).slice(0,80),number:String(c.number).slice(0,30)});LS.set('phFav',f.slice(0,30));renderFavs();voiceWords();toast('Favorito: '+c.name)})}
 function renderWa(){$('#phWa').innerHTML=waMsgs.length?waMsgs.map(m=>'<div class="lr"><span><b>'+esc(m.title)+'</b> <span class="small">'+new Date(m.t).toTimeString().slice(0,5)+'</span><br>'+esc(m.text)+'</span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhuma mensagem desde que o app abriu.</div>'}
 let phT=null;$('#phQ').oninput=()=>{clearTimeout(phT);phT=setTimeout(renderAgenda,200)};
@@ -1195,7 +1229,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='posto gasolina combustível abastecer marcar radar ir vamos leva navegar rota até parar encerrar sair navegação clima tempo temperatura previsão chuva trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
+const VBASE='abasteci autonomia estou bem tudo posto gasolina combustível abastecer marcar radar ir vamos leva navegar rota até parar encerrar sair navegação clima tempo temperatura previsão chuva trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
 function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<800)w.add(x)});
   getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));return [...w]}
@@ -1209,7 +1243,7 @@ function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off']
 /* o que o assistente ouviu: só age com "trilha" na frase, ou logo depois de armado (botão Voz / "trilha" sozinho), ou atender/recusar com a ligação tocando */
 function onHeard(o){const raw=String((o&&o.text)||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();if(!raw)return;
   const i=raw.search(/\btrilha\b/),ringing=callSt.state==='ringing',armed=Date.now()<vArmedT;let rest;
-  if(i>=0)rest=raw.slice(i+6).trim();else if(armed||ringing)rest=raw;else return;
+  if(i>=0)rest=raw.slice(i+6).trim();else if(armed||ringing||(sos&&sos.phase==='count'))rest=raw;else return;
   if(!rest){vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
   const c=parseCmd(rest);
   if(!c){if(i>=0||armed)say('Não entendi');return}
@@ -1295,7 +1329,7 @@ async function fuelFind(){const p=fix||LS.get('lastPos',null);if(!p||!Number.isF
   fuelList=(j.elements||[]).map(e=>{const c=e.center||e,t=e.tags||{};return {name:String(t.name||t.brand||'Posto').slice(0,60),sub:[t.brand&&t.brand!==t.name?t.brand:'',t['addr:street']].filter(Boolean).join(' · ').slice(0,80),lat:+c.lat,lon:+c.lon}})
     .filter(f=>Number.isFinite(f.lat)&&Number.isFinite(f.lon)).map(f=>Object.assign(f,{d:hav(p,f)})).sort((a,b)=>a.d-b.d).slice(0,40);
   fuelLayer.clearLayers();fuelList.forEach(f=>fuelLayer.addLayer(L.marker([f.lat,f.lon],{icon:fuelIcon,interactive:false,keyboard:false})));return fuelList}
-async function fuelOpen(){if(!await netOk())return;$('#dlgFuel').showModal();$('#fuelInfo').textContent='Procurando postos…';$('#fuelList').innerHTML='';
+async function fuelOpen(){if(!$('#dlgFuel').open)$('#dlgFuel').showModal();renderRange();if(!LS.get('netOk',false)&&!await netOk()){$('#fuelInfo').textContent='A lista de postos precisa de internet (aceite o aviso).';return}$('#fuelInfo').textContent='Procurando postos…';$('#fuelList').innerHTML='';
   try{const l=await fuelFind();$('#fuelInfo').textContent=l.length?l.length+' postos a até 8 km':'Nenhum posto a até 8 km no OpenStreetMap.';
     $('#fuelList').innerHTML=l.map((f,i)=>'<div class="lr"><span><b>'+esc(f.name)+'</b><br><span class="small">'+fmtKm(f.d)+(f.sub?' · '+esc(f.sub):'')+'</span></span><button class="btn" data-fgo="'+i+'">Ir</button></div>').join('');
     $('#fuelList').querySelectorAll('[data-fgo]').forEach(b=>b.onclick=()=>{$('#dlgFuel').close();fuelRoute(fuelList[+b.dataset.fgo])})}
@@ -1343,6 +1377,58 @@ addEventListener('devicemotion',e=>{const g=e.accelerationIncludingGravity,r=e.r
   if(!lean.g0||speedKmh<10){lean.v=0;return}
   const w=((r.beta||0)*lean.g0.x+(r.gamma||0)*lean.g0.y+(r.alpha||0)*lean.g0.z)*Math.PI/180,a=Math.max(-65,Math.min(65,Math.atan(speedKmh/3.6*w/9.81)*180/Math.PI));
   lean.v=lean.v*0.8+a*0.2;if(lean.v>lean.maxL)lean.maxL=lean.v;if(-lean.v>lean.maxR)lean.maxR=-lean.v});
+
+/* ---------- autonomia de combustível: km rodados desde o último "Abasteci" contra tanque × consumo ---------- */
+var fuelKm=+LS.get('fuelKm',0)||0,fuelWarn=0;
+function rangeKm(){return cfg.tankL>0&&cfg.kmL>0?cfg.tankL*cfg.kmL-fuelKm:null}
+function renderRange(){const r=rangeKm();$('#rangeInfo').textContent=r==null?'Preencha o tanque e o consumo.':Math.max(0,Math.round(r))+' km restantes · '+fuelKm.toFixed(0)+' km desde o último abastecimento'}
+function fillUp(){fuelKm=0;fuelWarn=0;LS.set('fuelKm',0);if($('#dlgFuel').open)renderRange();say('Tanque cheio. Autonomia de '+Math.round(rangeKm()||0)+' quilômetros');toast('Abastecido: contagem zerada')}
+/* aviso na reserva (e de novo com a metade dela), com o posto mais perto */
+function fuelCheck(){const r=rangeKm();if(r==null)return;const lvl=r<=cfg.reserveKm/2?2:r<=cfg.reserveKm?1:0;if(lvl<=fuelWarn)return;fuelWarn=lvl;
+  const txt='Reserva de combustível: faltam cerca de '+Math.max(0,Math.round(r))+' quilômetros';toast('⛽ '+txt,7000);beep(700,250);say(txt);
+  if(LS.get('netOk',false))fuelFind().then(l=>{if(l.length)say('Posto mais perto: '+l[0].name+', a '+spokenDist(l[0].d))}).catch(()=>{})}
+$('#bFilled').onclick=fillUp;
+['sTankL','sKmL','sReserveKm'].forEach(id=>$('#'+id).addEventListener('change',()=>{fuelWarn=0;renderRange()}));
+$('#bFuel').onclick=()=>{['sTankL','sKmL','sReserveKm'].forEach((id,i)=>$('#'+id).value=cfg[['tankL','kmL','reserveKm'][i]]);renderRange();fuelOpen()};
+
+/* ---------- aviso de queda (SOS): impacto andando ≥25 km/h + parado 15 s → contagem de 30 s → SMS + ligação ---------- */
+var sos=null,spdHist=[];
+function sosContacts(){return (LS.get('sosC',[])||[]).filter(c=>c&&typeof c.number==='string'&&fmtNum(c.number).length>=3).slice(0,3)}
+function renderSos(){const c=sosContacts();$('#sosList').innerHTML=c.length?c.map((x,i)=>'<div class="lr"><span><b>'+esc(x.name||'Contato')+'</b><br><span class="small">'+esc(x.number)+'</span></span><button class="btn g" data-sosrm="'+i+'">✕</button></div>').join(''):'<div class="small" style="padding:6px 0">Nenhum contato de emergência (até 3).</div>';
+  $('#sosList').querySelectorAll('[data-sosrm]').forEach(b=>b.onclick=()=>{const c2=sosContacts();c2.splice(+b.dataset.sosrm,1);LS.set('sosC',c2);renderSos()})}
+function sosAddC(c){const l=sosContacts();if(l.length>=3){toast('Já tem 3 contatos de emergência');return}if(!c||fmtNum(c.number).length<3){toast('Número inválido');return}
+  if(l.some(x=>fmtNum(x.number)===fmtNum(c.number)))return;l.push({name:String(c.name||'').slice(0,40),number:String(c.number).slice(0,30)});LS.set('sosC',l);renderSos();toast('Contato de emergência: '+(c.name||c.number))}
+$('#sosAdd').onclick=()=>{sosAddC({name:$('#sosNm').value.trim(),number:$('#sosNum').value.trim()});$('#sosNm').value='';$('#sosNum').value=''};
+$('#sCrashSens').onchange=e=>{cfg.crashSens=e.target.value==='alta'?'alta':'normal';saveCfg();if(cfg.crashOn)crashArmNow(false)};
+$('#sCrashName').onchange=e=>{cfg.crashName=e.target.value.trim().slice(0,30);saveCfg()};
+async function crashArmNow(manual){if(!NATIVE){if(manual&&cfg.crashOn)toast('O aviso de queda só funciona no app (APK)',4000);return}
+  if(cfg.crashOn&&manual){if(!sosContacts().length)toast('Adicione ao menos um contato de emergência',5000);
+    try{const r=await nat('requestSms');if(!r||!r.granted)toast('Sem permissão de SMS o aviso não sai',6000)}catch(e){}}
+  nat('crashArm',{on:!!cfg.crashOn,g:cfg.crashSens==='alta'?3:4}).catch(()=>{})}
+function sosPos(){const now=Date.now();spdHist.push({t:now,v:speedKmh});while(spdHist.length&&now-spdHist[0].t>30000)spdHist.shift();
+  if(sos&&sos.phase==='watch'&&speedKmh>=10){clearTimeout(sos.timer);sos=null}}     /* voltou a andar: não foi queda */
+function onImpact(o){if(!cfg.crashOn||sos)return;const now=Date.now(),vmax=Math.max(0,...spdHist.filter(x=>now-x.t<=6000).map(x=>x.v));
+  if(vmax<25)return;                                                                  /* tombo parado ou devagar não conta */
+  sos={phase:'watch',g:+(o&&o.g)||0,test:false};sos.timer=setTimeout(()=>{if(sos&&sos.phase==='watch'){if(speedKmh<5)sosCount(30);else sos=null}},15000)}
+function sosCount(n){sos.phase='count';sos.left=n;$('#sosT').textContent=sos.test?'TESTE DO AVISO DE QUEDA':'QUEDA DETECTADA';$('#sosOk').textContent='Estou bem';
+  $('#sosMsg').textContent='Sem resposta, mando SMS com a sua localização para '+(sosContacts().map(c=>c.name||c.number).join(', ')||'(nenhum contato!)')+(sos.test?'':' e ligo para o primeiro')+'.';
+  document.querySelectorAll('dialog[open]').forEach(d=>{try{d.close()}catch(e){}});$('#sosBox').classList.add('on');$('#sosN').textContent=n;vib([600,300,600,300,600]);
+  say(sos.test?'Teste do aviso de queda. Diga cancelar ou toque em Estou bem':'Queda detectada. Diga cancelar ou toque em Estou bem',true);
+  sos.iv=setInterval(()=>{if(!sos)return;sos.left--;$('#sosN').textContent=Math.max(0,sos.left);beep(sos.left%2?1300:900,250);vib(200);
+    if(sos.left>0&&sos.left%10===0)say('Enviando aviso em '+sos.left+' segundos',true);if(sos.left<=0){clearInterval(sos.iv);sosSend()}},1000)}
+async function sosSend(){const S=sos;if(!S)return;S.phase='sent';const c=sosContacts(),p=fix||LS.get('lastPos',null),hh=new Date().toTimeString().slice(0,5);
+  const link=p&&Number.isFinite(+p.lat)?'https://maps.google.com/?q='+(+p.lat).toFixed(6)+','+(+p.lon).toFixed(6):'(sem GPS)';
+  const txt=(S.test?'TrilhaNav: TESTE do aviso de queda (não é real). ':'TrilhaNav: possível queda de '+(cfg.crashName||'motociclista')+' às '+hh+'. ')+'Localização: '+link;
+  $('#sosOk').textContent='Fechar';$('#sosN').textContent='';
+  if(!c.length){$('#sosMsg').textContent='Nenhum contato de emergência cadastrado: nada foi enviado.';say('Nenhum contato de emergência cadastrado',true);return}
+  try{const r=await nat('sendSms',{numbers:c.map(x=>x.number),text:txt});$('#sosMsg').textContent='Aviso enviado por SMS para '+((r&&r.sent)||c.length)+' contato(s).';say(S.test?'SMS de teste enviado':'Aviso enviado',true)}
+  catch(e){$('#sosMsg').textContent='Não consegui enviar o SMS: '+errTxt(e);say('Não consegui enviar o SMS',true)}
+  if(!S.test)setTimeout(()=>{if(sos===S&&speedKmh<5)nat('placeCall',{number:fmtNum(c[0].number)}).catch(()=>{})},4000)}
+function sosCancel(){if(!sos)return;clearTimeout(sos.timer);clearInterval(sos.iv);const was=sos.phase;sos=null;$('#sosBox').classList.remove('on');if(was==='count')say('Aviso cancelado',true)}
+$('#sosOk').onclick=sosCancel;
+$('#sosTestB').onclick=()=>{if(sos)return;if(!sosContacts().length){toast('Adicione um contato primeiro');return}sos={phase:'count',test:true};
+  (NATIVE?nat('requestSms').catch(()=>{}):Promise.resolve()).then(()=>sosCount(10))};
+if(NATIVE){try{NP.nat.addListener('impact',onImpact)}catch(e){}if(cfg.crashOn)setTimeout(()=>crashArmNow(false),2000)}
 const UPD_URL='https://raw.githubusercontent.com/Lubiell/trilhanav/apk/versao.json';
 async function updInfo(){if(!NATIVE)return;try{const me=await nat('appInfo');$('#updInfo').textContent='Versão instalada: '+String(me.version).slice(0,20)}catch(e){}}
 async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização automática só no app (APK)');return}
@@ -1355,7 +1441,7 @@ async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização au
   if(!ok)return;toast('Baixando a atualização…',120000);
   try{await nat('installApk',{url:v.apk,sha256:String(v.sha256).toLowerCase()});toast('Toque em "Atualizar" na tela do Android',8000)}catch(e){toast(errTxt(e),7000)}}
 $('#bUpd').onclick=()=>checkUpdate(true);
-if(NATIVE){try{NP.nat.addListener('call',onCall);NP.nat.addListener('whatsapp',onWa);NP.nat.addListener('media',onMedia);NP.nat.addListener('heard',onHeard);NP.nat.addListener('voice',onVoiceState);
+if(NATIVE){try{NP.nat.addListener('call',onCall);NP.nat.addListener('wacall',o=>onCall(Object.assign({},o||{},{src:'wa',number:''})));NP.nat.addListener('whatsapp',onWa);NP.nat.addListener('media',onMedia);NP.nat.addListener('heard',onHeard);NP.nat.addListener('voice',onVoiceState);
     NP.nat.addListener('update',p=>{if(p&&p.pct>=0)toast('Baixando a atualização… '+p.pct+'%',120000)})}catch(e){}
   if(cfg.updAuto&&Date.now()-(+LS.get('updT',0)||0)>12*3600e3)setTimeout(()=>checkUpdate(false),8000);
   /* agenda (nomes para o assistente) e assistente sempre ligado: o serviço de microfone só pode começar com o app na tela */
@@ -1367,7 +1453,7 @@ function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.
   $('#gpsDot').className='dot '+(c.accuracy<=15?'ok':c.accuracy<=40?'mid':'');$('#gpsTxt').textContent='GPS ±'+Math.round(c.accuracy)+' m';
   let sp=c.speed!=null&&!isNaN(c.speed)?c.speed*3.6:null;
   if(last&&c.accuracy<=50){const d=hav(last,cur);const dt=(now-last.t)/1000;if(sp==null&&dt>0)sp=d/dt*3.6;
-    if(d>=Math.max(3,c.accuracy*0.3)||(sp!=null&&sp>3)){const km=d/1000*cfg.mult;if(dt>0&&d/dt<90){st.total+=km;st.partial+=km;if(sp>3){st.movSec+=dt;st.movKm+=km}}
+    if(d>=Math.max(3,c.accuracy*0.3)||(sp!=null&&sp>3)){const km=d/1000*cfg.mult;if(dt>0&&d/dt<90){st.total+=km;st.partial+=km;fuelKm+=km;if(sp>3){st.movSec+=dt;st.movKm+=km}}
       if(c.heading!=null&&!isNaN(c.heading)&&sp>3)gpsHdg=c.heading;else if(d>5)gpsHdg=brg(last,cur);last=cur;
       if(recording){rec.push(cur);recLine.addLatLng([cur.lat,cur.lon])}}}
   else if(!last&&c.accuracy<=50)last=cur;   /* só parte de uma posição confiável: a 1ª posição (rede, ±centenas de metros) somava um salto falso ao TOTAL */
@@ -1375,7 +1461,7 @@ function onPos(p){const first=!fix;const c=p.coords;const now=p.timestamp||Date.
   $('#speed').textContent=Math.round(speedKmh);if(speedKmh>=15)learnComp();applyHeading();
   if(!map.hasLayer(me))me.addTo(map);me.setLatLng([cur.lat,cur.lon]);
   if(follow&&(curPane==='paneMap'||split)){map.setView([cur.lat,cur.lon],map.getZoom()<13?16:map.getZoom(),{animate:false});}
-  if(first)autoTheme();renderOdo();rtCheck();navUpdate();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();if(now-lastT>3000){saveOdo();LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
+  if(first)autoTheme();renderOdo();rtCheck();navUpdate();updateNav();updateProg();elevCursor();updateRbAuto();copilot();checkAlerts();sosPos();fuelCheck();if(now-lastT>3000){saveOdo();LS.set('fuelKm',fuelKm);LS.set('lastPos',{lat:cur.lat,lon:cur.lon});lastT=now}if(curPane==='paneDash')renderDash()}
 function onErr(e){$('#gpsDot').className='dot';$('#gpsTxt').textContent=!window.isSecureContext?'GPS bloqueado: abra pelo link https':e.code===1?'GPS sem permissão':'GPS ---'}
 let watchId=null,bgId=null,natT=0,natTry=0,natSeq=0,natTimer=null,fbTimer=null;
 const gpsTxt=(t,cls)=>{$('#gpsDot').className='dot'+(cls?' '+cls:'');$('#gpsTxt').textContent=t};
@@ -1412,10 +1498,25 @@ function startSim(){stopSim();if(track.length<2){toast('Carregue um GPX para sim
 function stopSim(){if(simT)clearInterval(simT);simT=null}
 
 /* ---------- painel ---------- */
+/* o Painel mostra só os mostradores escolhidos (Personalizar), na ordem abaixo; "grandes" = menos colunas e números maiores */
+const DASH=[['spd','Velocidade'],['max','Vel. máxima'],['avg','Vel. média (em mov.)'],['mov','Tempo em movimento'],['alt','Altitude'],['hdg','Rumo'],['rest','Restante da trilha'],['wps','Waypoints'],
+  ['range','Autonomia'],['wx','Clima'],['lim','Limite agora'],['lean','Inclinação'],['leanmax','Inclinação máxima'],['eta','Chegada (Ir para)'],['acc','Precisão GPS'],['coord','Coordenadas'],['recn','Pontos gravados'],['corr','Correção do odômetro'],['chrono','Cronômetro']];
+function dashSel(){const v=LS.get('dashSel',null);return Array.isArray(v)?v.filter(k=>DASH.some(d=>d[0]===k)):DASH.map(d=>d[0])}
 function renderDash(){const avg=st.movSec>0?st.movKm/(st.movSec/3600):0;const ok=wpState.filter(s=>s==='ok').length,miss=wpState.filter(s=>s==='miss').length;
   let rest='—';if(fix&&track.length>1){const r=distToTrack(fix);if(r){let s=hav(fix,track[r.i+1]);for(let i=r.i+1;i<track.length-1;i++)s+=hav(track[i],track[i+1]);rest=(s/1000).toFixed(1)+' km'}}
-  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Limite agora',curZone?curZone.limit+' km/h (zona)':cfg.limOn&&limCur?limCur+' km/h (via)':cfg.spd>0?cfg.spd+' km/h':'—'],['Inclinação',leanTxt()],['Inclinação máxima',lean.maxL||lean.maxR?'E '+Math.round(lean.maxL)+'° · D '+Math.round(lean.maxR)+'°':'—'],['Pontos gravados',rec.length],['Correção do odômetro',st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—'],['Cronômetro',$('#chronoTxt').textContent]];
-  $('#dash').innerHTML=items.map(([k,v])=>'<div class="card"><h4>'+k.toUpperCase()+'</h4><div class="mid">'+v+'</div></div>').join('')}
+  const rk=rangeKm(),V={spd:Math.round(speedKmh)+' km/h',max:Math.round(st.maxSpd)+' km/h',avg:avg.toFixed(1)+' km/h',mov:hms(st.movSec),alt:fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—',hdg:heading==null?'—':Math.round(heading)+'°',rest,
+    wps:ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length,range:rk==null?'— (configure em Postos)':Math.max(0,Math.round(rk))+' km',wx:wxD?WXI[wxD.kind]+' '+Math.round(wxD.temp)+'°':'—',
+    lim:curZone?curZone.limit+' km/h (zona)':cfg.limOn&&limCur?limCur+' km/h (via)':cfg.spd>0?cfg.spd+' km/h':'—',lean:leanTxt(),leanmax:lean.maxL||lean.maxR?'E '+Math.round(lean.maxL)+'° · D '+Math.round(lean.maxR)+'°':'—',
+    eta:nav&&nav.q?new Date(Date.now()+nav.rt.time*Math.max(0,nav.rt.len-nav.q.along)/Math.max(1,nav.rt.len)*1000).toTimeString().slice(0,5):'—',acc:fix?'±'+Math.round(fix.acc)+' m':'—',coord:fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—',recn:rec.length,
+    corr:st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—',chrono:$('#chronoTxt').textContent};
+  const sel=dashSel(),dl=$('#dash');dl.classList.toggle('big',!!cfg.dashBig);
+  dl.innerHTML=DASH.filter(d=>sel.includes(d[0])).map(([k,l])=>'<div class="card'+(k==='range'&&rk!=null&&rk<=cfg.reserveKm?' warn':'')+'" data-k="'+k+'"><h4>'+l.toUpperCase()+'</h4><div class="mid">'+V[k]+'</div></div>').join('')||'<div class="small" style="padding:10px">Nenhum mostrador escolhido: toque em Personalizar.</div>'}
+function openDashEdit(){const sel=dashSel();$('#dashBig').checked=!!cfg.dashBig;
+  $('#dashItems').innerHTML=DASH.map(([k,l])=>'<label>'+l+' <input type="checkbox" data-dk="'+k+'"'+(sel.includes(k)?' checked':'')+'></label>').join('');
+  $('#dashItems').querySelectorAll('[data-dk]').forEach(c=>c.onchange=()=>{LS.set('dashSel',[...$('#dashItems').querySelectorAll('[data-dk]')].filter(x=>x.checked).map(x=>x.dataset.dk));renderDash()});$('#dlgDash').showModal()}
+$('#dashEdit').onclick=openDashEdit;
+$('#dashBig').onchange=e=>{cfg.dashBig=e.target.checked;saveCfg();renderDash()};
+$('#dashAll').onclick=()=>{LS.set('dashSel',DASH.map(d=>d[0]));openDashEdit();renderDash()};
 const hms=s=>{s=Math.floor(s);return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 
 /* ---------- cronômetro ---------- */
@@ -1459,12 +1560,12 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}const m={i:Math.min(
   marks.push(m);LS.set('marks',marks);wps.splice(m.i,0,{lat:m.lat,lon:m.lon,name:m.name,mark:true});wpState.splice(m.i,0,'ok');assignWpKm();buildRb();rebuildZones();setWp(m.i+1)};
 
 /* ---------- ajustes ---------- */
-const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sLimTol','limTol',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways'],['sLimOn','limOn']];
+const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sTankL','tankL',parseFloat],['sKmL','kmL',parseFloat],['sReserveKm','reserveKm',parseFloat],['sLimTol','limTol',parseFloat],['sRadarTol','radarTol',parseFloat]];
+const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways'],['sCrashOn','crashOn'],['sLimOn','limOn']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sRotMode').value=rotMode();
   radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
-binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='wx'){wxShow();if(cfg.wx)wxUpdate(true)}if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
+binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='crashOn')crashArmNow(true);if(k==='wx'){wxShow();if(cfg.wx)wxUpdate(true)}if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
 $('#sTotal').onchange=e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){st.total=v;saveOdo();renderOdo()}};
 $('#bCal').onclick=()=>{const a=parseFloat($('#sCalRb').value),b=parseFloat($('#sCalApp').value);if(a>0&&b>0){cfg.mult=+(cfg.mult*a/b).toFixed(4);saveCfg();$('#sMult').value=cfg.mult;renderOdo();toast('Multiplicador: '+cfg.mult)}else toast('Preencha as duas distâncias')};
 $('#sNoteMin').addEventListener('change',()=>buildEvents());
@@ -1584,7 +1685,7 @@ function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l]
   $('#keyList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{learning=b.dataset.a;renderKeys()})}
 $('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
 const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,voice:()=>voiceCmd(false),answer:()=>runCmd({a:'answer'}),hangup:()=>runCmd({a:'end'}),mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous')};
-addEventListener('keydown',e=>{if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
+addEventListener('keydown',e=>{if(sos&&sos.phase==='count'){e.preventDefault();sosCancel();return}if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
   if(!e.code||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')))return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a){e.preventDefault();if(e.repeat&&!['totPlus','totMinus','rbDown','rbUp'].includes(a))return;ACT[a]()}});
 
 /* ---------- trava de toque, tela, tema ---------- */
@@ -1613,7 +1714,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>

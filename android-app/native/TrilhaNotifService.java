@@ -7,6 +7,7 @@ import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
@@ -30,6 +31,78 @@ public class TrilhaNotifService extends NotificationListenerService {
     public interface Sink {
         void onWhatsApp(JSObject msg);
         void onMedia(JSObject info);
+        void onWaCall(JSObject call);
+    }
+
+    // ---- ligação pelo WhatsApp: a notificação de chamada traz quem liga e os botões Atender/Recusar/Desligar ----
+    private static volatile String callKey = null;
+    private static volatile android.app.PendingIntent waAnswer, waDecline, waHangup;
+    private static final java.util.regex.Pattern CALL_TXT = java.util.regex.Pattern.compile(
+        "(?i)(chamada|liga(ç|c)(ã|a)o).*(voz|v(í|i)deo|recebida|entrada)|(incoming|ongoing).*(voice|video)? ?call|em andamento|chamando|tocando");
+    private static final java.util.regex.Pattern ANS = java.util.regex.Pattern.compile("(?i)^(atender|aceitar|answer|accept)");
+    private static final java.util.regex.Pattern DEC = java.util.regex.Pattern.compile("(?i)^(recusar|rejeitar|decline|reject|ignorar)");
+    private static final java.util.regex.Pattern HUP = java.util.regex.Pattern.compile("(?i)^(desligar|encerrar|hang ?up|end)");
+
+    /** aciona o botão da notificação de chamada do WhatsApp: answer | decline | hangup */
+    static String waAct(String act) {
+        android.app.PendingIntent pi = "answer".equals(act) ? waAnswer : "decline".equals(act) ? (waDecline != null ? waDecline : waHangup) : (waHangup != null ? waHangup : waDecline);
+        if (pi == null) return "sem botão para isso na notificação do WhatsApp";
+        try {
+            if (Build.VERSION.SDK_INT >= 34) {
+                android.app.ActivityOptions o = android.app.ActivityOptions.makeBasic();
+                o.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED);
+                pi.send(null, 0, null, null, null, null, o.toBundle());
+            } else {
+                pi.send();
+            }
+            return null;
+        } catch (Exception e) {
+            return "o WhatsApp não aceitou: " + e.getMessage();
+        }
+    }
+
+    /** é notificação de chamada? (categoria de chamada, estilo de chamada do Android 12+ ou texto "chamada de voz recebida") */
+    private boolean handleCall(StatusBarNotification sbn, Notification n) {
+        Bundle ex = n.extras;
+        CharSequence t = ex == null ? null : ex.getCharSequence(Notification.EXTRA_TITLE);
+        CharSequence x = ex == null ? null : ex.getCharSequence(Notification.EXTRA_TEXT);
+        boolean isCall = Notification.CATEGORY_CALL.equals(n.category)
+            || (ex != null && (ex.containsKey("android.answerIntent") || ex.containsKey("android.declineIntent") || ex.containsKey("android.hangUpIntent")))
+            || (x != null && CALL_TXT.matcher(x).find() && (n.flags & Notification.FLAG_ONGOING_EVENT) != 0);
+        if (!isCall) return false;
+        android.app.PendingIntent a = null, d = null, h = null;
+        if (ex != null) {
+            try { a = ex.getParcelable("android.answerIntent"); d = ex.getParcelable("android.declineIntent"); h = ex.getParcelable("android.hangUpIntent"); } catch (Exception ignored) { }
+        }
+        if (n.actions != null) for (Notification.Action ac : n.actions) {
+            String l = ac.title == null ? "" : ac.title.toString().trim();
+            if (a == null && ANS.matcher(l).find()) a = ac.actionIntent;
+            else if (d == null && DEC.matcher(l).find()) d = ac.actionIntent;
+            else if (h == null && HUP.matcher(l).find()) h = ac.actionIntent;
+        }
+        callKey = sbn.getKey();
+        waAnswer = a; waDecline = d; waHangup = h;
+        String txt = x == null ? "" : x.toString();
+        boolean ringing = a != null;   // tocando = ainda tem o botão de atender
+        JSObject o = new JSObject();
+        o.put("state", ringing ? "ringing" : "offhook");
+        o.put("name", clip(t == null ? "" : t.toString(), 80));
+        o.put("video", txt.toLowerCase(java.util.Locale.ROOT).matches(".*(v(í|i)deo|video).*"));
+        o.put("app", "com.whatsapp.w4b".equals(sbn.getPackageName()) ? "WhatsApp Business" : "WhatsApp");
+        Sink s = sink;
+        if (s != null) s.onWaCall(o);
+        return true;
+    }
+
+    @Override
+    public void onNotificationRemoved(StatusBarNotification sbn) {
+        if (sbn == null || callKey == null || !callKey.equals(sbn.getKey())) return;
+        callKey = null;
+        waAnswer = waDecline = waHangup = null;
+        JSObject o = new JSObject();
+        o.put("state", "idle");
+        Sink s = sink;
+        if (s != null) s.onWaCall(o);
     }
 
     static volatile Sink sink;
@@ -139,6 +212,7 @@ public class TrilhaNotifService extends NotificationListenerService {
         seenWa++;
         Notification n = sbn.getNotification();
         if (n == null) { lastSkip = "sem notificação"; return; }
+        if (handleCall(sbn, n)) { lastSkip = "chamada"; return; }
         // resumo do grupo ("3 mensagens de 2 conversas") e notificação fixa ("Verificando novas mensagens") não são mensagem
         if ((n.flags & Notification.FLAG_GROUP_SUMMARY) != 0) { lastSkip = "resumo do grupo"; return; }
         if ((n.flags & Notification.FLAG_ONGOING_EVENT) != 0) { lastSkip = "notificação fixa"; return; }
