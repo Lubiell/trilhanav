@@ -36,6 +36,7 @@ Usados só quando o usuário busca um endereço, pede uma rota ou liga os radare
 | Overpass API (espelho mail.ru) | radares por área | serviço público; os radares ficam guardados no aparelho |
 | Open-Meteo (open-meteo.com) | clima: temperatura, chuva de 15 em 15 min, rajadas, próximas 12 h | gratuito para uso não comercial; dados CC BY 4.0 (crédito na tela do clima) |
 | MET Norway (api.met.no) | clima, reserva quando o Open-Meteo falha | dados CC BY 4.0 (crédito na tela do clima) |
+| Google Maps (link no SMS do aviso de queda) | só o endereço `maps.google.com/?q=lat,lon` no texto do SMS | nenhum dado é enviado pelo TrilhaNav ao Google |
 | Waze / Google Maps | só abre o app deles com o destino (link universal) | nenhum dado é enviado pelo TrilhaNav |
 
 ## Formatos
