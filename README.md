@@ -4,18 +4,19 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.5.0.apk`** (atual) | 2.5.0 (versionCode 20500) | commit `b3cc4ae` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
-| `trilhanav-2.4.0.apk` | 2.4.0 (versionCode 20400) | commit `dba6186` (PR #2) | 56 MB |
+| **`trilhanav-2.6.0.apk`** (atual) | 2.6.0 (versionCode 20600) | commit `2a52a7b` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
+| `trilhanav-2.5.0.apk` | 2.5.0 (versionCode 20500) | commit `b3cc4ae` (PR #2) | 56 MB |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.5.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.5.0.apk
+**Baixar no celular (2.6.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.0.apk
 
-(A 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.6.0: `34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca`
 - 2.5.0: `ffe5a65428cb517b4544d4c5fe6495d88785e0475e64bc3ac7aaa3d3c789a1bb`
 - 2.4.0: `eec3f92b604936ab2063c9ab68912bcfc8c2c12665b4152ba0608ad1c019c571`
 - 2.3.0: `19c374268dbaed919b28da4e38c2978c35b891d31d6dd0f6d0336c30e9bafef5`
@@ -23,6 +24,18 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.6.0
+
+- **Ligação pelo WhatsApp:** a tela de ligação mostra quem está ligando pelo WhatsApp (voz ou vídeo); diga "atender" ou
+  "recusar" (ou use os botões). Funciona pelo mesmo "acesso a notificações" do WhatsApp (Telefone → Liberar acesso a notificações).
+- **Aviso de queda (SOS):** em Telefone → Aviso de queda: ligue, ponha seu nome e até 3 contatos (ou o botão SOS na Agenda).
+  Queda andando a 25 km/h ou mais + moto parada 15 s → contagem de 30 s com alarme → SMS com a localização e ligação para o
+  1º contato. Cancela com "Estou bem", "Trilha, cancelar" ou qualquer tecla do guidão. Botão "Testar" manda um SMS de teste.
+- **Autonomia:** Mais → Postos: tanque (L), consumo (km/l) e "Abasteci". Avisa na reserva com o posto mais perto.
+  Voz: "Trilha, autonomia", "Trilha, abasteci".
+- **Painel personalizável** (botão Personalizar): escolha os mostradores e o modo "grandes". Novos: Autonomia, Clima, Chegada.
+- **Ícone novo** e tema dia com mais contraste ao sol.
 
 ## O que mudou na 2.5.0
 

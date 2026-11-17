@@ -1,7 +1,7 @@
 {
- "version": "2.5.0",
- "code": 20500,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.5.0.apk",
- "sha256": "ffe5a65428cb517b4544d4c5fe6495d88785e0475e64bc3ac7aaa3d3c789a1bb",
- "notes": "Barra nova com os botões principais e o resto em Mais; sem funções repetidas; postos de combustível (\"Trilha, posto mais perto\"); placa com o limite de velocidade da rua; inclinação nas curvas no Painel. Baixe no Wi-Fi (56 MB)."
+ "version": "2.6.0",
+ "code": 20600,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.0.apk",
+ "sha256": "34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca",
+ "notes": "Ligação do WhatsApp: mostra quem liga e atende/recusa por voz; aviso de queda (SOS) com SMS para os seus contatos (ligue em Telefone); autonomia de combustível; Painel personalizável; ícone novo. Baixe no Wi-Fi (56 MB)."
 }
