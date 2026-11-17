@@ -4,24 +4,37 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.4.0.apk`** (atual) | 2.4.0 (versionCode 20400) | commit `dba6186` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
-| `trilhanav-2.3.0.apk` | 2.3.0 (versionCode 20300) | commit `9006310` (PR #2) | 56 MB |
+| **`trilhanav-2.5.0.apk`** (atual) | 2.5.0 (versionCode 20500) | commit `b3cc4ae` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
+| `trilhanav-2.4.0.apk` | 2.4.0 (versionCode 20400) | commit `dba6186` (PR #2) | 56 MB |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.4.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.4.0.apk
+**Baixar no celular (2.5.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.5.0.apk
 
-(A 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.5.0: `ffe5a65428cb517b4544d4c5fe6495d88785e0475e64bc3ac7aaa3d3c789a1bb`
 - 2.4.0: `eec3f92b604936ab2063c9ab68912bcfc8c2c12665b4152ba0608ad1c019c571`
 - 2.3.0: `19c374268dbaed919b28da4e38c2978c35b891d31d6dd0f6d0336c30e9bafef5`
 - 2.2.0: `1ac3818a44d91a843d7bbf48e53e3b43b1d1a6acccc90cc9a8f2be91a77a40f2`
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.5.0
+
+- **Barra nova:** Roadbook, Mapa, Ir para, Painel, Telefone, Voz, Gravar e **Mais** (cabe no celular em pé sem rolar). Em "Mais",
+  uma grade com o resto: Dividir, Altimetria, Arquivos, Waypoints, Cronômetro, Nota, Voltar à trilha, Zerar parcial, Postos,
+  Música, Tema, Tela cheia e Ajustes. O cronômetro rodando aparece na barra de cima.
+- **Sem repetições:** um só ajuste de girar o mapa (Ajustes: nunca / só durante o Ir para / sempre); "Abrir" ficou dentro de
+  Arquivos; "Marcar radar" só nos Ajustes (e por voz: "Trilha, marcar radar"); o tema só pelo botão de "Mais".
+- **Postos de combustível:** Mais → Postos (raio de 8 km, do OpenStreetMap) e por voz "Trilha, posto mais perto" (já faz a rota).
+- **Limite da via:** placa com o limite de velocidade da rua onde você está (onde o OpenStreetMap tem o limite) e alerta ao
+  passar do limite + 7 km/h. Ajustes → Limite da via.
+- **Inclinação:** ângulo na curva e máximo de cada lado no Painel (calibra sozinho com a moto parada em pé).
 
 ## O que mudou na 2.4.0
 
