@@ -510,6 +510,7 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     @PluginMethod
     public void voiceStart(PluginCall call) {
         if (!has("mic")) { call.reject("sem permissão do microfone"); return; }
+        TrilhaVoiceService.useBt = call.getBoolean("bt", false);
         TrilhaVoiceService.setGrammar(grammarOf(call));
         try {
             ContextCompat.startForegroundService(getContext(), new Intent(getContext(), TrilhaVoiceService.class));
@@ -517,6 +518,13 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         } catch (Exception e) {
             call.reject("não consegui ligar o assistente: " + e.getMessage());
         }
+    }
+
+    /** usa (ou não) o microfone do fone/intercom Bluetooth para o assistente */
+    @PluginMethod
+    public void voiceBt(PluginCall call) {
+        TrilhaVoiceService.setBt(call.getBoolean("on", false));
+        call.resolve();
     }
 
     @PluginMethod

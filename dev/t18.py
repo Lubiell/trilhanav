@@ -26,7 +26,7 @@ window.Capacitor={isNativePlatform:()=>true,getPlatform:()=>'android',registerPl
   findContacts:async o=>{__calls.push(['findContacts',o]);return {list:[]}},
   voiceStart:async o=>{__calls.push(['voiceStart',o]);setTimeout(()=>__emit('voice',{state:'on'}),50)},
   voiceStop:async()=>{__calls.push(['voiceStop',{}]);__emit('voice',{state:'off'})},
-  voiceWords:async o=>{__calls.push(['voiceWords',o])},
+  voiceWords:async o=>{__calls.push(['voiceWords',o])},voiceBt:async o=>{__calls.push(['voiceBt',o])},
   listen:async o=>{__calls.push(['listen',o]);const t=__listenQ.shift();if(!t)throw new Error('não entendi');return {texts:t}},
   appInfo:async()=>({version:'2.3.0',code:20300}),installApk:rec('installApk')})};
 """
@@ -49,6 +49,10 @@ async def main():
         words = vs[0]['words'] if vs else []
         check('assistente liga sozinho ao abrir (permissão de microfone dada)', len(vs) == 1 and await pg.evaluate('TN.voiceSt') == 'on')
         check('vocabulário: comandos + nomes da agenda (com acento)', all(w in words for w in ['trilha', 'atender', 'próxima', 'maria', 'joão', 'antônio', 'mãe', 'oficina']) and len(words) < 800, str(len(words)))
+        check('assistente pede o microfone do fone Bluetooth (padrão ligado)', vs and vs[0].get('bt') is True, str(vs[0].get('bt') if vs else None))
+        await pg.evaluate("__emit('voice',{state:'on',msg:'fone'})")
+        check('ouvindo pelo fone: botão mostra "Ouvindo (fone)"', await pg.text_content('#bVoice span') == 'Ouvindo (fone)')
+        await pg.evaluate("__emit('voice',{state:'on',msg:'celular'})")
         check('botão Voz fica verde "Ouvindo"', await pg.evaluate("document.querySelector('#bVoice').classList.contains('live')&&document.querySelector('#bVoice span').textContent==='Ouvindo'"))
 
         # ---------- palavra de ativação ----------
@@ -109,6 +113,9 @@ async def main():
         await pg.evaluate("__agenda.push({name:'Pedro Novo',number:'31988887777'})")
         await pg.fill('#phQ', ''); await pg.click('#phRefresh'); await pg.wait_for_timeout(400)
         check('"Atualizar contatos" relê a agenda e atualiza o vocabulário', await pg.evaluate("document.querySelectorAll('#phRes [data-rcall]').length") == 5 and 'pedro' in (await calls('voiceWords'))[-1]['words'])
+        await pg.click('#sVoiceBt'); await pg.wait_for_timeout(150)
+        check('desmarcar "microfone do fone" avisa o nativo (volta ao microfone do celular)', (await calls('voiceBt'))[-1] == {'on': False} and not await pg.evaluate('TN.cfg.voiceBt'))
+        await pg.click('#sVoiceBt'); await pg.wait_for_timeout(150)
         await pg.click('#sVoiceAlways'); await pg.wait_for_timeout(200)
         check('desligar "sempre ligado" para o assistente', len(await calls('voiceStop')) == 1 and await pg.evaluate('TN.voiceSt') == 'off' and not await pg.evaluate('TN.cfg.voiceAlways'))
         await pg.click('#sVoiceAlways'); await pg.wait_for_timeout(300)

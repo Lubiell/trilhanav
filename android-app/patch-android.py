@@ -16,7 +16,7 @@ for f in ('MainActivity.java', 'TrilhaNativePlugin.java', 'TrilhaNotifService.ja
 mf = os.path.join(main, 'AndroidManifest.xml')
 s = open(mf, encoding='utf-8').read()
 perms = ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK',
-         'READ_PHONE_STATE', 'READ_CALL_LOG', 'ANSWER_PHONE_CALLS', 'CALL_PHONE', 'READ_CONTACTS', 'RECORD_AUDIO', 'REQUEST_INSTALL_PACKAGES', 'FOREGROUND_SERVICE_MICROPHONE', 'SEND_SMS']
+         'READ_PHONE_STATE', 'READ_CALL_LOG', 'ANSWER_PHONE_CALLS', 'CALL_PHONE', 'READ_CONTACTS', 'RECORD_AUDIO', 'REQUEST_INSTALL_PACKAGES', 'FOREGROUND_SERVICE_MICROPHONE', 'SEND_SMS', 'MODIFY_AUDIO_SETTINGS']
 s = s.replace('android:allowBackup="true"', 'android:allowBackup="false"')   # o Auto Backup levaria trilhas, notas e fotos para a conta Google
 add = ''.join(f'    <uses-permission android:name="android.permission.{p}" />\n' for p in perms if f'android.permission.{p}"' not in s)
 if '<queries>' not in s:
