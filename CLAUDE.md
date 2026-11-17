@@ -2,9 +2,11 @@
 
 App de navegação off-road no estilo do DMD2 (roadbook PDF/OpenRally, GPX, odômetro de rali), feito como PWA de um arquivo só, com versão APK (Capacitor). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.6.0, 17/11/2026)
+## Estado (v2.6.1, 17/11/2026)
 
 Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (merge commit `4de6888`). **Nada disto rodou em celular real.**
+
+**v2.6.1 (17/11/2026):** assistente pelo microfone do fone/intercom Bluetooth (`cfg.voiceBt`, padrão ligado por escolha do dono, sabendo que a música fica com qualidade de ligação): `TrilhaVoiceService` com `AudioRecord` próprio (VOICE_COMMUNICATION + `setPreferredDevice`), canal SCO por `setCommunicationDevice` (Android 12+) ou `startBluetoothSco`, rechecado a cada 15 s; solta o microfone em ligação/escuta do Google. Nunca testado com fone de verdade. APK 2.6.1 publicado (a 2.5.0 saiu do branch `apk`).
 
 **v2.6.0 (17/11/2026):** aviso de queda (spec aprovada: `crashArm`/`sendSms` no nativo, decisão no app `onImpact`/`sosPos`/`sosCount`/`sosSend`, `t21`); ligação do WhatsApp (`TrilhaNotifService.handleCall` → evento `wacall`, `waCallAction` aciona os botões da notificação; `t22`); autonomia (`rangeKm`, `fuelKm`, `fillUp`); Painel personalizável (`DASH`, `tn_dashSel`, `cfg.dashBig`); ícone novo (`icon.svg` + `make-icons.py`, também `--pwa`); tema dia mais contrastado. APK 2.6.0 publicado (a 2.4.0 saiu do branch `apk`).
 
@@ -25,7 +27,7 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 | `main` | o código da v2.0 |
 | `gh-pages` (`79860a0`) | o que o Pages serve em https://lubiell.github.io/trilhanav/. O runtime (`index.html`, `sw.js`, `manifest.json`, `lib/`) é idêntico ao da `main`; só docs, testes e `android-app/` diferem |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.6.0.apk` (atual, depuração, 56 MB), 2.5.0, 2.0.1, 2.0.0 (as outras só no histórico), `SHA256SUMS`, README e **`versao.json`** (`version`, `code`, `apk`, `sha256`, `notes`: o app ≥2.2.0 lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.0.apk. SHA-256 `34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca`. Arquivo >50 MB: o GitHub avisa (limite é 100 MB). Todos têm a mesma chave de depuração (certificado `16acb7ad…8029`, em `~/.android/debug.keystore` do ambiente da sessão), então cada um atualiza por cima do anterior |
+| `apk` (órfão) | `trilhanav-2.6.1.apk` (atual, depuração, 56 MB), 2.6.0, 2.0.1, 2.0.0 (as outras só no histórico), `SHA256SUMS`, README e **`versao.json`** (`version`, `code`, `apk`, `sha256`, `notes`: o app ≥2.2.0 lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.1.apk. SHA-256 `83b59b350501925e9252bc48228fe0c79d9c48f12fb9fa8697ac0516b40919da`. Arquivo >50 MB: o GitHub avisa (limite é 100 MB). Todos têm a mesma chave de depuração (certificado `16acb7ad…8029`, em `~/.android/debug.keystore` do ambiente da sessão), então cada um atualiza por cima do anterior |
 | `ccr-6d2015d5-vi9zyo` | branch de trabalho das sessões do Claude; reiniciada a partir da `main` a cada PR |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (snapshots do código via `git archive`); pasta `trilhanav/` com o bundle git e referências |
 
@@ -33,7 +35,7 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet e pdf.js vêm do cdnjs (no APK vão locais). `window.TN` expõe internos para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 e `elevation/` (leaflet-elevation 3.0.1, só handlers Distance/Altitude/Slope, carregados por `import()` relativo a `dist/`: a estrutura `lib/elevation/{dist,src/handlers,images}` não pode mudar). As duas últimas são **GPL-3.0**: ver `NOTICE.md`.
-- `sw.js`: cache offline do app (`trilhanav-vN`, hoje `v11`) e dos tiles online já vistos (`trilhanav-tiles`). Rede primeiro; guarda em tempo de uso os arquivos do próprio app, do cdnjs e as fontes do Google. Subir `N` a cada release e listar aqui qualquer arquivo novo de `lib/`.
+- `sw.js`: cache offline do app (`trilhanav-vN`, hoje `v12`) e dos tiles online já vistos (`trilhanav-tiles`). Rede primeiro; guarda em tempo de uso os arquivos do próprio app, do cdnjs e as fontes do Google. Subir `N` a cada release e listar aqui qualquer arquivo novo de `lib/`.
 - `manifest.json`, `icon.svg`, `icon-192.png`, `icon-512.png`.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, plugin Java `native/TrilhaNativePlugin.java` + `native/TrilhaNotifService.java` (acesso a notificações), `native/TrilhaVoiceService.java` (assistente Vosk; o `build-apk.sh` baixa o modelo pt para `android-app/vosk-model/`, confere o SHA-256 e põe em `assets/model-pt` com o arquivo `uuid`; só ABIs ARM), `patch-android.py`, ver o README dele). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml`: compila o APK no GitHub (Actions → APK → Run workflow, ou tag `v*`); `permissions: contents: read`, sem credencial persistida.
@@ -86,6 +88,8 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 Referência de lógica de tripmaster: mattogodoy/open-rally-computer (GPL-3: não copiar código sem manter o nosso aberto).
 
 ## Armadilhas já encontradas
+
+- **Microfone do fone Bluetooth**: o Android só grava dele com o canal de voz (SCO/HFP) ligado, e aí a música também sai por esse canal, em mono. Não dá para ter as duas coisas; por isso existe o ajuste `voiceBt`. O `SpeechService` do Vosk não deixa escolher o microfone: a captura é própria.
 
 - **Ligação do WhatsApp** não passa pelo estado do telefone (o `call` do Android não dispara): só a notificação de chamada mostra. Acionar o botão da notificação (`PendingIntent.send`) no Android 14+ precisa de `MODE_BACKGROUND_ACTIVITY_START_ALLOWED`; o WhatsApp pode mudar os rótulos ou o formato da notificação. Nunca testado num aparelho.
 - **SOS**: a mensagem de chamada do WhatsApp não pode virar "mensagem" (ela é ongoing; `handleCall` vem antes dos filtros).
