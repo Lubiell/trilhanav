@@ -4,18 +4,19 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.6.0.apk`** (atual) | 2.6.0 (versionCode 20600) | commit `2a52a7b` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
-| `trilhanav-2.5.0.apk` | 2.5.0 (versionCode 20500) | commit `b3cc4ae` (PR #2) | 56 MB |
+| **`trilhanav-2.6.1.apk`** (atual) | 2.6.1 (versionCode 20601) | commit `d23ac73` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
+| `trilhanav-2.6.0.apk` | 2.6.0 (versionCode 20600) | commit `2a52a7b` (PR #2) | 56 MB |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.6.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.0.apk
+**Baixar no celular (2.6.1):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.1.apk
 
-(A 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.6.1: `83b59b350501925e9252bc48228fe0c79d9c48f12fb9fa8697ac0516b40919da`
 - 2.6.0: `34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca`
 - 2.5.0: `ffe5a65428cb517b4544d4c5fe6495d88785e0475e64bc3ac7aaa3d3c789a1bb`
 - 2.4.0: `eec3f92b604936ab2063c9ab68912bcfc8c2c12665b4152ba0608ad1c019c571`
@@ -24,6 +25,13 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.6.1
+
+- **Assistente de voz pelo fone/intercom Bluetooth do capacete:** com o fone conectado, o "Trilha" sempre ligado escuta pelo
+  microfone do capacete (o botão Voz mostra "Ouvindo (fone)"). Enquanto ligado, o Android manda a música pelo mesmo canal,
+  com **qualidade de ligação** (mono). Para ouvir música com qualidade normal, desmarque em Telefone → "Ouvir pelo microfone do
+  fone/intercom Bluetooth" (aí ele volta a usar o microfone do celular). Em ligação, o microfone fica com a ligação.
 
 ## O que mudou na 2.6.0
 

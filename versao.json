@@ -1,7 +1,7 @@
 {
- "version": "2.6.0",
- "code": 20600,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.0.apk",
- "sha256": "34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca",
- "notes": "Ligação do WhatsApp: mostra quem liga e atende/recusa por voz; aviso de queda (SOS) com SMS para os seus contatos (ligue em Telefone); autonomia de combustível; Painel personalizável; ícone novo. Baixe no Wi-Fi (56 MB)."
+ "version": "2.6.1",
+ "code": 20601,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.1.apk",
+ "sha256": "83b59b350501925e9252bc48228fe0c79d9c48f12fb9fa8697ac0516b40919da",
+ "notes": "Assistente de voz pelo microfone do fone/intercom Bluetooth do capacete (diga \"Trilha\" e o comando). Enquanto ligado a música fica com qualidade de ligação; dá para desligar em Telefone."
 }
