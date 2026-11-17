@@ -76,6 +76,9 @@ async def routes(ctx):
     await ctx.route('https://photon.komoot.io/**', photon)
     await ctx.route('https://valhalla1.openstreetmap.de/**', valhalla)
     await ctx.route('https://maps.mail.ru/**', overpass)
+    # clima fora do ar no teste (nada de internet de verdade)
+    await ctx.route('https://api.open-meteo.com/**', lambda r: r.fulfill(status=503, body=''))
+    await ctx.route('https://api.met.no/**', lambda r: r.fulfill(status=503, body=''))
 
 FIX = '''([la,lo,v,h,t,acc])=>TN.onPos({timestamp:t,coords:{latitude:la,longitude:lo,altitude:800,accuracy:acc||5,speed:v,heading:h}})'''
 
@@ -96,10 +99,10 @@ async def main():
         await pg.goto(URL); await pg.wait_for_timeout(1200)
 
         # ---------- ícones e barra ----------
-        r = await pg.evaluate('''(()=>{const bs=[...document.querySelectorAll('#bot .b')];return {n:bs.length,svg:bs.filter(b=>b.querySelector('svg.ic use')).length,
+        r = await pg.evaluate('''(()=>{const bs=[...document.querySelectorAll('#bot .b, #moreGrid .b')];return {n:bs.length,svg:bs.filter(b=>b.querySelector('svg.ic use')).length,
           emoji:bs.filter(b=>/\\p{Extended_Pictographic}/u.test([...b.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(''))).length,
           refs:bs.map(b=>b.querySelector('use')&&b.querySelector('use').getAttribute('href')).filter(h=>!document.querySelector(h)).length}})()''')
-        check('barra de baixo: todos os botões com ícone SVG, sem emoji, sem símbolo faltando', r['n'] >= 18 and r['svg'] == r['n'] and r['emoji'] == 0 and r['refs'] == 0, str(r))
+        check('barra de baixo: todos os botões com ícone SVG, sem emoji, sem símbolo faltando', r['n'] >= 21 and r['svg'] == r['n'] and r['emoji'] == 0 and r['refs'] == 0, str(r))
         check('dec6 decodifica a polyline do Valhalla', await pg.evaluate('(s)=>{const p=TN.dec6(s);return p.length+"|"+p[30].lat.toFixed(6)+"|"+p[30].lon.toFixed(6)}', enc6(PTS)) == f'{len(PTS)}|{c[0]:.6f}|{c[1]:.6f}')
 
         # ---------- privacidade: nada sai antes do aviso ----------
@@ -192,7 +195,7 @@ async def main():
         check('sem rota: avisa radar à frente no rumo, some depois de passar e ignora rua paralela', on1 and not on2 and not on3, f'{on1} {on2} {on3}')
 
         # ---------- marcar radar e guardar no aparelho ----------
-        await pg.click('#bSet'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.wait_for_timeout(200)
         check('ajustes: seção Radares com contagem', 'radares guardados' in await pg.text_content('#radInfo'))
         await pg.click('#bRadMark'); await pg.wait_for_timeout(200); await pg.fill('#askIn', '50'); await pg.click('#askOk'); await pg.wait_for_timeout(900)
         await pg.evaluate("document.querySelector('#dlgSet').close()")
@@ -221,7 +224,7 @@ async def main():
         await pg.click('[data-pane=paneRb]'); await pg.wait_for_timeout(300)
         tu = await pg.evaluate("[...document.querySelectorAll('#rbList .rbn')].map(r=>r.querySelector('img.tu')?'img':'vazio')")
         check('Largada e Chegada com desenho (não mais quadrado vazio)', tu and tu[0] == 'img' and tu[-1] == 'img', str(tu))
-        await pg.click('#bElev'); await pg.wait_for_timeout(1500)
+        await pg.evaluate("document.querySelector('#bElev').click()"); await pg.wait_for_timeout(1500)
         w1 = await pg.evaluate("Math.round(document.querySelector('#elevDiv svg').getBoundingClientRect().width)")
         await pg.set_viewport_size({'width': 800, 'height': 720}); await pg.wait_for_timeout(1500)
         w2 = await pg.evaluate("(()=>{const s=document.querySelectorAll('#elevDiv svg');return [s.length?Math.round(s[0].getBoundingClientRect().width):0,document.querySelector('#elevDiv').clientWidth]})()")

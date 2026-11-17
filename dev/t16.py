@@ -129,7 +129,7 @@ async def main():
         check('música atual aparece (Spotify), sem HTML', await pg.text_content('#mNow') == '▶ Música <b>Boa</b> — Banda (Spotify)' and 'Música' in await pg.text_content('#toast'))
         await pg.evaluate("__listenQ.push(['tocar'])"); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
         check('com player ativo, "tocar" manda play para ele', (await calls('mediaKey'))[-1] == {'key': 'play'})
-        await pg.click('#bSpot'); await pg.wait_for_timeout(200); await pg.click('#mSpotBg'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bSpot').click()"); await pg.wait_for_timeout(200); await pg.click('#mSpotBg'); await pg.wait_for_timeout(200)
         check('botão "Tocar no Spotify (sem sair daqui)"', len(await calls('spotifyPlay')) == 2)
         await pg.evaluate("document.querySelector('#dlgMedia').close()")
 
@@ -164,7 +164,7 @@ async def main():
         await pg.evaluate("__emit('call',{state:'idle'})")
 
         # ---------- atualização ----------
-        await pg.click('#bSet'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.wait_for_timeout(200)
         check('Ajustes mostram a versão instalada', 'Versão instalada: 2.2.0' in await pg.text_content('#updInfo'))
         await pg.click('#bUpd'); await pg.wait_for_timeout(500)
         r = await pg.evaluate("({open:document.querySelector('#dlgAsk').open,t:document.querySelector('#askT').textContent,m:document.querySelector('#askMsg').textContent,html:document.querySelector('#askMsg').innerHTML})")

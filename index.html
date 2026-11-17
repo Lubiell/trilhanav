@@ -100,6 +100,14 @@ body.navOn #banner{top:96px}
 #waCard{position:fixed;left:10px;bottom:76px;z-index:1650;display:none;max-width:min(420px,90vw);background:var(--panel);border:1px solid var(--line);border-left:6px solid #25d366;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #0008;cursor:pointer}
 #waCard.on{display:block}#waT{font-weight:700}#waX{font-size:15px;max-height:4.2em;overflow:hidden;white-space:pre-wrap;word-break:break-word}
 #wx{white-space:nowrap;padding:2px 6px;border-radius:8px}#wx.alert{background:var(--bad);color:#fff}
+#dlgMore{width:min(560px,96vw);margin:auto auto 72px}
+#moreGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+#moreGrid .b{width:auto;min-width:0;height:78px;background:var(--card);border:1px solid var(--line)}#moreGrid .b span{font-size:12px;white-space:normal;text-align:center;line-height:1.1}#moreGrid .b .ic{width:28px;height:28px}
+#bot{justify-content:space-around;gap:2px;padding:0 4px}#bot .b{flex:1 1 0;min-width:0;max-width:96px;padding:0 1px}#bot .b span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+body.portrait #bot .b span{font-size:9.5px}
+#limBox{position:absolute;left:12px;bottom:28px;z-index:870;display:none;width:70px;height:70px;border-radius:50%;background:#fff;color:#111;border:7px solid #d11;align-items:center;justify-content:center;font:900 26px Orbitron,monospace;box-shadow:0 4px 14px #0008}
+#limBox.on{display:flex}#limBox.over{animation:pisca .5s steps(2) infinite}
+.fuelmk{font-size:20px;line-height:24px;text-align:center;filter:drop-shadow(0 1px 2px #000a)}
 #bVoice.live .ic{color:#1f9d55}#bVoice.live span{color:#1f9d55}#bVoice.on{background:#c62828;color:#fff}#bVoice.on .ic{color:#fff}
 #mNow{text-align:center;font-weight:600;padding:2px 0 10px;min-height:1.2em}
 .nvr{cursor:pointer}.nvsel{background:var(--card);box-shadow:inset 4px 0 0 var(--acc);padding-left:8px!important}
@@ -123,15 +131,18 @@ dialog input[type=checkbox]{width:24px;height:24px;min-height:0}
 h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 .wpok{color:var(--ok)}.wpmiss{color:var(--bad)}
 .leaflet-container{background:#1b2a36}
+/* grade "Mais" com o celular deitado: mais colunas e botões mais baixos (fica acima das outras regras de propósito) */
+@media (orientation:landscape) and (max-height:480px){#dlgMore{width:min(720px,96vw);max-width:96vw;margin:6px auto 60px;max-height:calc(100vh - 70px)}#moreGrid .b{height:56px}#moreGrid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-rb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol><symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></symbol><symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></symbol><symbol id="i-elev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l5-8 4 4 4-9 5 7"/><path d="M3 21h18"/></symbol><symbol id="i-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/></symbol><symbol id="i-nav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 19-7-4-7 4z"/></symbol><symbol id="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-lib" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol><symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol><symbol id="i-chrono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M12 2v3"/></symbol><symbol id="i-rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol><symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol><symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol><symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol><symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol><symbol id="i-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-set" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2" fill="var(--panel)"/><circle cx="15" cy="12" r="2.2" fill="var(--panel)"/><circle cx="7" cy="18" r="2.2" fill="var(--panel)"/></symbol><symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-rb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol><symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></symbol><symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></symbol><symbol id="i-elev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l5-8 4 4 4-9 5 7"/><path d="M3 21h18"/></symbol><symbol id="i-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/></symbol><symbol id="i-nav" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 19-7-4-7 4z"/></symbol><symbol id="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-lib" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol><symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol><symbol id="i-chrono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M12 2v3"/></symbol><symbol id="i-rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" fill="currentColor"/></symbol><symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol><symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol><symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol><symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol><symbol id="i-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol><symbol id="i-fuel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h12M7 8h4"/><path d="M14 9l3 2v6a1.5 1.5 0 0 0 3 0V8l-3-3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol><symbol id="i-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-set" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2" fill="var(--panel)"/><circle cx="15" cy="12" r="2.2" fill="var(--panel)"/><circle cx="7" cy="18" r="2.2" fill="var(--panel)"/></symbol><symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol></svg>
 <div id="app">
   <div id="top">
     <span id="bat">🔋 --</span>
     <span><i class="dot" id="gpsDot"></i><span id="gpsTxt">GPS ---</span></span>
     <span id="recTop" style="color:var(--bad);display:none">● REC</span>
+    <span id="chronoTop" style="display:none;font-family:Orbitron"></span>
     <span class="sp"></span>
     <span id="fileName" class="small"></span>
     <span id="wx" title="Clima" style="cursor:pointer;display:none"></span>
@@ -151,8 +162,9 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
       <div id="banner"></div>
       <div id="navCard" title="Toque para repetir a instrução"><img id="navArr" alt=""><div style="min-width:0"><div id="navDist" class="mid"></div><div id="navTxt"></div><div id="navSub" class="small"></div></div>
         <div class="nvb"><div id="navEta"></div><div class="row"><button class="btn g" id="navWaze">Waze</button><button class="btn r" id="navEnd" title="Encerrar a rota">Sair</button></div></div></div>
+      <div id="limBox" title="Limite de velocidade da via"></div>
       <div id="radBox"><b id="radLim">?</b><span id="radDist"></span></div>
-      <div class="pane on" id="paneRb"><div id="rb"></div><div id="rbAuto"><div id="rbHead"></div><div id="rbList"></div></div><button class="btn g" id="rbSwitch">PDF ⇄ Notas</button><div id="rbEmpty">Nenhum roadbook carregado<br>Abra um PDF ou GPX pelo botão Abrir<br>ou toque em Ir para e navegue até um endereço</div></div>
+      <div class="pane on" id="paneRb"><div id="rb"></div><div id="rbAuto"><div id="rbHead"></div><div id="rbList"></div></div><button class="btn g" id="rbSwitch">PDF ⇄ Notas</button><div id="rbEmpty">Nenhum roadbook carregado<br>Abra um PDF ou GPX em Mais → Arquivos<br>ou toque em Ir para e navegue até um endereço</div></div>
       <div class="pane" id="paneMap"><div id="map"></div><div id="elevDiv"><div id="elevMsg"></div></div></div>
       <div class="pane" id="paneSplit"></div>
       <div class="pane" id="paneDash"><div id="dash"></div></div>
@@ -162,25 +174,11 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     <button class="b on" data-pane="paneRb"><svg class="ic"><use href="#i-rb"/></svg><span>Roadbook</span></button>
     <button class="b" data-pane="paneMap"><svg class="ic"><use href="#i-map"/></svg><span>Mapa</span></button>
     <button class="b" id="bNav"><svg class="ic"><use href="#i-nav"/></svg><span>Ir para</span></button>
-    <button class="b" id="bSplit"><svg class="ic"><use href="#i-split"/></svg><span>Dividir</span></button>
-    <button class="b" id="bElev"><svg class="ic"><use href="#i-elev"/></svg><span>Altimetria</span></button>
     <button class="b" data-pane="paneDash"><svg class="ic"><use href="#i-dash"/></svg><span>Painel</span></button>
-    <i class="sep"></i>
-    <button class="b" id="bOpen"><svg class="ic"><use href="#i-open"/></svg><span>Abrir</span></button>
-    <button class="b" id="bGpx"><svg class="ic"><use href="#i-lib"/></svg><span>Trilhas</span></button>
-    <button class="b" id="bWp"><svg class="ic"><use href="#i-pin"/></svg><span>Waypoints</span></button>
-    <button class="b" id="bChrono"><svg class="ic"><use href="#i-chrono"/></svg><span id="chronoTxt">00:00</span></button>
-    <button class="b" id="bRec"><svg class="ic"><use href="#i-rec"/></svg><span>Gravar</span></button>
-    <button class="b" id="bNote"><svg class="ic"><use href="#i-note"/></svg><span>Nota</span></button>
-    <button class="b" id="bBack"><svg class="ic"><use href="#i-back"/></svg><span>Voltar</span></button>
-    <button class="b" id="bResetP"><svg class="ic"><use href="#i-reset"/></svg><span>Zerar parc.</span></button>
-    <button class="b" id="bSpot"><svg class="ic"><use href="#i-music"/></svg><span>Spotify</span></button>
     <button class="b" id="bPhone"><svg class="ic"><use href="#i-phone"/></svg><span>Telefone</span></button>
     <button class="b" id="bVoice"><svg class="ic"><use href="#i-mic"/></svg><span>Voz</span></button>
-    <i class="sep"></i>
-    <button class="b" id="bDay"><svg class="ic"><use href="#i-moon"/></svg><span>Dia/Noite</span></button>
-    <button class="b" id="bFull"><svg class="ic"><use href="#i-full"/></svg><span>Tela cheia</span></button>
-    <button class="b" id="bSet"><svg class="ic"><use href="#i-set"/></svg><span>Ajustes</span></button>
+    <button class="b" id="bRec"><svg class="ic"><use href="#i-rec"/></svg><span>Gravar</span></button>
+    <button class="b" id="bMore"><svg class="ic"><use href="#i-more"/></svg><span>Mais</span></button>
   </div>
 </div>
 <input type="file" id="fileIn" accept=".pdf,.gpx,application/pdf,application/gpx+xml" multiple hidden>
@@ -204,7 +202,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Alerta fora da trilha (m, 0 = desliga) <input type="number" id="sOff"></label>
   <label>Alerta de velocidade (km/h, 0 = desliga) <input type="number" id="sSpd"></label>
   <label>Avanço automático de waypoint <input type="checkbox" id="sAuto"></label>
-  <label>Mapa gira com o rumo <input type="checkbox" id="sRot"></label>
+  <label>Girar o mapa com a direção <select id="sRotMode" style="width:auto"><option value="nav">só durante o Ir para</option><option value="always">sempre</option><option value="never">nunca</option></select></label>
   <label>Bússola do aparelho (rumo parado ou devagar) <input type="checkbox" id="sComp"></label>
   <label>Usar só o GPS acima de (km/h) <input type="number" id="sCompSpd"></label>
   <label>Ajuste da bússola (°) <input type="number" step="0.1" id="sCompOff"></label>
@@ -218,7 +216,6 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Tolerância dentro da zona (km/h) <input type="number" id="sZoneTol"></label>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bVoiceTest">Testar voz</button><button class="btn g" id="bZones">Zonas de velocidade…</button></div>
   <h3>Aparência</h3>
-  <label>Tema <select id="sTheme"><option value="auto">Automático (pelo sol)</option><option value="day">Dia</option><option value="night">Noite</option></select></label>
   <h3>Roadbook</h3>
   <label>Rolagem por clique (px) <input type="number" id="sScroll"></label>
   <label>Copiloto fala curvas a partir de (°) <input type="number" id="sNoteMin"></label>
@@ -231,6 +228,10 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Mostrar temperatura e alertas de clima <input type="checkbox" id="sWx"></label>
   <label>Avisar por voz (chuva chegando, tempestade, vento forte, calor, frio, neblina) <input type="checkbox" id="sWxVoice"></label>
   <div class="small">Previsão do Open-Meteo (reserva: MET Norway), atualizada a cada 15 min ou a cada 10 km, e no destino quando você usa Ir para. Toque na temperatura lá em cima para ver as próximas horas.</div>
+  <h3>Limite da via</h3>
+  <label>Mostrar o limite de velocidade da rua (OpenStreetMap) <input type="checkbox" id="sLimOn"></label>
+  <label>Tolerância acima do limite da via (km/h) <input type="number" step="1" id="sLimTol"></label>
+  <div class="small">Placa no canto do mapa e alerta ao passar do limite. Onde o OpenStreetMap não tem o limite da rua, a placa não aparece (vale o "Alerta de velocidade" acima). Precisa de internet para baixar a região.</div>
   <h3>Radares</h3>
   <label>Avisar de radares (OpenStreetMap) <input type="checkbox" id="sRadar"></label>
   <label>Avisar a partir de (m) <input type="number" step="50" id="sRadarDist"></label>
@@ -254,7 +255,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.4.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.5.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -271,9 +272,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div id="navRes"></div><div id="navRoutes"></div>
   <label>Evitar pedágio <input type="checkbox" id="sNavToll"></label>
   <label>Evitar rodovias <input type="checkbox" id="sNavHwy"></label>
-  <label>Mapa gira com a direção durante a rota (como no Waze) <input type="checkbox" id="sNavRot"></label>
   <h3>Favoritos e recentes</h3><div id="navRecent"></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="navRadMark">Marcar radar aqui</button></div>
   <div class="small">Busca: Photon (komoot) · Rota para moto: Valhalla (FOSSGIS) · Radares e ruas © colaboradores do OpenStreetMap. Precisa de internet para buscar e calcular; sem ela, use Voltar (rota à trilha) ou abra no Waze.</div>
 </div></dialog>
 <dialog id="dlgPhone"><div class="hd"><b>Telefone, WhatsApp e voz</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
@@ -300,12 +299,31 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="padding:8px 0"><button class="btn g" id="wxRefresh">Atualizar</button></div>
   <div class="small" id="wxSrc"></div>
 </div></dialog>
+<dialog id="dlgMore"><div class="hd"><b>Mais</b><button class="btn g" data-close>Fechar</button></div><div class="bd"><div id="moreGrid">
+  <button class="b" id="bSplit"><svg class="ic"><use href="#i-split"/></svg><span>Dividir</span></button>
+  <button class="b" id="bElev"><svg class="ic"><use href="#i-elev"/></svg><span>Altimetria</span></button>
+  <button class="b" id="bGpx"><svg class="ic"><use href="#i-lib"/></svg><span>Arquivos</span></button>
+  <button class="b" id="bWp"><svg class="ic"><use href="#i-pin"/></svg><span>Waypoints</span></button>
+  <button class="b" id="bChrono"><svg class="ic"><use href="#i-chrono"/></svg><span id="chronoTxt">00:00</span></button>
+  <button class="b" id="bNote"><svg class="ic"><use href="#i-note"/></svg><span>Nota</span></button>
+  <button class="b" id="bBack"><svg class="ic"><use href="#i-back"/></svg><span>Voltar à trilha</span></button>
+  <button class="b" id="bResetP"><svg class="ic"><use href="#i-reset"/></svg><span>Zerar parc.</span></button>
+  <button class="b" id="bFuel"><svg class="ic"><use href="#i-fuel"/></svg><span>Postos</span></button>
+  <button class="b" id="bSpot"><svg class="ic"><use href="#i-music"/></svg><span>Música</span></button>
+  <button class="b" id="bDay"><svg class="ic"><use href="#i-moon"/></svg><span id="dayTxt">Tema</span></button>
+  <button class="b" id="bFull"><svg class="ic"><use href="#i-full"/></svg><span>Tela cheia</span></button>
+  <button class="b" id="bSet"><svg class="ic"><use href="#i-set"/></svg><span>Ajustes</span></button>
+</div></div></dialog>
+<dialog id="dlgFuel"><div class="hd"><b>Postos de combustível</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+  <div class="small" id="fuelInfo" style="padding-bottom:6px"></div><div id="fuelList"></div>
+  <div class="small" style="padding-top:8px">Postos num raio de 8 km, do OpenStreetMap (pode faltar posto ou estar desatualizado). Por voz: "Trilha, posto mais perto".</div>
+</div></dialog>
 <dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px"><button class="btn g" id="askNo">Cancelar</button><button class="btn" id="askOk">OK</button></div></div></dialog>
 
-<dialog id="dlgGpx"><div class="hd"><b>Trilhas (GPX)</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgGpx"><div class="hd"><b>Arquivos: roadbooks e trilhas</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
   <div id="gpxCrumb" class="small" style="padding-bottom:6px"></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:8px"><button class="btn" id="gImport">Importar GPX</button><button class="btn g" id="gNewDir">Nova pasta</button><button class="btn g" id="gSaveCur">Guardar o GPX aberto aqui</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:8px"><button class="btn" id="gOpen">Abrir PDF ou GPX</button><button class="btn g" id="gImport">Guardar GPX aqui</button><button class="btn g" id="gNewDir">Nova pasta</button><button class="btn g" id="gSaveCur">Guardar o GPX aberto aqui</button></div>
   <div id="gpxList"></div>
   <input type="file" id="gImportIn" accept=".gpx,application/gpx+xml,.xml" multiple hidden>
 </div></dialog>
@@ -351,7 +369,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
+const DEF={mult:1,step:0.01,wpR:90,off:0,spd:0,auto:true,rot:false,snd:true,scroll:160,sim:false,simV:60,day:false,snap:true,learn:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,lead:12,voiceVol:1,zoneOn:true,zoneTol:3,noteMin:45,rbReset:true,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={rbDown:'Roadbook: avançar',rbUp:'Roadbook: voltar',totPlus:'TOTAL +',totMinus:'TOTAL −',resetPartial:'Zerar parcial',nextWp:'Próximo waypoint',prevWp:'Waypoint anterior',chrono:'Cronômetro iniciar/parar',zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: próxima',mediaPrev:'Música: anterior',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
@@ -638,7 +656,7 @@ async function loadPDF(buf,name){const rb=$('#rb');rb.innerHTML='';$('#rbEmpty')
 function rbScroll(d){const rb=rbView==='auto'?$('#rbAuto'):$('#rb');rb.scrollBy({top:d,behavior:'smooth'})}
 
 /* ---------- abrir arquivos ---------- */
-$('#bOpen').onclick=()=>$('#fileIn').click();
+$('#gOpen').onclick=()=>{$('#dlgGpx').close();$('#fileIn').click()};
 $('#fileIn').onchange=async e=>{for(const f of e.target.files){if(/\.gpx$/i.test(f.name))loadGPX(await f.text(),f.name);else if(/\.pdf$/i.test(f.name)){await loadPDF(await f.arrayBuffer(),f.name);showPane('paneRb')}}e.target.value=''};
 ['dragover','drop'].forEach(ev=>addEventListener(ev,async e=>{e.preventDefault();if(ev==='drop')for(const f of e.dataTransfer.files){if(/\.gpx$/i.test(f.name))loadGPX(await f.text(),f.name);else if(/\.pdf$/i.test(f.name))await loadPDF(await f.arrayBuffer(),f.name)}}));
 
@@ -658,8 +676,8 @@ function checkAlerts(){let msg='';const now=fix?fix.t:Date.now();
   /* zona de velocidade: entrada, saída, aviso antecipado e excesso */
   const z=cfg.zoneOn&&prog?zoneAt(prog.km):null;
   if(z!==curZone){if(z){toast('Zona de velocidade: limite '+z.limit+' km/h',3000);beep(800,120)}else if(curZone){say('Fim da zona de velocidade');toast('Fim da zona de velocidade')}curZone=z}
-  const limit=z?z.limit+cfg.zoneTol:(cfg.spd>0?cfg.spd:0);
-  if(limit>0&&speedKmh>limit){msg=(msg?msg+' · ':'')+'VELOCIDADE '+Math.round(speedKmh)+' / LIMITE '+(z?z.limit:cfg.spd);if(!spdAlert){spdAlert=true;beep(660,300);vib(300);say('Velocidade acima do limite. Limite '+(z?z.limit:cfg.spd),true);lastWarnT=now}else if(now-lastWarnT>12000){lastWarnT=now;say('Reduza a velocidade')}}else spdAlert=false;
+  limCheck();const road=cfg.limOn&&limCur?limCur:0,limLbl=z?z.limit:road||cfg.spd,limit=z?z.limit+cfg.zoneTol:road?road+(cfg.limTol||0):(cfg.spd>0?cfg.spd:0);$('#limBox').classList.toggle('over',!!(road&&!z&&speedKmh>limit));
+  if(limit>0&&speedKmh>limit){msg=(msg?msg+' · ':'')+'VELOCIDADE '+Math.round(speedKmh)+' / LIMITE '+limLbl;if(!spdAlert){spdAlert=true;beep(660,300);vib(300);say('Velocidade acima do limite. Limite '+limLbl,true);lastWarnT=now}else if(now-lastWarnT>12000){lastWarnT=now;say('Reduza a velocidade')}}else spdAlert=false;
   if(cfg.zoneOn&&prog&&!z){const lead=Math.max(150,speedKmh/3.6*cfg.lead);const nz=zones.find(q=>q.from>prog.km);
     if(nz){const dm=(nz.from-prog.km)*1000;if(dm<=lead&&speedKmh>nz.limit+cfg.zoneTol)msg=(msg?msg+' · ':'')+'ZONA '+nz.limit+' EM '+round50(dm)+' m: REDUZA'}}
   const rm=radCheck();if(rm)msg=(msg?msg+' · ':'')+rm;
@@ -974,7 +992,7 @@ function renderNavRecent(){const r=getRecent().sort((a,b)=>(b.fav|0)-(a.fav|0)),
   el.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{navField='to';navPick(r[+b.dataset.rc])});
   el.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.fav];LS.set('navRecent',getRecent().map(x=>same(x,p)?Object.assign(x,{fav:!x.fav}):x));renderNavRecent()});
   el.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.rm];LS.set('navRecent',getRecent().filter(x=>!same(x,p)));renderNavRecent()})}
-async function openNavDlg(){$('#navQ').value=navSel.to?navSel.to.name:'';$('#navFrom').value=navSel.from?navSel.from.name:'';$('#sNavToll').checked=cfg.navNoToll;$('#sNavHwy').checked=cfg.navNoHwy;$('#sNavRot').checked=cfg.navRot;
+async function openNavDlg(){$('#navQ').value=navSel.to?navSel.to.name:'';$('#navFrom').value=navSel.from?navSel.from.name:'';$('#sNavToll').checked=cfg.navNoToll;$('#sNavHwy').checked=cfg.navNoHwy;
   $('#navRes').innerHTML='';renderNavRecent();renderNavRoutes();$('#dlgNav').showModal();if(!await netOk()){$('#dlgNav').close();return}$('#navQ').focus()}
 $('#bNav').onclick=()=>{if(nav){ask({title:'Rota em andamento',msg:'Destino: '+nav.to.name,options:[{label:'Escolher outro destino',value:'new'},{label:'Abrir no Waze',value:'waze'},{label:'Abrir no Google Maps',value:'gmaps'},{label:'Encerrar a rota',value:'end'}],ok:'OK'}).then(v=>{
     if(v==='new')openNavDlg();else if(v==='waze')openExt(wazeUrl(nav.to));else if(v==='gmaps')openExt(gmapsUrl(nav.to));else if(v==='end')navStop('Rota encerrada')});return}openNavDlg()};
@@ -1045,7 +1063,7 @@ function radCheck(){const box=$('#radBox');if(!cfg.radar||!fix){if(radCur){radCu
 async function radMark(){if(!fix){toast('Sem GPS');return}const at={lat:fix.lat,lon:fix.lon},dir=speedKmh>8&&gpsHdg!=null?Math.round(gpsHdg):null;
   const v=await ask({title:'Marcar radar aqui',msg:'Limite de velocidade do radar (km/h). Fica guardado só neste aparelho.',value:'60',ok:'Marcar'});if(v==null)return;
   const id='u'+Date.now();radars.set(id,{id,lat:at.lat,lon:at.lon,max:parseMax(v),dir,user:true});radSave();radDrawSoon();radInfo();toast('Radar marcado')}
-$('#bRadMark').onclick=radMark;$('#navRadMark').onclick=radMark;
+$('#bRadMark').onclick=radMark;
 $('#bRadArea').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('Ligue o aviso de radares primeiro');return}const b=map.getBounds(),ks=[];
   for(let la=Math.floor(b.getSouth()/RT);la<=Math.floor(b.getNorth()/RT);la++)for(let lo=Math.floor(b.getWest()/RT);lo<=Math.floor(b.getEast()/RT);lo++)ks.push(la+'_'+lo);
   if(ks.length>16){toast('Área grande demais: aproxime o mapa (até uns 100 km)',4000);return}radQueue(ks,true);toast('Baixando radares de '+ks.length+' área(s)…',3000)};
@@ -1065,6 +1083,8 @@ function parseCmd(t){const s=normTxt(t);if(!s)return null;
   const raw=String(t).toLowerCase().replace(/[.!?,]+/g,' ').replace(/\s+/g,' ').trim(),m=CALLRE.exec(raw)||CALLRE.exec(s);if(m)return {a:'call',who:m[1].trim().slice(0,60)};
   const g=GORE.exec(raw)||GORE.exec(s);if(g)return {a:'go',where:g[1].trim().slice(0,80)};if(/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:para|pra|pro|ate|até|ao|a|o))*$/.test(s))return {a:'go',where:''};
   if(/\b(clima|tempo|temperatura|previsao|chuva)\b/.test(s))return {a:'wx'};
+  if(/\b(posto|gasolina|combustivel|abastecer)\b/.test(s))return {a:'fuel'};
+  if(/\bmarcar\b/.test(s)&&/\bradar\b/.test(s))return {a:'radar'};
   if(/\b(pausar|pausa|pause|parar|para a musica)\b/.test(s))return {a:'pause'};
   if(/\b(proxima|proximo|pular|pula|avancar|avanca)\b/.test(s))return {a:'next'};
   if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
@@ -1118,6 +1138,8 @@ async function runCmd(c){if(!c)return;const st=callSt.state;
     case 'go':return /^(|para|pra|pro|a|o|ao|ate|até)$/.test(normTxt(c.where))?askPlace():goPlace(c.where);
     case 'stopnav':if(nav){navStop('Rota encerrada');say('Rota encerrada')}else say('Nenhuma rota');return;
     case 'wx':return wxSay();
+    case 'fuel':return fuelGo();
+    case 'radar':return radMarkVoice();
     default:return}}
 function readMsgs(){const m=waMsgs.slice(0,3);if(!m.length){say('Nenhuma mensagem nova');return}say(m.map(x=>'Mensagem de '+x.title+': '+x.text.slice(0,200)).join('. '),true)}
 async function voiceCmd(fromCall){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}
@@ -1173,7 +1195,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='ir vamos leva navegar rota até parar encerrar sair navegação clima tempo temperatura previsão chuva trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
+const VBASE='posto gasolina combustível abastecer marcar radar ir vamos leva navegar rota até parar encerrar sair navegação clima tempo temperatura previsão chuva trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
 function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<800)w.add(x)});
   getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));return [...w]}
@@ -1263,6 +1285,64 @@ function wxSay(){if(!wxD){say('Sem previsão do tempo agora');wxUpdate(true);ret
 $('#wx').onclick=async()=>{if(!LS.get('netOk',false)&&!await netOk())return;wxShow();$('#dlgWx').showModal();wxRender();if(!wxD||Date.now()-wxT>5*60e3)wxUpdate(true)};
 $('#wxRefresh').onclick=()=>wxUpdate(true);
 setInterval(()=>wxUpdate(false),60e3);setTimeout(()=>{wxShow();wxUpdate(false)},3000);
+
+/* ---------- postos de combustível (OpenStreetMap, raio de 8 km) ---------- */
+var fuelLayer=L.layerGroup().addTo(map),fuelList=[];
+const fuelIcon=L.divIcon({className:'',html:'<div class="fuelmk">⛽</div>',iconSize:[24,24],iconAnchor:[12,12]});
+async function fuelFind(){const p=fix||LS.get('lastPos',null);if(!p||!Number.isFinite(+p.lat))throw new Error('sem GPS');
+  const q='[out:json][timeout:25];(node["amenity"="fuel"](around:8000,'+(+p.lat).toFixed(4)+','+(+p.lon).toFixed(4)+');way["amenity"="fuel"](around:8000,'+(+p.lat).toFixed(4)+','+(+p.lon).toFixed(4)+'););out center 80;';
+  const j=await politeFetch(OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)},45000);
+  fuelList=(j.elements||[]).map(e=>{const c=e.center||e,t=e.tags||{};return {name:String(t.name||t.brand||'Posto').slice(0,60),sub:[t.brand&&t.brand!==t.name?t.brand:'',t['addr:street']].filter(Boolean).join(' · ').slice(0,80),lat:+c.lat,lon:+c.lon}})
+    .filter(f=>Number.isFinite(f.lat)&&Number.isFinite(f.lon)).map(f=>Object.assign(f,{d:hav(p,f)})).sort((a,b)=>a.d-b.d).slice(0,40);
+  fuelLayer.clearLayers();fuelList.forEach(f=>fuelLayer.addLayer(L.marker([f.lat,f.lon],{icon:fuelIcon,interactive:false,keyboard:false})));return fuelList}
+async function fuelOpen(){if(!await netOk())return;$('#dlgFuel').showModal();$('#fuelInfo').textContent='Procurando postos…';$('#fuelList').innerHTML='';
+  try{const l=await fuelFind();$('#fuelInfo').textContent=l.length?l.length+' postos a até 8 km':'Nenhum posto a até 8 km no OpenStreetMap.';
+    $('#fuelList').innerHTML=l.map((f,i)=>'<div class="lr"><span><b>'+esc(f.name)+'</b><br><span class="small">'+fmtKm(f.d)+(f.sub?' · '+esc(f.sub):'')+'</span></span><button class="btn" data-fgo="'+i+'">Ir</button></div>').join('');
+    $('#fuelList').querySelectorAll('[data-fgo]').forEach(b=>b.onclick=()=>{$('#dlgFuel').close();fuelRoute(fuelList[+b.dataset.fgo])})}
+  catch(e){$('#fuelInfo').textContent='Não consegui procurar ('+errTxt(e)+').'}}
+async function fuelRoute(f){if(!fix){say('Sem GPS para calcular a rota');return}
+  try{const rs=await routeReq({lat:fix.lat,lon:fix.lon,hdg:speedKmh>8?gpsHdg:null},f,false);navStart(rs[0],{name:f.name,sub:f.sub,lat:f.lat,lon:f.lon},null)}catch(e){say('Não consegui calcular a rota');toast('Rota: '+errTxt(e),5000)}}
+async function fuelGo(){if(!LS.get('netOk',false)){say('Abra o Ir para uma vez e aceite o aviso de internet');return}
+  try{const l=await fuelFind();if(!l.length){say('Nenhum posto a até 8 quilômetros');return}say('Posto mais perto: '+l[0].name+', a '+spokenDist(l[0].d));fuelRoute(l[0])}catch(e){say('Não consegui procurar postos')}}
+$('#bFuel').onclick=fuelOpen;
+$('#bMore').onclick=()=>$('#dlgMore').showModal();
+/* tocar num botão de "Mais" faz a ação e fecha a grade (depois, para não atrapalhar diálogos que o botão abre) */
+$('#dlgMore').addEventListener('click',e=>{if(e.target.closest('#moreGrid .b'))setTimeout(()=>{if($('#dlgMore').open)$('#dlgMore').close()},0)});
+function radMarkVoice(){if(!fix){say('Sem GPS');return}const id='u'+Date.now();radars.set(id,{id,lat:fix.lat,lon:fix.lon,max:null,dir:speedKmh>8&&gpsHdg!=null?Math.round(gpsHdg):null,user:true});radSave();radDrawSoon();radInfo();say('Radar marcado')}
+
+/* ---------- limite de velocidade da via (maxspeed do OpenStreetMap), por quadrados de 0,05° baixados conforme você anda ---------- */
+var limCells={},limQ=[],limBusy=false,limCur=null,limCurId=null,limT=0,limFail={};
+const LC=0.05,limKey=(la,lo)=>Math.floor(la/LC)+'_'+Math.floor(lo/LC);
+function limQueue(keys){for(const k of keys)if(!limCells[k]&&!limQ.includes(k)&&!(limFail[k]&&Date.now()-limFail[k]<120000))limQ.push(k);limPump()}
+async function limPump(){if(limBusy||!limQ.length||!cfg.limOn||!LS.get('netOk',false))return;limBusy=true;const k=limQ.shift(),[a,b]=k.split('_').map(Number),s0=a*LC,w0=b*LC;
+  try{const q='[out:json][timeout:25];way["highway"]["maxspeed"]('+s0.toFixed(3)+','+w0.toFixed(3)+','+(s0+LC).toFixed(3)+','+(w0+LC).toFixed(3)+');out tags geom;';
+    const j=await politeFetch(OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)},45000);
+    if(!Array.isArray(j.elements))throw new Error('resposta inválida');
+    limCells[k]={t:Date.now(),ways:j.elements.filter(e=>e.type==='way'&&Array.isArray(e.geometry)&&e.geometry.length>1).map(e=>({id:e.id,max:parseMax((e.tags||{}).maxspeed),one:(e.tags||{}).oneway==='yes',pts:e.geometry.map(g=>({lat:+g.lat,lon:+g.lon}))})).filter(w=>w.max)};
+    const ks=Object.keys(limCells);if(ks.length>40)ks.sort((x,y)=>limCells[x].t-limCells[y].t).slice(0,ks.length-40).forEach(x=>delete limCells[x])}
+  catch(e){limFail[k]=Date.now()}finally{limBusy=false;if(limQ.length)setTimeout(limPump,1200)}}
+/* a via mais próxima (≤25 m) e, andando, no mesmo sentido do rumo do GPS */
+function limCheck(){if(!cfg.limOn||!fix){limCur=null;$('#limBox').classList.remove('on');return}
+  if(fix.t-limT>1500||fix.t<limT){limT=fix.t;const ks=new Set();for(const a of [-.01,.01])for(const b of [-.01,.01])ks.add(limKey(fix.lat+a,fix.lon+b));limQueue([...ks])
+    const k=Math.cos(rad(fix.lat))*R*Math.PI/180,m=R*Math.PI/180,hdg=speedKmh>=8?gpsHdg:null;let best=null;
+    for(const key of ks){const c=limCells[key];if(!c)continue;for(const w of c.ways){for(let i=0;i<w.pts.length-1;i++){const A=w.pts[i],B=w.pts[i+1];
+      const ax=(A.lon-fix.lon)*k,ay=(A.lat-fix.lat)*m,bx=(B.lon-fix.lon)*k,by=(B.lat-fix.lat)*m,dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;if(!L2)continue;let t=-(ax*dx+ay*dy)/L2;t=Math.max(0,Math.min(1,t));
+      const d=Math.hypot(ax+t*dx,ay+t*dy);if(d>25||(best&&d>=best.d))continue;
+      if(hdg!=null){const sb=brg(A,B),df=Math.abs(angDiff(sb,hdg));if(!(df<=45||(!w.one&&df>=135)))continue}
+      best={d,w}}}}
+    limCur=best?best.w.max:null;const id=best?best.w.id:null;
+    limCurId=id;
+    $('#limBox').textContent=limCur||'';$('#limBox').classList.toggle('on',!!limCur)}}
+
+/* ---------- inclinação na curva: tan(ângulo) = velocidade × guinada / g (giroscópio projetado na vertical da moto, calibrada parada) ---------- */
+var lean={g0:null,v:0,maxL:0,maxR:0};
+function leanTxt(){if(!lean.g0)return 'calibrando (pare a moto em pé)';if(speedKmh<10)return '0°';const a=Math.round(Math.abs(lean.v));return a<2?'0°':a+'° '+(lean.v>0?'E':'D')}
+addEventListener('devicemotion',e=>{const g=e.accelerationIncludingGravity,r=e.rotationRate;if(!g||!r||g.x==null)return;const gm=Math.hypot(g.x,g.y,g.z);if(gm<5)return;
+  const spin=Math.abs(r.alpha||0)+Math.abs(r.beta||0)+Math.abs(r.gamma||0);
+  if(speedKmh<3&&spin<5){const u={x:g.x/gm,y:g.y/gm,z:g.z/gm},k=lean.g0?0.05:1;lean.g0=lean.g0?{x:lean.g0.x*(1-k)+u.x*k,y:lean.g0.y*(1-k)+u.y*k,z:lean.g0.z*(1-k)+u.z*k}:u}
+  if(!lean.g0||speedKmh<10){lean.v=0;return}
+  const w=((r.beta||0)*lean.g0.x+(r.gamma||0)*lean.g0.y+(r.alpha||0)*lean.g0.z)*Math.PI/180,a=Math.max(-65,Math.min(65,Math.atan(speedKmh/3.6*w/9.81)*180/Math.PI));
+  lean.v=lean.v*0.8+a*0.2;if(lean.v>lean.maxL)lean.maxL=lean.v;if(-lean.v>lean.maxR)lean.maxR=-lean.v});
 const UPD_URL='https://raw.githubusercontent.com/Lubiell/trilhanav/apk/versao.json';
 async function updInfo(){if(!NATIVE)return;try{const me=await nat('appInfo');$('#updInfo').textContent='Versão instalada: '+String(me.version).slice(0,20)}catch(e){}}
 async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização automática só no app (APK)');return}
@@ -1334,7 +1414,7 @@ function stopSim(){if(simT)clearInterval(simT);simT=null}
 /* ---------- painel ---------- */
 function renderDash(){const avg=st.movSec>0?st.movKm/(st.movSec/3600):0;const ok=wpState.filter(s=>s==='ok').length,miss=wpState.filter(s=>s==='miss').length;
   let rest='—';if(fix&&track.length>1){const r=distToTrack(fix);if(r){let s=hav(fix,track[r.i+1]);for(let i=r.i+1;i<track.length-1;i++)s+=hav(track[i],track[i+1]);rest=(s/1000).toFixed(1)+' km'}}
-  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Limite agora',curZone?curZone.limit+' km/h (zona)':cfg.spd>0?cfg.spd+' km/h':'—'],['Pontos gravados',rec.length],['Correção do odômetro',st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—'],['Cronômetro',$('#chronoTxt').textContent]];
+  const items=[['Velocidade',Math.round(speedKmh)+' km/h'],['Vel. máxima',Math.round(st.maxSpd)+' km/h'],['Vel. média (em mov.)',avg.toFixed(1)+' km/h'],['Tempo em movimento',hms(st.movSec)],['Altitude',fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—'],['Rumo',heading==null?'—':Math.round(heading)+'°'],['Restante da trilha',rest],['Waypoints',ok+' ✅ / '+miss+' ❌ / '+wps.filter(w=>!w.auto).length],['Precisão GPS',fix?'±'+Math.round(fix.acc)+' m':'—'],['Coordenadas',fix?fix.lat.toFixed(5)+', '+fix.lon.toFixed(5):'—'],['Limite agora',curZone?curZone.limit+' km/h (zona)':cfg.limOn&&limCur?limCur+' km/h (via)':cfg.spd>0?cfg.spd+' km/h':'—'],['Inclinação',leanTxt()],['Inclinação máxima',lean.maxL||lean.maxR?'E '+Math.round(lean.maxL)+'° · D '+Math.round(lean.maxR)+'°':'—'],['Pontos gravados',rec.length],['Correção do odômetro',st.nCorr?(st.corr>=0?'+':'')+st.corr.toFixed(2)+' km ('+st.nCorr+')':'—'],['Cronômetro',$('#chronoTxt').textContent]];
   $('#dash').innerHTML=items.map(([k,v])=>'<div class="card"><h4>'+k.toUpperCase()+'</h4><div class="mid">'+v+'</div></div>').join('')}
 const hms=s=>{s=Math.floor(s);return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 
@@ -1343,7 +1423,8 @@ let chr=LS.get('chrono',{run:false,acc:0,start:0});
 function chronoMs(){return chr.acc+(chr.run?Date.now()-chr.start:0)}
 function chronoToggle(){if(chr.run){chr.acc+=Date.now()-chr.start;chr.run=false}else{chr.start=Date.now();chr.run=true}LS.set('chrono',chr);beep(1000,80)}
 function chronoReset(){chr={run:false,acc:0,start:0};LS.set('chrono',chr);toast('Cronômetro zerado')}
-setInterval(()=>{const s=Math.floor(chronoMs()/1000);$('#chronoTxt').textContent=s>=3600?hms(s):String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');$('#bChrono').classList.toggle('on',chr.run)},500);
+setInterval(()=>{const s=Math.floor(chronoMs()/1000),t=s>=3600?hms(s):String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');$('#chronoTxt').textContent=t;$('#bChrono').classList.toggle('on',chr.run);
+  /* o cronômetro foi para "Mais": rodando, aparece na barra de cima */ $('#chronoTop').style.display=chr.run?'':'none';$('#chronoTop').textContent='⏱ '+t},500);
 let hold=null;$('#bChrono').onpointerdown=()=>{hold=setTimeout(()=>{hold='done';chronoReset()},800)};$('#bChrono').onpointerup=()=>{if(hold!=='done'){clearTimeout(hold);chronoToggle()}hold=null};
 
 /* ---------- gravação ---------- */
@@ -1378,9 +1459,9 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}const m={i:Math.min(
   marks.push(m);LS.set('marks',marks);wps.splice(m.i,0,{lat:m.lat,lon:m.lon,name:m.name,mark:true});wpState.splice(m.i,0,'ok');assignWpKm();buildRb();rebuildZones();setWp(m.i+1)};
 
 /* ---------- ajustes ---------- */
-const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sRot','rot'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sNavRot','navRot'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways']];
-function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sTheme').value=cfg.dayMode;
+const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sLimTol','limTol',parseFloat],['sRadarTol','radarTol',parseFloat]];
+const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways'],['sLimOn','limOn']];
+function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sRotMode').value=rotMode();
   radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
 binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='sim'){stopGPS();startGPS()}if(k==='wx'){wxShow();if(cfg.wx)wxUpdate(true)}if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
@@ -1388,7 +1469,7 @@ $('#sTotal').onchange=e=>{const v=parseFloat(e.target.value);if(!isNaN(v)){st.to
 $('#bCal').onclick=()=>{const a=parseFloat($('#sCalRb').value),b=parseFloat($('#sCalApp').value);if(a>0&&b>0){cfg.mult=+(cfg.mult*a/b).toFixed(4);saveCfg();$('#sMult').value=cfg.mult;renderOdo();toast('Multiplicador: '+cfg.mult)}else toast('Preencha as duas distâncias')};
 $('#sNoteMin').addEventListener('change',()=>buildEvents());
 $('#sCompOff').addEventListener('change',()=>{cfg.compLearned=true;saveCfg()});
-$('#bResetT').onclick=()=>{st.total=0;st.partial=0;st.maxSpd=0;st.movSec=0;st.movKm=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0;saveOdo();renderOdo();toast('TOTAL zerado')};
+$('#bResetT').onclick=()=>{lean.maxL=0;lean.maxR=0;st.total=0;st.partial=0;st.maxSpd=0;st.movSec=0;st.movKm=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0;saveOdo();renderOdo();toast('TOTAL zerado')};
 $('#bSet').onclick=()=>{fillSet();$('#dlgSet').showModal()};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('#bExport').onclick=exportGPX;
@@ -1515,8 +1596,10 @@ function media(key){if(!NATIVE){toast('Controle de música só funciona no app (
 $('#bSpot').onclick=()=>{if(NATIVE){$('#dlgMedia').showModal();return}const a=/Android/i.test(navigator.userAgent);location.href=a?'intent://open.spotify.com/#Intent;scheme=https;package=com.spotify.music;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.spotify.music;end':'spotify:'};
 $('#mPrev').onclick=()=>media('previous');$('#mPlay').onclick=()=>media('playpause');$('#mNext').onclick=()=>media('next');
 $('#mOpen').onclick=()=>{try{NP.nat.openApp({package:'com.spotify.music'}).catch(()=>toast('Spotify não encontrado'))}catch(e){}};
-$('#bDay').onclick=()=>{const o=['auto','day','night'];cfg.dayMode=o[(o.indexOf(cfg.dayMode)+1)%3];saveCfg();autoTheme();toast('Tema: '+{auto:'automático (pelo sol)',day:'dia',night:'noite'}[cfg.dayMode])};
-$('#sTheme').onchange=e=>{cfg.dayMode=e.target.value;saveCfg();autoTheme()};
+$('#bDay').onclick=()=>{const o=['auto','day','night'];cfg.dayMode=o[(o.indexOf(cfg.dayMode)+1)%3];saveCfg();autoTheme();dayTxt();toast('Tema: '+{auto:'automático (pelo sol)',day:'dia',night:'noite'}[cfg.dayMode])};
+const rotMode=()=>cfg.rot?'always':cfg.navRot?'nav':'never';
+$('#sRotMode').onchange=e=>{const v=e.target.value;cfg.rot=v==='always';cfg.navRot=v!=='never';saveCfg();try{applyHeading()}catch(err){}};
+function dayTxt(){$('#dayTxt').textContent='Tema: '+{auto:'auto',day:'dia',night:'noite'}[cfg.dayMode||'auto']}dayTxt();
 function applyTheme(){document.body.classList.toggle('day',cfg.day);if(typeof offLayer!=='undefined'&&offLayer)loadOffline()}
 $('#bFull').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else{await document.documentElement.requestFullscreen();try{await screen.orientation.lock('landscape')}catch(e){}}}catch(e){toast('Tela cheia indisponível')}};
 let wake=null;async function keepAwake(){try{if('wakeLock' in navigator){wake=await navigator.wakeLock.request('screen')}}catch(e){}}
@@ -1530,7 +1613,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>

@@ -100,7 +100,7 @@ async def main():
         check('nenhum script do arquivo executou (XSS em nome e SVG)', await pg.evaluate('window.__pwn===undefined'))
         tu = await pg.evaluate("[...document.querySelectorAll('#rbList img.tu')].map(i=>i.getAttribute('src').slice(0,30))")
         check('tulip em SVG vai como imagem data: (sem HTML inline)', len(tu) == 1 and tu[0].startswith('data:image/svg+xml'), str(tu))
-        await pg.click('#bWp'); await pg.wait_for_timeout(300)
+        await pg.evaluate("document.querySelector('#bWp').click()"); await pg.wait_for_timeout(300)
         nm = await pg.evaluate("document.querySelector('#wpList').innerText")
         check('nome com HTML aparece como texto na lista de waypoints', '<img src=x' in nm and await pg.evaluate('window.__pwn===undefined'), nm.replace('\n', ' | ')[:80])
         await pg.evaluate("document.querySelector('#dlgWp').close()")
@@ -184,7 +184,7 @@ async def main():
         check('teclas de rolagem valem para a lista de notas', await pg.evaluate("document.querySelector('#rbAuto').scrollTop") > 0)
         # nome malicioso na lista de waypoints
         await pg.evaluate('(x)=>TN.loadGPX(x,"xss.gpx")', '<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><wpt lat="-20" lon="-44"><name>&lt;img src=x onerror=window.__pwn=9&gt;</name></wpt><trk><trkseg><trkpt lat="-20" lon="-44"/><trkpt lat="-20" lon="-43.9"/></trkseg></trk></gpx>')
-        await pg.click('#bWp'); await pg.wait_for_timeout(400)
+        await pg.evaluate("document.querySelector('#bWp').click()"); await pg.wait_for_timeout(400)
         check('nome malicioso na lista de waypoints não executa', await pg.evaluate('window.__pwn===undefined') and '<img src=x' in await pg.evaluate("document.querySelector('#wpList').innerText"))
         check('sem erros (PDF + notas)', not errs, str(errs))
         await b.close()

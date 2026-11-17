@@ -72,7 +72,7 @@ async def main():
         # 2) "Marcar aqui" e reabrir: a marca continua na lista e os estados não desalinham
         pg, errs = await page(b)
         await pg.evaluate('(x)=>TN.loadGPX(x,"a.gpx")', A); await pg.evaluate(RIDE, [T0, K, 50])
-        await pg.click('#bWp'); await pg.click('#bMarkWp'); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bWp').click()"); await pg.click('#bMarkWp'); await pg.wait_for_timeout(200)
         antes = await pg.evaluate('({n:TN.wps.map(w=>w.name),st:TN.wpState,idx:TN.st.wpIdx,rb:TN.rbNotes.map(n=>n.name)})')
         await pg.reload(); await pg.wait_for_timeout(1300)
         dep = await pg.evaluate('({n:TN.wps.map(w=>w.name),st:TN.wpState,idx:TN.st.wpIdx,rb:TN.rbNotes.map(n=>n.name)})')
@@ -118,7 +118,7 @@ async def main():
         pg, errs = await page(b, SPEECH)
         await pg.evaluate('(x)=>TN.loadGPX(x,"a.gpx")', A)
         await pg.evaluate(POS, [-20.02, -44.0 + 2 * K, T0, 5, 0]); await pg.evaluate(POS, [-20.02, -44.0 + 2 * K, T0 + 1000, 5, 0])
-        await pg.click('#bBack'); await pg.wait_for_timeout(500)
+        await pg.evaluate("document.querySelector('#bBack').click()"); await pg.wait_for_timeout(500)
         for i in range(1, 121):
             await pg.evaluate(POS, [-20.02, -44.0 + 2 * K + i * 0.01 * K, T0 + 1000 + i * 1000, 5, 10])
         await pg.wait_for_timeout(300)
@@ -134,7 +134,7 @@ async def main():
 
         # 7) simulação + GPX do gerenciador: funciona depois de reabrir
         pg, errs = await page(b)
-        await pg.click('#bGpx'); await pg.set_input_files('#gImportIn', 't.gpx'); await pg.wait_for_timeout(500)
+        await pg.evaluate("document.querySelector('#bGpx').click()"); await pg.set_input_files('#gImportIn', 't.gpx'); await pg.wait_for_timeout(500)
         await pg.click('[data-act=open]'); await pg.wait_for_timeout(400)
         await pg.evaluate("()=>{TN.cfg.sim=true;localStorage.setItem('tn_cfg',JSON.stringify(TN.cfg))}")
         await pg.reload(); await pg.wait_for_timeout(4000)
@@ -166,7 +166,7 @@ async def main():
         await pg.evaluate("()=>{window.__a=0;const o=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){if(this.download)window.__a++;return o.call(this)}}")
         await pg.evaluate('(x)=>TN.loadGPX(x,"a.gpx")', A)
         await pg.click('#bRec'); await pg.evaluate(RIDE, [T0, K, 10])
-        await pg.click('#bSet'); await pg.click('#bExport'); await pg.wait_for_timeout(600)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.click('#bExport'); await pg.wait_for_timeout(600)
         calls = await pg.evaluate('__calls')
         txt = base64.b64decode(calls[0]['data']).decode() if calls else ''
         check('exportar chama shareFile com nome .gpx e o conteúdo em base64', len(calls) == 1 and calls[0]['name'].endswith('.gpx') and calls[0]['mime'] == 'application/gpx+xml' and '<trkpt' in txt and txt.startswith('<?xml'), str(calls and {k: str(v)[:40] for k, v in calls[0].items()}))
@@ -177,7 +177,7 @@ async def main():
         await pg.context.close()
         pg, errs = await page(b)
         await pg.evaluate("()=>{window.__a=0;const o=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){if(this.download)window.__a++;return o.call(this)}}")
-        await pg.click('#bSet'); await pg.click('#bBackup'); await pg.wait_for_timeout(300)
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.click('#bBackup'); await pg.wait_for_timeout(300)
         check('no navegador o download continua pelo <a download>', await pg.evaluate('window.__a') == 1)
         await pg.context.close()
 
