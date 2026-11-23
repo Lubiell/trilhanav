@@ -1,7 +1,7 @@
 {
- "version": "2.7.0",
- "code": 20700,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.0.apk",
- "sha256": "e75a581f2fc79dba55a8e6df43f91eb2775bd7215a0626b0c8cde3fe05f0167c",
- "notes": "App de moto sem as funções de rali. Sem internet: busca de cidades, ruas e lugares e rota longa pelo mapa offline. Correções de segurança. ATENÇÃO: chave nova, desinstale a versão anterior antes."
+ "version": "2.7.1",
+ "code": 20701,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.1.apk",
+ "sha256": "aea6835fa668f52e6c75378a0815fa53edca8f8f215a251ac8ad32ef8447ee54",
+ "notes": "Corrige o download do mapa de MG que parava com \"Download interrompido… state had changed since it was read from disk\". Chave de assinatura fixa: desta vez desinstale a versão anterior antes; da 2.7.1 em diante as atualizações instalam por cima."
 }

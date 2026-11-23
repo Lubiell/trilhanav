@@ -4,18 +4,19 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.7.0.apk`** (atual) | 2.7.0 (versionCode 20700) | `main` `902a52e` (merge do PR #3), workflow APK | 54 MB (modelo de voz) |
+| **`trilhanav-2.7.1.apk`** (atual) | 2.7.1 (versionCode 20701) | `main` `d95bd16` (merge do PR #5), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
 | `trilhanav-2.6.3.apk` | 2.6.3 (versionCode 20603) | commit `acec126` da branch `claude/loving-lovelace-yzb96l` (PR #3), workflow APK | 56 MB (modelo de voz) |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.7.0):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.0.apk
+**Baixar no celular (2.7.1):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.1.apk
 
-(A 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.7.1: `aea6835fa668f52e6c75378a0815fa53edca8f8f215a251ac8ad32ef8447ee54`
 - 2.7.0: `e75a581f2fc79dba55a8e6df43f91eb2775bd7215a0626b0c8cde3fe05f0167c`
 - 2.6.3: `8a7d786728f1d2dc5ac54dcea0686ac6ce17e56dbf2bf85b4e2cc72849fb8482`
 - 2.6.2: `3e8d0cf4060069c64feed3dbbd1fce232e4da5be43c2bc8f6ce288d37344b33e`
@@ -28,6 +29,11 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.7.1
+
+- **Chave de assinatura fixa** (certificado SHA-256 `c7654768ee33ec4489240519181d6062ed8b5f6c2025aaea5b5606bed5da8dd1`): desta vez ainda é preciso desinstalar a versão anterior (exporte trilhas e faça backup dos ajustes antes); **da 2.7.1 em diante as atualizações instalam por cima**, sem apagar trilhas, notas e mapa. A chave fica só no Google Drive do dono.
+- **Download do mapa de MG** não para mais com "Download interrompido: … the state had changed since it was read from disk" (`NotReadableError` do Android ao reler o arquivo logo depois de gravar): o SHA-256 é conferido nos bytes recebidos e a leitura do mapa é refeita com o arquivo novo.
 
 ## O que mudou na 2.7.0
 
