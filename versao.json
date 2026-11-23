@@ -1,7 +1,7 @@
 {
- "version": "2.6.1",
- "code": 20601,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.1.apk",
- "sha256": "83b59b350501925e9252bc48228fe0c79d9c48f12fb9fa8697ac0516b40919da",
- "notes": "Assistente de voz pelo microfone do fone/intercom Bluetooth do capacete (diga \"Trilha\" e o comando). Enquanto ligado a música fica com qualidade de ligação; dá para desligar em Telefone."
+ "version": "2.6.2",
+ "code": 20602,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.2.apk",
+ "sha256": "3e8d0cf4060069c64feed3dbbd1fce232e4da5be43c2bc8f6ce288d37344b33e",
+ "notes": "Ir para sem Waze/Google Maps: sem internet a rota sai pelas estradas do mapa offline (toque longo no mapa escolhe o destino). Voz sai pelo fone do capacete e a música abaixa antes de falar. 'Trilha, trocar música' e volume nas teclas do guidão. ATENÇÃO: chave nova, desinstale a 2.6.1 antes."
 }

@@ -4,18 +4,19 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.6.1.apk`** (atual) | 2.6.1 (versionCode 20601) | commit `d23ac73` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
-| `trilhanav-2.6.0.apk` | 2.6.0 (versionCode 20600) | commit `2a52a7b` (PR #2) | 56 MB |
+| **`trilhanav-2.6.2.apk`** (atual) | 2.6.2 (versionCode 20602) | commit `4f82993` da branch `claude/loving-lovelace-yzb96l` (PR #3), compilado pelo workflow APK | 56 MB (modelo de voz) |
+| `trilhanav-2.6.1.apk` | 2.6.1 (versionCode 20601) | commit `d23ac73` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.6.1):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.1.apk
+**Baixar no celular (2.6.2):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.2.apk
 
-(A 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.6.2: `3e8d0cf4060069c64feed3dbbd1fce232e4da5be43c2bc8f6ce288d37344b33e`
 - 2.6.1: `83b59b350501925e9252bc48228fe0c79d9c48f12fb9fa8697ac0516b40919da`
 - 2.6.0: `34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca`
 - 2.5.0: `ffe5a65428cb517b4544d4c5fe6495d88785e0475e64bc3ac7aaa3d3c789a1bb`
@@ -25,6 +26,13 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.6.2
+
+- **Chave de assinatura nova:** a 2.6.1 foi assinada com uma chave que se perdeu. Para instalar a 2.6.2 é preciso **desinstalar a 2.6.1 antes** (apaga trilhas, notas, ajustes e o mapa offline: exporte/faça backup antes). Certificado da 2.6.2: `ea205c4c…f2df9b`.
+- **Ir para sem Waze nem Google Maps:** saíram os botões. Com internet segue a rota de moto de antes; **sem internet** (ou se o serviço falhar) a rota sai pelas estradas do **mapa offline** baixado no app (até uns 30 km), com a mesma voz curva a curva. **Toque longo no mapa** escolhe o destino; recentes, favoritos e coordenadas funcionam sem internet. Sem estrada ligando: "Seguir em linha reta (bússola)".
+- **Voz:** com o microfone do capacete ligado, a voz sai pelo fone (canal de ligação; o volume é o de ligação, suba durante a fala). A música abaixa antes de falar. "Testar voz" diz por que não sai som e abre a instalação da voz em português se faltar.
+- **Música:** "Trilha, trocar música"; volume +/− nas teclas do guidão (Ajustes › Teclas).
 
 ## O que mudou na 2.6.1
 
@@ -116,7 +124,7 @@ nada) e a **tela fica ligada** enquanto o app está aberto.
 
 - É um APK **de depuração** (assinado com a chave de depuração, `debuggable`): serve para instalar no seu celular, não para distribuir a outras pessoas nem para a Play Store.
 - Precisa permitir "instalar apps desconhecidos" para o navegador/gerenciador de arquivos que baixou o APK.
-- Todas as versões têm a mesma chave de depuração (certificado `16acb7ad…8029`), então cada um atualiza por cima do anterior sem perder dados. Se o Android recusar ("app não instalado" / assinatura diferente), desinstale o anterior antes: isso apaga trilhas, notas e o mapa offline guardados no app.
+- Da 2.0.0 à 2.6.1 a chave de depuração é a mesma (certificado `16acb7ad…8029`); a 2.6.2 tem outra (`ea205c4c…f2df9b`), então para passar da 2.6.1 para a 2.6.2 é preciso desinstalar antes. Entre versões da mesma chave, então cada um atualiza por cima do anterior sem perder dados. Se o Android recusar ("app não instalado" / assinatura diferente), desinstale o anterior antes: isso apaga trilhas, notas e o mapa offline guardados no app.
 - Ao abrir, permita a localização (escolha "o tempo todo" para a gravação seguir com a tela apagada) e as notificações.
 - **Nunca rodou num aparelho de verdade**: foi conferido por dentro (manifest, permissões, assinatura, classes, assets), não em uso.
 - Contém `leaflet-rotate` e `leaflet-elevation` (GPL-3.0): o código-fonte completo é o do repositório (ver `NOTICE.md`).
