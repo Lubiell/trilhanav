@@ -5,3 +5,10 @@ dev/small.pmtiles*
 dev/dl/
 __pycache__/
 dev/testmap.pmtiles
+
+# chave de assinatura do APK: só no Google Drive do dono, nunca no git
+*.p12
+*.pfx
+*.jks
+*.keystore
+senha*.txt

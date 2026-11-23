@@ -27,7 +27,17 @@ bash build-apk.sh --www-only                            # só monta www/ (não p
 
 O APK sai assinado com a chave de **depuração** e com a flag `debuggable`: serve para instalar no seu celular (permita
 "instalar apps desconhecidos"), não para distribuir a outras pessoas nem para a Play Store. Cada compilação no GitHub gera uma
-chave de depuração nova, então atualizar por cima exige desinstalar antes (e isso apaga trilhas, notas e o mapa offline do app). Para publicar numa loja é preciso uma chave de assinatura própria.
+chave de depuração nova; por isso, **antes de publicar, o APK é assinado de novo com a chave fixa** (desde a 2.7.1), e assim
+cada versão nova instala por cima da anterior sem apagar trilhas, notas e o mapa offline:
+
+```
+bash android-app/sign/assinar.sh trilhanav-X.Y.Z.apk assinado/trilhanav-X.Y.Z.apk trilhanav_chave_apk.p12 senha.txt
+```
+
+A chave (`trilhanav_chave_apk.p12`, PKCS12, alias `trilhanav`) e a senha (`trilhanav_chave_apk_senha.txt`) ficam **só no Google
+Drive do dono**, pasta "TrilhaNav - chave do APK (NAO APAGAR)"; nunca no repositório (o `.gitignore` barra `*.p12`, `*.jks`,
+`senha*.txt`). O script confere a assinatura e mostra o SHA-256 do certificado, que tem de ser
+`c7654768ee33ec4489240519181d6062ed8b5f6c2025aaea5b5606bed5da8dd1`. Sem essa chave, a versão seguinte volta a exigir desinstalar.
 
 O APK já compilado fica no branch órfão `apk` (link de download e SHA-256 no README dele).
 Também dá para compilar no GitHub: **Actions → APK → Run workflow**; o APK fica nos artefatos da execução.
