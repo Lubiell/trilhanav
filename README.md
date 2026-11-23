@@ -4,18 +4,19 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.6.2.apk`** (atual) | 2.6.2 (versionCode 20602) | commit `4f82993` da branch `claude/loving-lovelace-yzb96l` (PR #3), compilado pelo workflow APK | 56 MB (modelo de voz) |
-| `trilhanav-2.6.1.apk` | 2.6.1 (versionCode 20601) | commit `d23ac73` da branch `ccr-6d2015d5-vi9zyo` (PR #2) | 56 MB (modelo de voz) |
+| **`trilhanav-2.6.3.apk`** (atual) | 2.6.3 (versionCode 20603) | commit `acec126` da branch `claude/loving-lovelace-yzb96l` (PR #3), workflow APK | 56 MB (modelo de voz) |
+| `trilhanav-2.6.2.apk` | 2.6.2 (versionCode 20602) | commit `4f82993` da branch `claude/loving-lovelace-yzb96l` (PR #3), compilado pelo workflow APK | 56 MB (modelo de voz) |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.6.2):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.2.apk
+**Baixar no celular (2.6.3):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.3.apk
 
-(A 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.6.3: `8a7d786728f1d2dc5ac54dcea0686ac6ce17e56dbf2bf85b4e2cc72849fb8482`
 - 2.6.2: `3e8d0cf4060069c64feed3dbbd1fce232e4da5be43c2bc8f6ce288d37344b33e`
 - 2.6.1: `83b59b350501925e9252bc48228fe0c79d9c48f12fb9fa8697ac0516b40919da`
 - 2.6.0: `34060fe4a02201db5433a453065e2ae27b7cd190a051b34d94bc5edfaf9d99ca`
@@ -26,6 +27,13 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.6.3
+
+- **Chave nova outra vez** (certificado `aa006695…ec72f2`): desinstale a 2.6.2 antes. Cada compilação no GitHub ainda gera chave nova; a chave fixa está pendente.
+- **Funções de rali/trilha saíram da tela:** Roadbook, TOTAL/PARCIAL, waypoints, altimetria, cronômetro, tela dividida, voltar à trilha, zonas e simulação. O app abre no Mapa. Para religar: Ajustes › Aparência.
+- **Janelas sem "Fechar":** toque fora fecha; tocar em outro botão da barra já troca de janela. O Voltar do Android fecha a janela (sem janela, o app vai para segundo plano sem fechar).
+- **Atualização sempre automática:** procura ao abrir (no máximo 1 vez a cada 12 h).
 
 ## O que mudou na 2.6.2
 

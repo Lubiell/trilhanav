@@ -1,7 +1,7 @@
 {
- "version": "2.6.2",
- "code": 20602,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.2.apk",
- "sha256": "3e8d0cf4060069c64feed3dbbd1fce232e4da5be43c2bc8f6ce288d37344b33e",
- "notes": "Ir para sem Waze/Google Maps: sem internet a rota sai pelas estradas do mapa offline (toque longo no mapa escolhe o destino). Voz sai pelo fone do capacete e a música abaixa antes de falar. 'Trilha, trocar música' e volume nas teclas do guidão. ATENÇÃO: chave nova, desinstale a 2.6.1 antes."
+ "version": "2.6.3",
+ "code": 20603,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.3.apk",
+ "sha256": "8a7d786728f1d2dc5ac54dcea0686ac6ce17e56dbf2bf85b4e2cc72849fb8482",
+ "notes": "Funções de rali/trilha saíram da tela (religáveis em Ajustes › Aparência); janelas sem 'Fechar' (toque fora fecha e troca de janela); Voltar do Android fecha a janela; atualização sempre automática. ATENÇÃO: chave nova, desinstale a 2.6.2 antes."
 }
