@@ -4,3 +4,4 @@ dev/rb.pdf
 dev/small.pmtiles*
 dev/dl/
 __pycache__/
+dev/testmap.pmtiles
