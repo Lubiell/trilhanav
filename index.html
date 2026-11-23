@@ -217,7 +217,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.1 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -375,15 +375,19 @@ const layersCtl=L.control.layers(base).addTo(map);let offLayer=null,offPM=null,o
 const MAPS_BASE='https://raw.githubusercontent.com/Lubiell/trilhanav/mapas/mg/';
 async function opfsDir(){return await navigator.storage.getDirectory()}
 /* fonte PMTiles que lê um mapa guardado em várias partes, sem precisar juntar */
-class PartsSource{constructor(files,key){this.files=files;this.key=key;this.offs=[];let o=0;for(const f of files){this.offs.push(o);o+=f.size}this.size=o}
+/* "o estado mudou desde que foi lido do disco": o File é uma foto do arquivo; no Android a gravação termina depois e a foto fica velha */
+const staleFile=e=>/NotReadable|state had changed|changed since it was read/i.test(String(e&&(e.name+' '+e.message)));
+class PartsSource{constructor(files,key,handles){this.files=files;this.key=key;this.handles=handles||[];this.offs=[];let o=0;for(const f of files){this.offs.push(o);o+=f.size}this.size=o}
   getKey(){return this.key}
+  async read(i,a,b){for(let k=0;;k++){try{return await this.files[i].slice(a,b).arrayBuffer()}
+      catch(e){if(k>=3||!staleFile(e)||!this.handles[i])throw e;await new Promise(r=>setTimeout(r,200*(k+1)));this.files[i]=await this.handles[i].getFile()}}}
   async getBytes(off,len){const end=Math.min(off+len,this.size),bufs=[];let total=0;
-    for(let i=0;i<this.files.length;i++){const s=this.offs[i],e=s+this.files[i].size;if(e<=off)continue;if(s>=end)break;const b=await this.files[i].slice(Math.max(off,s)-s,Math.min(end,e)-s).arrayBuffer();bufs.push(b);total+=b.byteLength}
+    for(let i=0;i<this.files.length;i++){const s=this.offs[i],e=s+this.files[i].size;if(e<=off)continue;if(s>=end)break;const b=await this.read(i,Math.max(off,s)-s,Math.min(end,e)-s);bufs.push(b);total+=b.byteLength}
     if(bufs.length===1)return{data:bufs[0]};const out=new Uint8Array(total);let q=0;for(const b of bufs){out.set(new Uint8Array(b),q);q+=b.byteLength}return{data:out.buffer}}}
 async function dlState(){try{const d=await opfsDir();const dir=await d.getDirectoryHandle('mapa-dl');const man=JSON.parse(await (await (await dir.getFileHandle('manifest.json')).getFile()).text());
-  const files=[];let bytes=0;for(const pt of man.parts){try{const f=await (await dir.getFileHandle(pt.f)).getFile();if(f.size!==pt.size)continue;files.push(f);bytes+=f.size}catch(e){}}
-  return {man,files,bytes,complete:files.length===man.parts.length}}catch(e){return null}}
-async function offSource(){const s=await dlState();if(s&&s.complete)return {src:new PartsSource(s.files,s.man.id),size:s.bytes,label:s.man.label};
+  const files=[],handles=[];let bytes=0;for(const pt of man.parts){try{const h=await dir.getFileHandle(pt.f),f=await h.getFile();if(f.size!==pt.size)continue;files.push(f);handles.push(h);bytes+=f.size}catch(e){}}
+  return {man,files,handles,bytes,complete:files.length===man.parts.length}}catch(e){return null}}
+async function offSource(){const s=await dlState();if(s&&s.complete)return {src:new PartsSource(s.files,s.man.id,s.handles),size:s.bytes,label:s.man.label};
   const d=await opfsDir();const f=await (await d.getFileHandle('mapa.pmtiles')).getFile();return {src:new pmtiles.FileSource(f),size:f.size,label:''}}
 const mb=b=>(b/1048576).toFixed(0);
 async function loadOffline(){try{if(!navigator.storage||!navigator.storage.getDirectory){$('#offInfo').textContent='Este navegador não suporta mapa offline.';if(!offLayer)base['Ruas (OSM)'].addTo(map);return false}
@@ -416,17 +420,19 @@ async function downloadMap(){if(dlBusy)return;const info=$('#offInfo'),btn=$('#b
     if(free!==null&&free<man.size-have+5e7)throw new Error('espaço insuficiente no aparelho: faltam '+Math.ceil((man.size-have+5e7-free)/1e6)+' MB livres');
     for(const pt of todo){let tries=0;for(;;){try{
         const r=await fetch(MAPS_BASE+pt.f,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
-        const fh=await dir.getFileHandle(pt.f,{create:true});const w=await fh.createWritable();const rd=r.body.getReader();let n=0,shown=0;
-        try{for(;;){const {done,value}=await rd.read();if(done)break;await w.write(value);n+=value.length;
+        const fh=await dir.getFileHandle(pt.f,{create:true});const w=await fh.createWritable();const rd=r.body.getReader();let n=0,shown=0;const chunks=[];
+        try{for(;;){const {done,value}=await rd.read();if(done)break;await w.write(value);n+=value.length;if(pt.sha256)chunks.push(value);
             if(have+n-shown>2e6){shown=have+n;info.textContent='Baixando mapa de '+man.label+': '+Math.floor(shown/man.size*100)+'% ('+mb(shown)+' de '+mb(man.size)+' MB). Mantenha o app aberto.'}}
           await w.close()}catch(e){try{await w.abort()}catch(_){}throw e}
-        const f=await fh.getFile();let good=f.size===pt.size;if(good&&pt.sha256&&crypto.subtle)good=(await sha256hex(await f.arrayBuffer()))===pt.sha256;
+        /* confere o SHA-256 nos bytes que chegaram (reler o arquivo logo depois de gravar falha em alguns Android: "state had changed since it was read from disk") e o tamanho no disco */
+        let good=n===pt.size;if(good&&pt.sha256&&crypto.subtle)good=(await sha256hex(await new Blob(chunks).arrayBuffer()))===pt.sha256;chunks.length=0;
+        if(good){let sz=-1;for(let k=0;k<4&&sz!==pt.size;k++){try{sz=(await fh.getFile()).size}catch(e){}if(sz!==pt.size)await new Promise(r=>setTimeout(r,300*(k+1)))}good=sz===pt.size}
         if(!good){try{await dir.removeEntry(pt.f)}catch(e){}throw new Error('uma parte chegou corrompida')}
         have+=pt.size;break}
-      catch(e){if(++tries>=4)throw e;info.textContent='A conexão falhou, tentando de novo ('+tries+'/3)…';await new Promise(r=>setTimeout(r,dlRetryMs*tries))}}}
+      catch(e){if(++tries>=4)throw e;info.textContent=(staleFile(e)?'O armazenamento do celular demorou para gravar':'A conexão falhou')+', tentando de novo ('+tries+'/3)…';await new Promise(r=>setTimeout(r,dlRetryMs*tries))}}}
     try{await d.removeEntry('mapa.pmtiles')}catch(e){}
     dlBusy=false;toast('Mapa de '+man.label+' instalado ✅',4000);beep(1200,150);await loadOffline()}
-  catch(e){const msg=/Failed to fetch|NetworkError|network|Load failed/i.test(e.message||'')?'sem conexão com a internet':(e.message||e);info.textContent='Download interrompido: '+msg+'. Toque em "Baixar" de novo para continuar de onde parou.'}
+  catch(e){const msg=/Failed to fetch|NetworkError|network|Load failed/i.test(e.message||'')?'sem conexão com a internet':staleFile(e)?'o armazenamento do celular não terminou de gravar a tempo':(e.message||e);info.textContent='Download interrompido: '+msg+'. Toque em "Baixar" de novo para continuar de onde parou.'}
   finally{dlBusy=false;btn.disabled=false}}
 $('#bOffDl').onclick=downloadMap;
 $('#bOffMap').onclick=()=>$('#offIn').click();$('#offIn').onchange=e=>{const f=e.target.files;if(f.length)installOffline(f);e.target.value=''};
