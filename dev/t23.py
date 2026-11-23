@@ -142,7 +142,7 @@ async def main():
         check('"Mais" sem Dividir, Altimetria, Waypoints, Cronômetro, Voltar à trilha, Zerar parcial', not ({'bSplit', 'bElev', 'bWp', 'bBack', 'bResetP', 'bChrono'} & set(more)) and 'bSpot' in more and 'bSet' in more, str(more))
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close());document.querySelector('#bSet').click()"); await pg.wait_for_timeout(300)
         sets = await pg.evaluate("(()=>{const d=document.querySelector('#dlgSet');const t=[...d.querySelectorAll('h3')].map(h=>h.textContent);return {h:t,voice:document.querySelector('#sVoice').offsetParent!==null,keys:[...document.querySelectorAll('#keyList [data-a]')].map(b=>b.dataset.a)}})()")
-        check('Ajustes sem Odômetro/Roadbook/Simulação; voz continua; sem teclas de rali', 'Odômetro' not in sets['h'] and 'Roadbook' not in sets['h'] and 'Simulação' not in sets['h'] and sets['voice'] and 'totPlus' not in sets['keys'] and 'mediaVolUp' in sets['keys'], str(sets))
+        check('Ajustes sem Odômetro/Roadbook/Simulação nem teclas do guidão; voz continua', 'Odômetro' not in sets['h'] and 'Roadbook' not in sets['h'] and 'Simulação' not in sets['h'] and sets['voice'] and not sets['keys'], str(sets))
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close());document.querySelector('#bot [data-pane=paneDash]').click()"); await pg.wait_for_timeout(300)
         dk = await pg.evaluate("[...document.querySelectorAll('#dash [data-k]')].map(e=>e.dataset.k)")
         check('Painel sem cronômetro, waypoints, restante da trilha e correção do odômetro', dk and not ({'chrono', 'wps', 'rest', 'corr'} & set(dk)), str(dk))
