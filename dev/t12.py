@@ -36,6 +36,15 @@ async def main():
         check('tecla já gravada com HTML aparece como texto', await pg.evaluate("window.__pwn===undefined&&document.querySelector('#keyList [data-a=zoomOut]').textContent.startsWith('<img')"))
         await pg.evaluate("document.querySelector('#dlgSet').close()")
 
+        # ---- teclas gravadas de ações que saíram (rali) não ficam ativas e não quebram ----
+        await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({rbDown:'ArrowDown',totPlus:'ArrowRight',resetPartial:'Enter',zoomIn:'Equal'}));localStorage.setItem('tn_gpx','<gpx/>');localStorage.setItem('tn_wpState','[]')}''')
+        await pg.reload(); await pg.wait_for_timeout(1200)
+        n0 = len(errs)
+        for k in ('ArrowDown', 'ArrowRight', 'Enter'): await pg.keyboard.press(k)
+        await pg.wait_for_timeout(200)
+        r = await pg.evaluate("({k:Object.keys(JSON.parse(localStorage.getItem('tn_keys')||'{}')),gpx:localStorage.getItem('tn_gpx'),wp:localStorage.getItem('tn_wpState')})")
+        check('teclas antigas do rali (setas, Enter) não dão erro e os restos do rali saem do localStorage', len(errs) == n0 and r['gpx'] is None and r['wp'] is None, str((errs[n0:], r)))
+
         # ---- tile MVT malformado ----
         r = await pg.evaluate('''()=>{const out={};
           const t0=performance.now();

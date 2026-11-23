@@ -8,7 +8,8 @@ self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.
 const keepable=u=>u.startsWith(self.location.origin)||/^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//.test(u);
 /* no máximo TILE_MAX tiles online guardados (resposta opaca pode ocupar bem mais que o tamanho real na cota): ao passar, apaga os mais antigos */
 const TILE_MAX=3000;let trimBusy=false;
-async function trimTiles(c){if(trimBusy)return;trimBusy=true;try{const ks=await c.keys();for(let i=0;i<ks.length-TILE_MAX;i++)await c.delete(ks[i])}finally{trimBusy=false}}
+let putN=0;
+async function trimTiles(c){if(trimBusy||++putN%50)return;trimBusy=true;   /* confere a cada 50 tiles novos */try{const ks=await c.keys();for(let i=0;i<ks.length-TILE_MAX;i++)await c.delete(ks[i])}finally{trimBusy=false}}
 const isTile=u=>/tile\.openstreetmap\.org|opentopomap\.org|arcgisonline\.com/.test(u);
 self.addEventListener('fetch',e=>{const u=e.request.url;if(e.request.method!=='GET')return;
   if(u.includes('raw.githubusercontent.com'))return;

@@ -335,7 +335,9 @@ const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 const ACTIONS={zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: trocar (próxima)',mediaPrev:'Música: anterior',mediaVolUp:'Música: aumentar volume',mediaVolDown:'Música: abaixar volume',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
 const DEFKEYS={zoomIn:'Equal',zoomOut:'Minus',nextPane:'Tab',lock:'KeyL',mediaPlay:'',mediaNext:'',mediaPrev:'',voice:'',answer:'',hangup:''};
-let keys=Object.assign({},DEFKEYS,LS.get('keys',{}));
+let keys=Object.assign({},DEFKEYS,LS.get('keys',{}));for(const k in keys)if(!(k in ACTIONS))delete keys[k];   /* teclas de ações que saíram (rali) */
+/* restos das funções de rali (até a v2.6.3): o GPX guardado podia ocupar MBs da cota do localStorage */
+try{for(const k of Object.keys(localStorage))if(/^tn_(gpx|gpxName|gpxKey|gpxPath|wpState|marks|chrono|trailOn|rbScroll_.*|zones_.*)$/.test(k))localStorage.removeItem(k)}catch(e){}
 
 /* ---------- estado ---------- */
 /* estatísticas da viagem (Painel) */
@@ -428,7 +430,7 @@ async function downloadMap(){if(dlBusy)return;const info=$('#offInfo'),btn=$('#b
   finally{dlBusy=false;btn.disabled=false}}
 $('#bOffDl').onclick=downloadMap;
 $('#bOffMap').onclick=()=>$('#offIn').click();$('#offIn').onchange=e=>{const f=e.target.files;if(f.length)installOffline(f);e.target.value=''};
-$('#bOffDel').onclick=async()=>{if(dlBusy){toast('Espere o download terminar');return}const d=await opfsDir();let n=0;try{await d.removeEntry('mapa.pmtiles');n++}catch(e){}try{await d.removeEntry('mapa-dl',{recursive:true});n++}catch(e){}
+$('#bOffDel').onclick=async()=>{if(dlBusy){toast('Espere o download terminar');return}const d=await opfsDir();let n=0;try{await d.removeEntry('mapa.pmtiles');n++}catch(e){}try{await d.removeEntry('mapa-dl',{recursive:true});n++}catch(e){}try{await d.removeEntry('busca.json')}catch(e){}srchIdx=null;
   offPM=null;offH=null;if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer);offLayer=null}Object.values(base).forEach(l=>map.removeLayer(l));base['Ruas (OSM)'].addTo(map);$('#offInfo').textContent='Nenhum mapa offline instalado.';toast(n?'Mapa offline removido':'Nada para remover')};
 loadOffline();
 let trackLine=null,recLine=L.polyline([],{color:'#e64545',weight:3}).addTo(map),follow=true;
@@ -594,7 +596,7 @@ function corridorTiles(p,dest,z,W){const m=new Map(),n=Math.max(1,Math.ceil(hav(
   return [...m.values()]}
 /* A* no grafo de estradas, da posição p (entra por um nó a até R0 m) ao destino (sai por um nó a até R0 m) */
 function astarRoute(nd,adj,p,dest,R0){
-  /* entra/sai pelos nós a até R0 m; se não houver (centro da cidade, ponto no meio de um quarteirão), pelos 6 mais perto a até 3 km */
+  /* entra/sai pelos nós a até R0 m; se não houver (centro da cidade, ponto no meio de um quarteirão), pelos 12 mais perto a até 3 km */
   const pick=q=>{const a=nd.map((n,i)=>({i,d:hav(q,n)}));let w=a.filter(o=>o.d<=R0);if(!w.length)w=a.filter(o=>o.d<=3000);return w.sort((u,v)=>u.d-v.d).slice(0,12)};
   const near=pick(p),endC=new Map();pick(dest).forEach(o=>endC.set(o.i,1.5*o.d));
   if(!near.length||!endC.size)return null;
@@ -683,12 +685,12 @@ async function geoSearch(q,prog){q=String(q||'').trim();const m=COORD_RE.exec(q)
       const j=await politeFetch(PHOTON+'?q='+encodeURIComponent(q)+'&limit=8'+(near&&isFinite(near.lat)?'&lat='+near.lat.toFixed(2)+'&lon='+near.lon.toFixed(2):''),undefined,offPM?8000:20000);
       const r=(j.features||[]).map(placeOf).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180);if(r.length||!offPM)return r}
     catch(e){if(!offPM)throw e}}
-  if(!offPM)throw new Error('sem internet e sem mapa offline instalado (Ajustes › Mapa offline)');
+  if(!offPM)throw new Error(LS.get('netOk',false)?'sem internet e sem mapa offline instalado (Ajustes › Mapa offline)':'sem mapa offline instalado e a busca pela internet não foi liberada (aceite o aviso ao abrir o Ir para)');
   return offSearch(q,prog)}
 /* ---- busca sem internet: nomes do mapa offline ----
    Cidades e vilas: "places" do zoom 10 do mapa inteiro, lidos uma vez e guardados no aparelho (busca.json, refeito se o mapa mudar).
    Ruas com nome, povoados e lugares (posto, hospital…): lidos na hora no zoom 14 num raio de SRCH_R de você (ou do centro do mapa). */
-const SRCH_Z=10,SRCH_R=6000;let srchIdx=null;
+const SRCH_Z=10,SRCH_R=6000;let srchIdx=null,srchP=null;
 const offKey=()=>offH?[offH.minLon,offH.minLat,offH.maxLon,offH.maxLat,offH.maxZoom,offH.tileDataLength].join('_'):'';
 const PLK={city:'Cidade',town:'Cidade',village:'Vila',hamlet:'Povoado',suburb:'Bairro',neighbourhood:'Bairro',quarter:'Bairro',isolated_dwelling:'Sítio',farm:'Fazenda'};
 const POK={fuel:'Posto',hospital:'Hospital',clinic:'Clínica',pharmacy:'Farmácia',police:'Polícia',restaurant:'Restaurante',fast_food:'Lanchonete',cafe:'Café',hotel:'Hotel',guest_house:'Pousada',bank:'Banco',atm:'Caixa eletrônico',supermarket:'Supermercado',school:'Escola',place_of_worship:'Igreja',parking:'Estacionamento',camp_site:'Camping',waterfall:'Cachoeira',peak:'Pico',viewpoint:'Mirante',attraction:'Atração'};
@@ -696,13 +698,16 @@ const plLabel=pr=>PLK[pr.kind_detail]||PLK[pr.kind]||'Lugar';
 async function readPts(z,tiles,layer){const out=[];await Promise.all(tiles.map(async({x,y})=>{try{const r=await offPM.getZxy(z,x,y);if(!r)return;
     for(const f of mvtLayer(r.data,layer,1)){const nm=f.props['name:pt']||f.props.name;if(!nm)continue;for(const ln of f.lines){const [la,lo]=t2ll(z,x,y,ln[0][0],ln[0][1],f.ext);out.push({name:String(nm).slice(0,80),lat:la,lon:lo,pr:f.props})}}}catch(e){}}));
   return out}
-async function placeIndex(prog){const key=offKey();if(srchIdx&&srchIdx.key===key)return srchIdx;
+function placeIndex(prog){const key=offKey();if(srchIdx&&srchIdx.key===key)return Promise.resolve(srchIdx);
+  if(srchP&&srchP.key===key)return srchP.p;const p=buildPlaceIndex(key,prog).finally(()=>{if(srchP&&srchP.p===p)srchP=null});srchP={key,p};return p}
+async function buildPlaceIndex(key,prog){
   try{const j=JSON.parse(await (await fsRead([],'busca.json')).text());if(j&&j.key===key&&Array.isArray(j.items)){srchIdx=j;return j}}catch(e){}
   const z=Math.max(offH.minZoom,Math.min(SRCH_Z,offH.maxZoom)),tiles=boxTiles(ll2t(offH.maxLat,offH.minLon,z),ll2t(offH.minLat,offH.maxLon,z)),items=new Map();
   for(let i=0;i<tiles.length;i+=24){for(const q of await readPts(z,tiles.slice(i,i+24),'places')){const k=normTxt(q.name)+'|'+q.lat.toFixed(3)+'|'+q.lon.toFixed(3);
       if(!items.has(k))items.set(k,[q.name,+q.lat.toFixed(5),+q.lon.toFixed(5),plLabel(q.pr),+q.pr.population||0])}
     if(prog)prog(Math.min(100,Math.round((i+24)/tiles.length*100)))}
-  srchIdx={key,items:[...items.values()]};try{await fsWrite([],'busca.json',JSON.stringify(srchIdx))}catch(e){}return srchIdx}
+  const idx={key,items:[...items.values()]};if(!idx.items.length)return idx;   /* nada lido (erro, mapa sem places): não guarda, tenta de novo na próxima */
+  srchIdx=idx;try{await fsWrite([],'busca.json',JSON.stringify(idx))}catch(e){}return idx}
 async function nearNames(ref){const z=Math.min(14,offH.maxZoom),tiles=tilesAround(ref,SRCH_R,z),out=[],streets=new Map();if(tiles.length>64)return out;
   const [pl,po]=await Promise.all([readPts(z,tiles,'places'),readPts(z,tiles,'pois')]);
   pl.forEach(q=>out.push([q.name,q.lat,q.lon,plLabel(q.pr),+q.pr.population||0]));po.forEach(q=>out.push([q.name,q.lat,q.lon,POK[q.pr.kind]||POK[q.pr.kind_detail]||'Lugar',0]));
@@ -1452,7 +1457,7 @@ function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l]
 $('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
 const ACT={zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,voice:()=>voiceCmd(false),answer:()=>runCmd({a:'answer'}),hangup:()=>runCmd({a:'end'}),mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous'),mediaVolUp:()=>runCmd({a:'volup'}),mediaVolDown:()=>runCmd({a:'voldown'})};
 addEventListener('keydown',e=>{if(sos&&sos.phase==='count'){e.preventDefault();sosCancel();return}if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
-  if(!e.code||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')))return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a){e.preventDefault();if(e.repeat&&!['totPlus','totMinus','rbDown','rbUp'].includes(a))return;ACT[a]()}});
+  if(!e.code||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')))return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a&&ACT[a]){e.preventDefault();if(e.repeat&&!['zoomIn','zoomOut','mediaVolUp','mediaVolDown'].includes(a))return;ACT[a]()}});
 
 /* ---------- trava de toque, tela, tema ---------- */
 const shield=document.createElement('div');shield.style.cssText='position:fixed;inset:40px 0 0 0;z-index:1500;display:none';document.body.appendChild(shield);
@@ -1477,7 +1482,7 @@ loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* atalhos internos só para os testes automatizados (navegador controlado: navigator.webdriver); no uso normal não ficam expostos */
-if(navigator.webdriver)window.TN={offSearch,placeIndex,get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
+if(navigator.webdriver)window.TN={offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
 </script>
 </body>
 </html>

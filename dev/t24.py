@@ -57,6 +57,8 @@ async def main():
         check('sem acento acha "Rua do Rosário"', any(x['name'] == 'Rua do Rosário' for x in r), str(r[:3]))
         r = await pg.evaluate("TN.offSearch('hospital')")
         check('lugar a mais de 6 km (Hospital em Pedra Azul) não aparece na busca de perto', not any(x['name'] == 'Hospital São José' for x in r), str(r))
+        r = await pg.evaluate("(async()=>{const d=await navigator.storage.getDirectory();await d.removeEntry('busca.json');TN.resetSrch();const [a,b]=await Promise.all([TN.offSearch('pedra'),TN.offSearch('serra')]);return [a[0]&&a[0].name,b[0]&&b[0].name]})()")
+        check('duas buscas ao mesmo tempo montam o índice uma vez e as duas respondem', r == ['Pedra Azul', 'Serra Velha'], str(r))
         check('o índice de cidades ficou guardado no aparelho (busca.json)', await pg.evaluate("(async()=>{const d=await navigator.storage.getDirectory();const f=await (await d.getFileHandle('busca.json')).getFile();return JSON.parse(await f.text()).items.length})()") == 3)
 
         # pela tela "Ir para", sem aceitar o aviso de internet
