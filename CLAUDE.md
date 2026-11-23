@@ -18,11 +18,11 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 | Onde | O que tem |
 |---|---|
-| `main` | o código (até o merge do PR #3, ainda a v2.0) |
-| `gh-pages` | o site https://lubiell.github.io/trilhanav/. Na v2.7 o dono pediu para **retirar o site (PWA)**: ele vira só uma página com o link do APK (ver "Fluxo") |
+| `main` | o código: v2.7.0 (merge do PR #3, `902a52e`, 23/11/2026; o PR #2 entrou junto) |
+| `gh-pages` | https://lubiell.github.io/trilhanav/: desde a v2.7.0 só uma página de download (lê o `versao.json` e mostra o link do APK mais novo) e um `sw.js` que apaga o app antigo (PWA) do navegador de quem já tinha aberto. O código dessa página não está no `main` (só no `gh-pages`) |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | APKs, `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo) |
-| `claude/loving-lovelace-yzb96l` | branch de trabalho do PR #3 (base `ccr-6d2015d5-vi9zyo`, a 2.6.1 do PR #2) |
+| `apk` (órfão) | `trilhanav-2.7.0.apk` (atual, 54 MB, chave `a78f3f98…`), 2.6.3, 2.0.1, 2.0.0; `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.0.apk, SHA-256 `e75a581f2fc79dba55a8e6df43f91eb2775bd7215a0626b0c8cde3fe05f0167c` |
+| `claude/loving-lovelace-yzb96l` | branch de trabalho das sessões do Claude (recomeçado do `main` depois de cada merge) |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (código via `git archive`) |
 
 ### Arquivos
@@ -49,7 +49,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ## Fluxo de trabalho e de release
 
-1. Mudança numa branch → PR em rascunho → a **CI de testes** roda sozinha. Com os testes locais e a CI verdes, o merge pode ser feito (regra do dono no CLAUDE.md global).
+1. Mudança numa branch nova a partir do `main` → PR em rascunho → a **CI de testes** roda sozinha. Com os testes locais e a CI verdes, o merge é feito (regra do dono no CLAUDE.md global) e conferido no `main`.
 2. Site: o dono pediu para **retirar o site (PWA)**; o `gh-pages` passa a ter só uma página com o link do APK. Não publicar o `index.html` lá de novo sem ele pedir.
 3. Backup: `git archive --format=zip --prefix=trilhanav/ -o trilhanav_backup_AAAA-MM-DD_vX.Y.zip HEAD` e subir na raiz do Drive (o conector recusa arquivo acima de ~3 MB).
 4. APK: subir a versão em `android-app/package.json` (e `package-lock.json`); compilar pelo workflow `apk.yml` (Actions → APK → Run workflow; aqui não há Android SDK). Baixar o artefato, publicar no branch `apk` com um worktree, atualizando `SHA256SUMS`, README e **`versao.json`**, e conferir o SHA-256 do download pelo raw.githubusercontent.com.
