@@ -6,7 +6,10 @@ Empacota o app (`../index.html` e `../lib`) num APK Android. O que muda em rela�
   (notificação fixa "TrilhaNav: GPS ativo"). No navegador o GPS para quando a tela apaga.
 - **Voz do copiloto nativa** (TTS do Android, abaixa a música enquanto fala) e **controle de música**
   (⏮ ⏯ ⏭ e abrir o Spotify) pelo plugin `TrilhaNative` (`native/TrilhaNativePlugin.java`).
-- **Funciona sem internet na primeira abertura**: Leaflet, pdf.js e as fontes vão dentro do APK
+- **Exportar** (trilha gravada, ZIP com fotos, backup de ajustes): o WebView não baixa arquivos, então o app abre a
+  tela de compartilhar do Android (`TrilhaNative.shareFile`), de onde dá para salvar em Arquivos, Drive, WhatsApp etc.
+- **Tela sempre ligada** enquanto o app está aberto (`FLAG_KEEP_SCREEN_ON` no `MainActivity`).
+- **Funciona sem internet na primeira abertura**: Leaflet e as fontes vão dentro do APK
   (`build-apk.sh` troca os links do CDN por cópias locais). Os mapas continuam sendo o `.pmtiles` offline.
 
 O código do app é o mesmo do PWA: tudo que é nativo fica atrás de `NATIVE` no `index.html` e não faz nada no navegador.
@@ -37,7 +40,7 @@ sendo gravada com o app em segundo plano.
 
 ## Licenças
 
-Capacitor e o plugin de GPS são MIT. O app carrega `leaflet-rotate` e `leaflet-elevation` (GPL-3.0), então o APK
+Capacitor e o plugin de GPS são MIT. O app carrega `leaflet-rotate` (GPL-3.0), então o APK
 só pode ser distribuído com o código-fonte aberto (ver `../NOTICE.md`).
 
 ## Problemas conhecidos

@@ -1,4 +1,4 @@
-"""Correções da revisão de segurança: backup de ajustes, rótulo do mapa, tile MVT malformado, pdf.js sem eval."""
+"""Correções da revisão de segurança: backup de ajustes, teclas, tile MVT malformado, GPX com ponto inválido."""
 import asyncio, sys, json, os, tempfile
 from playwright.async_api import async_playwright
 
@@ -19,22 +19,31 @@ async def main():
         await pg.goto('http://localhost:8765/index.html'); await pg.wait_for_timeout(1300)
 
         # ---- backup de ajustes malicioso ----
-        evil = {'cfg': {'mult': 'x', 'wpR': 'abc', 'step': 0.05, 'dayMode': 'night', 'naoExiste': 'lixo', 'voice': 1, 'compSpd': 12},
-                'keys': {'chrono': '<img src=x onerror=window.__pwn=1>', 'lock': 'KeyZ', 'fantasma': 'KeyQ', 'zoomIn': 'a' * 500}}
+        evil = {'cfg': {'spd': 'x', 'radarDist': 'abc', 'voiceVol': 0.5, 'dayMode': 'night', 'naoExiste': 'lixo', 'voice': 1, 'compSpd': 12},
+                'keys': {'zoomOut': '<img src=x onerror=window.__pwn=1>', 'lock': 'KeyZ', 'fantasma': 'KeyQ', 'zoomIn': 'a' * 500}}
         path = os.path.join(TMP, 'ajustes.json'); open(path, 'w').write(json.dumps(evil))
-        await pg.click('#bSet'); await pg.set_input_files('#restoreIn', path); await pg.wait_for_timeout(500)
-        r = await pg.evaluate('''()=>({mult:TN.cfg.mult,wpR:TN.cfg.wpR,step:TN.cfg.step,dayMode:TN.cfg.dayMode,x:TN.cfg.naoExiste,voice:TN.cfg.voice,compSpd:TN.cfg.compSpd,
-          chrono:[...document.querySelectorAll('#keyList [data-a=chrono]')].map(b=>b.textContent)[0],lock:[...document.querySelectorAll('#keyList [data-a=lock]')].map(b=>b.textContent)[0],zoomIn:[...document.querySelectorAll('#keyList [data-a=zoomIn]')].map(b=>b.textContent)[0],pwn:window.__pwn})''')
-        check('valores de tipo errado são ignorados (mult/wpR/voice)', r['mult'] == 1 and r['wpR'] == 90 and r['voice'] is True, str(r))
-        check('valores válidos são aplicados (step, dayMode, compSpd, tecla lock)', r['step'] == 0.05 and r['dayMode'] == 'night' and r['compSpd'] == 12 and r['lock'] == 'KeyZ', str(r))
+        await pg.evaluate("document.querySelector('#bSet').click()"); await pg.set_input_files('#restoreIn', path); await pg.wait_for_timeout(500)
+        r = await pg.evaluate('''()=>({spd:TN.cfg.spd,radarDist:TN.cfg.radarDist,voiceVol:TN.cfg.voiceVol,dayMode:TN.cfg.dayMode,x:TN.cfg.naoExiste,voice:TN.cfg.voice,compSpd:TN.cfg.compSpd,
+          zoomOut:[...document.querySelectorAll('#keyList [data-a=zoomOut]')].map(b=>b.textContent)[0],lock:[...document.querySelectorAll('#keyList [data-a=lock]')].map(b=>b.textContent)[0],zoomIn:[...document.querySelectorAll('#keyList [data-a=zoomIn]')].map(b=>b.textContent)[0],pwn:window.__pwn})''')
+        check('valores de tipo errado são ignorados (spd/radarDist/voice)', r['spd'] == 0 and r['radarDist'] == 600 and r['voice'] is True, str(r))
+        check('valores válidos são aplicados (voiceVol, dayMode, compSpd, tecla lock)', r['voiceVol'] == 0.5 and r['dayMode'] == 'night' and r['compSpd'] == 12 and r['lock'] == 'KeyZ', str(r))
         check('chave desconhecida não entra', r['x'] is None)
-        check('tecla com HTML e tecla gigante são recusadas (voltam ao padrão)', r['chrono'] == 'KeyC' and r['zoomIn'] == 'Equal', str((r['chrono'], r['zoomIn'])))
+        check('tecla com HTML e tecla gigante são recusadas (voltam ao padrão)', r['zoomOut'] == 'Minus' and r['zoomIn'] == 'Equal', str((r['zoomOut'], r['zoomIn'])))
         check('nada executou', r['pwn'] is None)
         # mesmo que um valor estranho já esteja no localStorage, as teclas aparecem escapadas
-        await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({chrono:'<img src=x onerror=window.__pwn=2>'}))}''')
-        await pg.reload(); await pg.wait_for_timeout(1200); await pg.click('#bSet'); await pg.wait_for_timeout(300)
-        check('tecla já gravada com HTML aparece como texto', await pg.evaluate("window.__pwn===undefined&&document.querySelector('#keyList [data-a=chrono]').textContent.startsWith('<img')"))
-        await pg.click('#dlgSet [data-close]')
+        await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({zoomOut:'<img src=x onerror=window.__pwn=2>'}))}''')
+        await pg.reload(); await pg.wait_for_timeout(1200); await pg.evaluate("document.querySelector('#bSet').click()"); await pg.wait_for_timeout(300)
+        check('tecla já gravada com HTML aparece como texto', await pg.evaluate("window.__pwn===undefined&&document.querySelector('#keyList [data-a=zoomOut]').textContent.startsWith('<img')"))
+        await pg.evaluate("document.querySelector('#dlgSet').close()")
+
+        # ---- teclas gravadas de ações que saíram (rali) não ficam ativas e não quebram ----
+        await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({rbDown:'ArrowDown',totPlus:'ArrowRight',resetPartial:'Enter',zoomIn:'Equal'}));localStorage.setItem('tn_gpx','<gpx/>');localStorage.setItem('tn_wpState','[]')}''')
+        await pg.reload(); await pg.wait_for_timeout(1200)
+        n0 = len(errs)
+        for k in ('ArrowDown', 'ArrowRight', 'Enter'): await pg.keyboard.press(k)
+        await pg.wait_for_timeout(200)
+        r = await pg.evaluate("({k:Object.keys(JSON.parse(localStorage.getItem('tn_keys')||'{}')),gpx:localStorage.getItem('tn_gpx'),wp:localStorage.getItem('tn_wpState')})")
+        check('teclas antigas do rali (setas, Enter) não dão erro e os restos do rali saem do localStorage', len(errs) == n0 and r['gpx'] is None and r['wp'] is None, str((errs[n0:], r)))
 
         # ---- tile MVT malformado ----
         r = await pg.evaluate('''()=>{const out={};
@@ -49,25 +58,19 @@ async def main():
         check('tile truncado ou com tamanho absurdo dá erro rápido, sem travar', r['ms'] < 500 and 'sem erro' not in (r['a'], ), str(r))
         check('geometria com contagem gigante não gira em laço', r['ms'] < 500, str(r['c']))
 
-        # ---- PDF abre sem eval ----
-        src = open('../index.html', encoding='utf-8').read()
-        check('getDocument é chamado com isEvalSupported:false (CVE-2024-4367)', 'getDocument({data:buf,isEvalSupported:false})' in src)
-        await pg.set_input_files('#fileIn', 'rb.pdf'); await pg.wait_for_timeout(2000)
-        check('o PDF continua abrindo', await pg.evaluate("document.querySelectorAll('#rb canvas').length") == 3)
-
-
         # ---- digitar nota não dispara as teclas do controle ----
-        await pg.evaluate('()=>{TN.st.partial=3.21;TN.st.total=10;TN.onPos({timestamp:Date.now(),coords:{latitude:-20,longitude:-44,altitude:0,accuracy:5,speed:0,heading:null}})}')
-        await pg.click('#bNote'); await pg.click('#noteTx')
+        await pg.evaluate('()=>{TN.onPos({timestamp:Date.now(),coords:{latitude:-20,longitude:-44,altitude:0,accuracy:5,speed:0,heading:null}})}')
+        z0 = await pg.evaluate('TN.map.getZoom()')
+        await pg.evaluate("document.querySelector('#bNote').click()"); await pg.click('#noteTx')
         await pg.keyboard.type('cl=- ponte'); await pg.keyboard.press('Enter'); await pg.keyboard.press('ArrowLeft'); await pg.keyboard.press('ArrowRight'); await pg.keyboard.press('Backspace')
-        r = await pg.evaluate("({p:TN.st.partial,t:TN.st.total,v:document.querySelector('#noteTx').value,lock:document.querySelector('#lockIco').textContent})")
-        check('digitando na nota: PARCIAL, TOTAL e trava de toque não mudam, e o texto é digitado', abs(r['p'] - 3.21) < 1e-9 and r['t'] == 10 and r['v'] == 'cl=- ponte' and r['lock'] == '🔓', str(r))
+        r = await pg.evaluate("({z:TN.map.getZoom(),v:document.querySelector('#noteTx').value,lock:document.querySelector('#lockIco').textContent})")
+        check('digitando na nota: zoom (=/-) e trava de toque (L) não mudam, e o texto é digitado', r['z'] == z0 and r['v'] == 'cl=- ponte' and r['lock'] == '🔓', str(r))
         await pg.evaluate("()=>{document.querySelector('#toast').textContent='';document.dispatchEvent(new KeyboardEvent('keydown',{key:'a',code:'',bubbles:true}))}")
         check('tecla com code vazio (teclado virtual) não aciona ação nenhuma', 'música' not in await pg.text_content('#toast'))
         # toque duplo em "Salvar nota"
         await pg.fill('#noteTx', 'uma só'); await pg.evaluate("()=>{const b=document.querySelector('#noteSave');b.click();b.click()}"); await pg.wait_for_timeout(700)
         check('toque duplo em Salvar cria uma nota só', await pg.evaluate('TN.rnotes.length') == 1, str(await pg.evaluate('TN.rnotes.length')))
-        await pg.click('#dlgNote [data-close]')
+        await pg.evaluate("document.querySelector('#dlgNote').close()")
 
         # ---- tile MVT com camadas fora de ordem e campo desconhecido ----
         r = await pg.evaluate("""()=>{const vi=n=>{const o=[];while(n>127){o.push((n&127)|128);n=Math.floor(n/128)}o.push(n);return o};
@@ -79,24 +82,11 @@ async def main():
           const f=TN.mvtRoads(new Uint8Array(tile).buffer);return {n:f.length,kind:f[0]&&f[0].props.kind,lines:f[0]&&JSON.stringify(f[0].lines),ext:f[0]&&f[0].ext}}""")
         check('decodifica a camada roads no meio de outras, com chaves/valores depois das feições e campo desconhecido', r == {'n': 1, 'kind': 'minor_road', 'lines': '[[[0,0],[5,5]]]', 'ext': 4096}, str(r))
 
-        # ---- GPX: identidade por pasta, zonas fora de ordem, ponto inválido ----
-        K = 0.0095699
-        gp = lambda order, extra='': '<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">' + ''.join(f'<wpt lat="-20" lon="{-44 + km * K:.6f}"><name>{n}</name></wpt>' for km, n in order) + '<trk><trkseg>' + ''.join(f'<trkpt lat="-20" lon="{-44 + i * 0.1 * K:.6f}"/>' for i in range(61)) + extra + '</trkseg></trk></gpx>'
-        base = gp([(1, 'WP1'), (2, 'VEL 40'), (3, 'FIM')])
-        await pg.evaluate('(x)=>TN.loadGPX(x,"t.gpx",{parts:["gpx","Dia1"],name:"t.gpx"})', base)
-        await pg.evaluate("()=>{TN.wpState[0]='ok'}")
-        await pg.evaluate('(x)=>TN.loadGPX(x,"t.gpx",{parts:["gpx","Dia1"],name:"t.gpx"})', base)
-        same = await pg.evaluate('TN.wpState[0]')
-        await pg.evaluate('(x)=>TN.loadGPX(x,"t.gpx",{parts:["gpx","Dia2"],name:"t.gpx"})', base)
-        diff = await pg.evaluate('TN.wpState[0]')
-        check('mesmo arquivo reaberto mantém o progresso; mesmo nome em outra pasta começa do zero', same == 'ok' and diff is None, str((same, diff)))
-        await pg.evaluate("()=>{localStorage.setItem('tn_zones_gpx/Dia1/t.gpx#'+0,'x')}")
-        await pg.evaluate('(x)=>TN.loadGPX(x,"fora.gpx")', gp([(3, 'FIM'), (2, 'VEL 40'), (1, 'WP1')]))
-        z = await pg.evaluate('TN.zones.map(z=>[z.limit,+z.from.toFixed(2),+z.to.toFixed(2)])')
-        check('waypoints fora de ordem (FIM antes de VEL 40) ainda formam a zona certa', z == [[40, 2.0, 3.0]], str(z))
-        await pg.evaluate('(x)=>TN.loadGPX(x,"virgula.gpx")', gp([(1, 'WP1')], '<trkpt lat="45,5" lon="-44"/><trkpt lat="abc" lon="x"/>'))
-        r = await pg.evaluate('({km:TN.rbNotes.map(n=>n.km),w:TN.wps.map(w=>w.km)})')
-        check('ponto com lat "45,5" ou texto é descartado: nenhum km vira NaN', all(isinstance(v, (int, float)) for v in r['km'] + r['w']) and len(r['km']) >= 2, str(r))
+        # ---- GPX com ponto inválido: lat "45,5" ou texto é descartado ----
+        g = '<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg><trkpt lat="-20" lon="-44"/><trkpt lat="45,5" lon="-44"/><trkpt lat="abc" lon="x"/><trkpt lat="-20.01" lon="-44"/></trkseg></trk></gpx>'
+        await pg.evaluate('(x)=>TN.showGpx(x,"virgula.gpx")', g)
+        r = await pg.evaluate('TN.track.map(p=>[p.lat,p.lon])')
+        check('ponto com lat "45,5" ou texto é descartado no GPX', r == [[-20, -44], [-20.01, -44]], str(r))
 
         # ---- rótulo do mapa offline escapado ----
         await pg.set_input_files('#offIn', 'small.pmtiles'); await pg.wait_for_timeout(3000)

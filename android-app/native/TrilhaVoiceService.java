@@ -1,0 +1,306 @@
+package io.github.lubiell.trilhanav;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ServiceInfo;
+import android.media.AudioDeviceInfo;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.os.Build;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+
+import androidx.core.app.NotificationCompat;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.json.JSONObject;
+import org.vosk.Model;
+import org.vosk.Recognizer;
+import org.vosk.android.StorageService;
+
+/**
+ * Assistente de voz sempre ligado, sem internet: Vosk com o modelo pequeno de português (dentro do APK) e uma gramática só
+ * com as palavras de comando e os nomes da agenda. Roda como serviço em primeiro plano do tipo microfone, para seguir com a
+ * tela apagada. Fica em pausa enquanto o próprio app fala (senão ouviria o "diga atender") e durante as ligações.
+ * O que é ouvido não sai do aparelho: o texto vai só para o app, que só age se a frase começar com "trilha".
+ *
+ * Microfone do fone/intercom Bluetooth (cfg "voiceBt"): liga o canal de voz do Bluetooth (SCO) e grava dele. Enquanto o canal
+ * estiver ligado o Android manda a música também por ele, com qualidade de ligação (mono): é o preço de ouvir pelo capacete.
+ * A captura é feita aqui (AudioRecord próprio) e não pelo SpeechService do Vosk, para poder escolher o microfone.
+ */
+public class TrilhaVoiceService extends Service {
+    public interface Sink {
+        void onHeard(String text);
+        void onVoiceState(String state, String msg);
+    }
+
+    static volatile Sink sink;
+    static volatile String grammar = "[\"trilha\", \"[unk]\"]";
+    static volatile boolean useBt = false;
+    private static TrilhaVoiceService self;
+    private static final Set<String> holds = new HashSet<>();
+    private static final Handler main = new Handler(Looper.getMainLooper());
+
+    private Model model;
+    private Recognizer rec;
+    private final Object recLock = new Object();
+    private Thread loop;
+    private volatile boolean running = false;
+    private volatile boolean paused = false;
+    private boolean loading = false;
+    private AudioManager am;
+    private boolean btOn = false;
+    private AudioDeviceInfo btIn = null;
+    private final Runnable btTick = new Runnable() {
+        @Override public void run() { if (self == TrilhaVoiceService.this) { applyBt(); main.postDelayed(this, 15000); } }
+    };
+
+    static boolean running() {
+        return self != null;
+    }
+
+    static boolean onHeadset() {
+        TrilhaVoiceService s = self;
+        return s != null && s.btOn;
+    }
+
+    /** pausa/retoma a escuta por um motivo ("tts", "call", "listen"): só escuta quando não sobra motivo nenhum.
+     *  Em ligação e na escuta do Google o microfone é solto de verdade (outra pessoa precisa dele). */
+    static void hold(String why, boolean on) {
+        main.post(() -> {
+            if (on) holds.add(why); else holds.remove(why);
+            TrilhaVoiceService s = self;
+            if (s == null || s.model == null) return;
+            boolean needMic = !holds.contains("call") && !holds.contains("listen");
+            if (!needMic && s.running) { s.stopLoop(); s.applyBt(); }
+            else if (needMic && !s.running) { s.applyBt(); s.startLoop(); }
+            s.paused = !holds.isEmpty();
+            if (!s.paused) synchronized (s.recLock) { if (s.rec != null) s.rec.reset(); }
+            s.report();
+        });
+    }
+
+    /** liga/desliga o microfone do fone Bluetooth */
+    static void setBt(boolean on) {
+        useBt = on;
+        main.post(() -> {
+            TrilhaVoiceService s = self;
+            if (s != null && s.model != null) { s.applyBt(); s.restartLoop(); }
+        });
+    }
+
+    /** troca a gramática (palavras de comando + nomes) e recomeça a escuta com ela */
+    static void setGrammar(String g) {
+        grammar = g;
+        main.post(() -> {
+            TrilhaVoiceService s = self;
+            if (s != null && s.model != null) s.restart();
+        });
+    }
+
+    private static void state(String st, String msg) {
+        Sink k = sink;
+        if (k != null) k.onVoiceState(st, msg == null ? "" : msg);
+    }
+
+    private void report() {
+        state(paused || !running ? "paused" : "on", btOn ? "fone" : "celular");
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        self = this;
+        am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        startAsForeground();
+        if (model == null && !loading) {
+            loading = true;
+            state("loading", "carregando o modelo de voz");
+            // o modelo vem nos assets do APK; na 1ª vez é copiado para a pasta do app (precisa do arquivo "uuid")
+            StorageService.unpack(this, "model-pt", "model", m -> {
+                loading = false;
+                model = m;
+                applyBt();
+                restart();
+                main.postDelayed(btTick, 15000);
+            }, e -> {
+                loading = false;
+                state("error", "modelo de voz: " + e.getMessage());
+            });
+        }
+        return START_STICKY;
+    }
+
+    private void startAsForeground() {
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel("tn_voz") == null) {
+            NotificationChannel ch = new NotificationChannel("tn_voz", "TrilhaNav (voz)", NotificationManager.IMPORTANCE_LOW);
+            ch.setShowBadge(false);
+            nm.createNotificationChannel(ch);
+        }
+        Intent open = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        PendingIntent pi = open == null ? null : PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE);
+        Notification n = new NotificationCompat.Builder(this, "tn_voz")
+            .setContentTitle("TrilhaNav: assistente de voz ligado")
+            .setContentText("Diga \"Trilha\" e o comando. Sem internet: nada sai do celular.")
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setOngoing(true)
+            .setContentIntent(pi)
+            .build();
+        if (Build.VERSION.SDK_INT >= 29) startForeground(4242, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+        else startForeground(4242, n);
+    }
+
+    /** liga o canal de voz do fone Bluetooth quando pedido e disponível (fora de ligação, que cuida dele sozinha) */
+    @SuppressWarnings("deprecation")
+    private void applyBt() {
+        if (am == null) return;
+        boolean want = useBt && !holds.contains("call");
+        boolean was = btOn;
+        try {
+            if (Build.VERSION.SDK_INT >= 31) {
+                AudioDeviceInfo bt = null;
+                for (AudioDeviceInfo d : am.getAvailableCommunicationDevices()) if (d.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) { bt = d; break; }
+                if (want && bt != null) {
+                    AudioDeviceInfo cur = am.getCommunicationDevice();
+                    if (cur == null || cur.getId() != bt.getId()) am.setCommunicationDevice(bt);
+                    btOn = true;
+                } else if (btOn) {
+                    am.clearCommunicationDevice();
+                    btOn = false;
+                } else btOn = false;
+            } else {
+                if (want && am.isBluetoothScoAvailableOffCall() && hasBtInput()) {
+                    if (!am.isBluetoothScoOn()) { am.setMode(AudioManager.MODE_IN_COMMUNICATION); am.startBluetoothSco(); am.setBluetoothScoOn(true); }
+                    btOn = true;
+                } else if (btOn) {
+                    am.setBluetoothScoOn(false); am.stopBluetoothSco(); am.setMode(AudioManager.MODE_NORMAL);
+                    btOn = false;
+                }
+            }
+        } catch (Exception e) {
+            btOn = false;
+        }
+        btIn = null;
+        if (btOn) for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_INPUTS)) if (d.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) { btIn = d; break; }
+        if (was != btOn && running) { restartLoop(); }
+        else report();
+    }
+
+    private boolean hasBtInput() {
+        for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_INPUTS)) if (d.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) return true;
+        return false;
+    }
+
+    private void restart() {
+        try {
+            stopLoop();
+            synchronized (recLock) {
+                if (rec != null) rec.close();
+                rec = new Recognizer(model, 16000.0f, grammar);
+            }
+            paused = !holds.isEmpty();
+            if (!holds.contains("call") && !holds.contains("listen")) startLoop();
+            report();
+        } catch (Exception e) {
+            state("error", "microfone: " + e.getMessage());
+        }
+    }
+
+    private void restartLoop() {
+        if (model == null) return;
+        stopLoop();
+        if (!holds.contains("call") && !holds.contains("listen")) startLoop();
+        report();
+    }
+
+    /** grava 16 kHz mono do microfone escolhido e entrega ao Vosk; o texto reconhecido vai para o app */
+    private void startLoop() {
+        if (running || rec == null) return;
+        running = true;
+        final boolean bt = btOn;
+        final AudioDeviceInfo dev = btIn;
+        loop = new Thread(() -> {
+            AudioRecord ar = null;
+            try {
+                int min = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                ar = new AudioRecord(bt ? MediaRecorder.AudioSource.VOICE_COMMUNICATION : MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                    16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, Math.max(min, 8192));
+                if (bt && dev != null) ar.setPreferredDevice(dev);
+                if (ar.getState() != AudioRecord.STATE_INITIALIZED) { state("error", "microfone não abriu"); return; }
+                ar.startRecording();
+                short[] buf = new short[2048];
+                while (running) {
+                    int n = ar.read(buf, 0, buf.length);
+                    if (n <= 0 || paused) continue;
+                    String res = null;
+                    synchronized (recLock) {
+                        if (rec != null && rec.acceptWaveForm(buf, n)) res = rec.getResult();
+                    }
+                    if (res != null) deliver(res);
+                }
+            } catch (SecurityException e) {
+                state("error", "sem permissão do microfone");
+            } catch (Exception e) {
+                state("error", "microfone: " + e.getMessage());
+            } finally {
+                if (ar != null) { try { ar.stop(); } catch (Exception ignored) { } ar.release(); }
+                running = false;
+            }
+        }, "trilha-voz");
+        loop.start();
+    }
+
+    private void stopLoop() {
+        running = false;
+        Thread t = loop;
+        loop = null;
+        if (t != null) { try { t.join(1500); } catch (InterruptedException ignored) { } }
+    }
+
+    private void deliver(String json) {
+        try {
+            String t = new JSONObject(json).optString("text", "").trim();
+            if (t.isEmpty() || t.equals("[unk]")) return;
+            Sink k = sink;
+            if (k != null) main.post(() -> k.onHeard(t));
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        main.removeCallbacks(btTick);
+        stopLoop();
+        boolean b = useBt; useBt = false; applyBt(); useBt = b;
+        synchronized (recLock) {
+            if (rec != null) { rec.close(); rec = null; }
+        }
+        if (model != null) {
+            model.close();
+            model = null;
+        }
+        self = null;
+        state("off", "");
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+}
