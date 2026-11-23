@@ -2,9 +2,11 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.0, 23/11/2026)
+## Estado (v2.7.1, 23/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
+
+**v2.7.1:** primeiro retorno do celular do dono na 2.6.3: o download do mapa de MG parava com "Download interrompido: An operation that depends on state cached in an interface object was made but the state had changed since it was read from disk" (`NotReadableError`): reler a parte logo depois de gravar falha no Android dele. Agora o SHA-256 é conferido nos bytes que chegaram pela rede (sem reler o arquivo) e o `PartsSource` refaz a leitura com um `File` novo (`handles`, `staleFile`). `t25` reproduz o erro. E a 2.7.0 não instalou por cima da 2.6.3 ("conflito com um pacote já existente": chave diferente).
 
 **v2.7.0 (PR #3):** a pedido do dono ("faça as 7 melhorias e retire A–F"):
 - **Saiu o rali inteiro:** roadbook (PDF/OpenRally/automático), odômetro TOTAL/PARCIAL e calibração, waypoints e validação, zonas de velocidade e copiloto da trilha, voltar à trilha, altimetria, cronômetro, tela dividida, simulação de GPS. `index.html` foi de 229 KB para ~180 KB; **pdf.js** e **leaflet-elevation** (GPL) saíram do app e do APK. GPX continua só para **ver no mapa** (`showGpx`/`hideGpx`, Arquivos e gravações; tocar no nome lá em cima tira). O CAP mostra "sem rota" fora do Ir para. Saiu também o botão duplicado "Abrir o Spotify".
@@ -29,7 +31,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v17`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v18`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin`, `TrilhaNotifService`, `TrilhaVoiceService` (Vosk)). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
@@ -88,6 +90,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Rota offline**: o centro de uma cidade (ponto do `places`) pode ficar a centenas de metros do vértice de rua mais perto; por isso a entrada/saída cai para os 6 nós mais perto a até 3 km. A mesma estrada em zooms diferentes não coincide (o zoom baixo é simplificado): portais.
 - **PMTiles**: o id do tile é Hilbert com `rotate(s, …)` (s = metade atual), como no `make_testmap.py`.
 - Gradle no ambiente da sessão: Maven Central responde 429 a `HEAD`; init script com o espelho do Google no README de `android-app/`.
+- **OPFS no Android**: reler um arquivo logo depois de gravar (`getFile()` + `arrayBuffer()`) pode dar `NotReadableError` ("state had changed since it was read from disk"); um `File` é uma foto do arquivo. Conferir os bytes recebidos em memória e, ao ler, pegar um `File` novo pelo handle e tentar de novo (`t25`).
 - **Odômetro/km**: a 1ª posição do GPS costuma ser imprecisa; só vale como partida com precisão ≤50 m.
 - **Service worker**: `r.clone()` antes de devolver a resposta. Recurso de outro domínio só entra no cache se o pedido for CORS. Para testar offline, cortar a rede **e** limpar o cache HTTP.
 - **APK**: o WebView não baixa arquivos; exportação por `TrilhaNative.shareFile`. `FLAG_KEEP_SCREEN_ON` no `MainActivity`.
@@ -99,13 +102,13 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24; do python3 $t.py; done
+cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25; do python3 $t.py; done
 python3 fixtures.py --clean
 ```
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/teclas/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`).
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/teclas/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler.
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 
