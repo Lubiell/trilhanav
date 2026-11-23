@@ -126,8 +126,7 @@ async def main():
         check('destino entra nos recentes', 'Praça' in await pg.text_content('#navRecent'))
         await pg.click('#sNavToll'); await pg.wait_for_timeout(1500)
         check('"evitar pedágio" recalcula com use_tolls=0', calls['bodies'][-1]['costing_options']['motorcycle']['use_tolls'] == 0)
-        await pg.click('#navRoutes [data-ext="waze"]')
-        check('Abrir no Waze usa o link universal do Waze', await pg.evaluate('window.__open.slice(-1)[0]') == f'https://waze.com/ul?ll={DEST[0]:.6f},{DEST[1]:.6f}&navigate=yes')
+        check('sem botões do Waze/Google Maps (v2.6.2)', await pg.evaluate("document.querySelectorAll('#navRoutes [data-ext]').length") == 0)
         await pg.click('#navRoutes [data-go="0"]'); await pg.wait_for_timeout(600)
         st = await pg.evaluate("({nav:!!TN.nav,on:document.body.classList.contains('navOn'),card:getComputedStyle(document.querySelector('#navCard')).display,pane:document.querySelector('#paneMap').classList.contains('on'),dlg:document.querySelector('#dlgNav').open})")
         check('Ir: começa a navegação, mostra o cartão e o mapa, fecha a tela', st == {'nav': True, 'on': True, 'card': 'grid', 'pane': True, 'dlg': False}, str(st))
@@ -207,14 +206,12 @@ async def main():
         txt = await pg.evaluate("[...document.querySelectorAll('.radmk')].map(e=>e.textContent).sort().join(',')")
         check('marcador do radar mostra o limite', txt == '50,60', txt)
 
-        # ---------- falha de rede: rota não sai, oferece Waze/Google Maps ----------
+        # ---------- falha de rede: sem mapa offline a rota não sai; oferece linha reta (v2.6.2: sem Waze/Google Maps) ----------
         MODE['valhalla'] = 'fail'
         await pg.click('#bNav'); await pg.wait_for_timeout(300)
         await pg.click('#navRecent [data-rc="0"]'); await pg.wait_for_timeout(1500)
         txt = await pg.text_content('#navRoutes')
-        check('sem rota: mensagem e botões Waze/Google Maps', 'Não consegui calcular' in txt and await pg.evaluate("document.querySelectorAll('#navRoutes [data-ext]').length") == 2, txt[:100])
-        await pg.click('#navRoutes [data-ext="gmaps"]')
-        check('Google Maps com destino', 'google.com/maps/dir/?api=1&destination=' in await pg.evaluate('window.__open.slice(-1)[0]'))
+        check('sem rota: mensagem e opção de linha reta, sem Waze/Google Maps', 'Não consegui calcular' in txt and await pg.evaluate("!!document.querySelector('#navStraight')&&!document.querySelector('#navRoutes [data-ext]')"), txt[:100])
         await pg.click('#dlgNav [data-close]')
         check('fechar sem ir limpa a prévia', await pg.evaluate('!TN.navPlan&&!TN.nav'))
 

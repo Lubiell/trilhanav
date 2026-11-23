@@ -128,10 +128,12 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
                 // enquanto o app fala, o assistente não escuta (senão ouviria o próprio "diga atender")
                 private final java.util.Set<String> live = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
                 private void upd() { TrilhaVoiceService.hold("tts", !live.isEmpty()); }
+                // a música só volta ao volume normal quando não sobra fala nenhuma (sem "sobe e desce" entre duas frases seguidas)
+                private void release() { main.postDelayed(() -> { if (live.isEmpty() && !tts.isSpeaking()) focusOff(); }, 400); }
                 @Override public void onStart(String id) { live.add(id); upd(); focusOn(); }
-                @Override public void onDone(String id) { live.remove(id); main.postDelayed(this::upd, 300); focusOff(); }
-                @Override public void onError(String id) { live.remove(id); upd(); focusOff(); }
-                @Override public void onStop(String id, boolean interrupted) { live.remove(id); upd(); focusOff(); }
+                @Override public void onDone(String id) { live.remove(id); main.postDelayed(this::upd, 300); release(); }
+                @Override public void onError(String id) { live.remove(id); upd(); release(); }
+                @Override public void onStop(String id, boolean interrupted) { live.remove(id); upd(); release(); }
             });
             ttsReady = true;
             if (pendingText != null) {

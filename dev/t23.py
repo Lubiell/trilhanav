@@ -69,6 +69,11 @@ async def main():
         d = await pg.evaluate(DRIVE, [t0 + 5000]); await pg.wait_for_timeout(300)
         spk = await pg.evaluate('TN.spoken.slice()')
         check('voz curva a curva e chegada, sem internet', d['arrived'] and 'Você chegou ao destino' in spk and any('à direita' in x or 'à esquerda' in x for x in spk), str(spk[-5:]))
+        # estrada de serra: curva de 90° desenhada em vértices a cada 15 m vira UMA manobra; grampo de 160° não é "retorno"
+        serra = await pg.evaluate('''()=>{const k=1/111194.9,pts=[];let lat=-20,lon=-44,h=0;const step=(d)=>{lat+=Math.cos(h*Math.PI/180)*d*k;lon+=Math.sin(h*Math.PI/180)*d*k/Math.cos(lat*Math.PI/180);pts.push({lat,lon})};
+          pts.push({lat,lon});for(let i=0;i<20;i++)step(15);for(let i=0;i<4;i++){h+=22.5;step(15)}for(let i=0;i<20;i++)step(15);for(let i=0;i<8;i++){h-=20;step(12)}for(let i=0;i<20;i++)step(15);
+          const r=TN.offNavRoute(TN.mkRoute(pts),false);return r.man.map(m=>m.txt)}''')
+        check('serra: uma manobra por curva e grampo sem "retorno"', len(serra) == 4 and 'Faça o retorno' not in serra and 'direita' in serra[1] and 'esquerda' in serra[2], str(serra))
         check('sem erros (offline)', not errs, str(errs))
 
         # destino longe demais e sem mapa: mensagem certa e opção de linha reta
@@ -80,6 +85,13 @@ async def main():
         check('longe demais: explica e oferece linha reta', 'longe demais' in txt and await pg.evaluate("!!document.querySelector('#navStraight')"), txt)
         await pg.evaluate("document.querySelector('#navStraight').click()"); await pg.wait_for_timeout(300)
         check('linha reta inicia a rota (bússola)', await pg.evaluate("!!TN.nav&&TN.nav.rt.straight"))
+
+        # coordenada digitada sem aceitar a internet: acha sem rede
+        await pg.evaluate("document.querySelector('#navEnd').click()"); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#bNav').click()"); await pg.wait_for_timeout(400)
+        await pg.evaluate("document.querySelectorAll('#dlgAsk[open]').forEach(d=>d.close())"); await pg.wait_for_timeout(200)
+        await pg.fill('#navQ', '-20.024, -44.000'); await pg.press('#navQ', 'Enter'); await pg.wait_for_timeout(600)
+        check('coordenada sem internet: aparece sem pedir o aviso de novo', 'Coordenada' in await pg.text_content('#navRes') and not await pg.evaluate("document.querySelector('#dlgAsk').open"), await pg.text_content('#navRes'))
 
         # ===== com internet aceita, mas o Valhalla falha: cai para o mapa offline =====
         vh = []

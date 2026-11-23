@@ -766,7 +766,8 @@ function unlockVoice(){try{const ss=window.speechSynthesis;if(NATIVE||!ss||typeo
 async function voiceTest(){if(!cfg.voice){toast('Voz desligada: ligue "Copiloto por voz" acima');return}
   say('Copiloto ligado. Em duzentos metros, curva à direita.',true);
   if(NATIVE){try{const s=await NP.nat.ttsStatus();
-      if(s.failed)toast('O aparelho não tem motor de voz. Instale o "Speech Services by Google" na Play Store',7000);
+      if(!s.ready&&!s.failed)toast('A voz ainda está iniciando: toque em Testar voz de novo em alguns segundos',5000);
+      else if(s.failed)toast('O aparelho não tem motor de voz. Instale o "Speech Services by Google" na Play Store',7000);
       else if(!s.langOk){toast('Voz em português não instalada: abrindo a tela para baixar',6000);NP.nat.installVoice().catch(()=>{})}
       else toast(s.headset?'Saindo pelo fone do capacete. Sem som? Suba o volume DURANTE a fala (é o volume de ligação)':'Sem som? Suba o volume de MÍDIA do aparelho',6000)}catch(e){}return}
   const ss=window.speechSynthesis;if(!ss){toast('Este navegador não tem voz. Use o Chrome ou o APK',6000);return}
@@ -892,9 +893,19 @@ async function offlineRouteTo(p,dest){rtTooBig=false;if(!offPM||!offH)return nul
   rtTooBig=!tried;return null}
 /* transforma a rota offline no formato do "Ir para" (manobras com o mesmo cartão e a mesma voz das rotas da internet) */
 function offNavRoute(rt,straight){const man=[{type:1,txt:'Siga',alert:'Siga',pre:'Siga',street:'',exit:0,along:0,len:0}];
-  if(!straight)for(let i=1;i<rt.pts.length-1;i++){const a=rt.pts[i-1],b=rt.pts[i],c=rt.pts[i+1];if(hav(a,b)<12||hav(b,c)<12)continue;const A=angDiff(brg(b,c),brg(a,b)),aa=Math.abs(A),R=A>0;
-    if(aa<40)continue;const type=aa>=150?12:aa>=110?(R?11:14):aa>=70?(R?10:15):(R?9:16),txt=type===12?'Faça o retorno':(aa>=110?'Vire acentuadamente à ':aa>=70?'Vire à ':'Curva à ')+(R?'direita':'esquerda');
-    const along=rt.cum[i],last=man[man.length-1];if(man.length>1&&along-last.along<25)continue;man.push({type,txt,alert:txt,pre:txt,street:'',exit:0,along,len:0})}
+  /* uma curva desenhada em vários vértices seguidos (estrada de serra) vira UMA manobra: junta os vértices que viram para o mesmo lado,
+     com menos de 40 m entre eles, e classifica pelo ângulo total; a manobra fica no início da curva */
+  const P=rt.pts,C=rt.cum;let bend=null;
+  const close=()=>{const B=bend;bend=null;if(!B)return;const aa=Math.abs(B.tot),R=B.tot>0,last=man[man.length-1];
+    if(aa<40||(man.length>1&&B.start-last.along<40))return;
+    const type=aa>=170?12:aa>=110?(R?11:14):aa>=70?(R?10:15):(R?9:16),txt=type===12?'Faça o retorno':(aa>=110?'Curva fechada à ':aa>=70?'Vire à ':'Curva à ')+(R?'direita':'esquerda');
+    man.push({type,txt,alert:txt,pre:txt,street:'',exit:0,along:B.start,len:0})};
+  if(!straight)for(let i=1;i<P.length-1;i++){if(hav(P[i-1],P[i])<3||hav(P[i],P[i+1])<3)continue;const d=angDiff(brg(P[i],P[i+1]),brg(P[i-1],P[i]));
+    if(bend&&C[i]-bend.end>40)close();
+    if(Math.abs(d)<5)continue;
+    if(bend&&Math.sign(d)!==Math.sign(bend.tot))close();
+    if(!bend)bend={start:C[i],end:C[i],tot:0};bend.tot+=d;bend.end=C[i]}
+  close();
   man.push({type:4,txt:'Destino',alert:'o destino estará à frente',pre:'Chegando ao destino',street:'',exit:0,along:rt.len,len:0});
   rt.man=man;rt.time=rt.len/(straight?8:10);rt.via=straight?'linha reta (sem estrada no mapa offline)':'mapa offline (sem internet)';rt.offline=true;return rt}
 async function offNavReq(from,to){let r=null;try{r=await offlineRouteTo(from,to)}catch(e){r=null}
@@ -967,7 +978,8 @@ const lc1=t=>t?t.charAt(0).toLowerCase()+t.slice(1):t;
 /* ---- busca de endereço ---- */
 function placeOf(f){const p=(f&&f.properties)||{},c=((f&&f.geometry)||{}).coordinates||[];const street=[p.street,p.housenumber].filter(Boolean).join(', ');
   return {name:String(p.name||street||p.city||'Lugar').slice(0,80),sub:[p.name&&street?street:'',p.district||p.locality,p.city,p.state].filter(Boolean).join(' · ').slice(0,120),lat:+c[1],lon:+c[0]}}
-async function geoSearch(q){q=String(q||'').trim();const m=/^(-?\d{1,2}\.\d+)\s*[,;\s]\s*(-?\d{1,3}\.\d+)$/.exec(q);
+const COORD_RE=/^(-?\d{1,2}\.\d+)\s*[,;\s]\s*(-?\d{1,3}\.\d+)$/;
+async function geoSearch(q){q=String(q||'').trim();const m=COORD_RE.exec(q);
   if(m){const lat=+m[1],lon=+m[2];if(Math.abs(lat)<=90&&Math.abs(lon)<=180)return [{name:'Coordenada',sub:lat.toFixed(5)+', '+lon.toFixed(5),lat,lon}]}
   if(q.length<3)return [];const near=fix||LS.get('lastPos',null);
   const j=await politeFetch(PHOTON+'?q='+encodeURIComponent(q)+'&limit=8'+(near&&isFinite(near.lat)?'&lat='+near.lat.toFixed(2)+'&lon='+near.lon.toFixed(2):''));
@@ -992,14 +1004,14 @@ function parseTrip(t){let pts=[];const man=[];((t&&t.legs)||[]).forEach(L=>{cons
   rt.time=+((t.summary||{}).time)||rt.len/8;const via=rt.man.filter(m=>m.street).sort((a,b)=>b.len-a.len)[0];rt.via=via?via.street:'';return rt}
 /* rota do "Ir para": pela internet (Valhalla) quando há rede e o usuário aceitou; senão, ou se falhar, pelo mapa offline */
 async function anyRoute(from,to,alts){let err=null;
-  if(navigator.onLine!==false&&LS.get('netOk',false)){try{return await routeReq(from,to,alts)}catch(e){err=e}}
+  if(navigator.onLine!==false&&LS.get('netOk',false)){try{return await routeReq(from,to,alts,offPM?8000:25000)}catch(e){err=e}}
   const r=await offNavReq(from,to);if(r)return [r];
   throw new Error(rtTooBig?'destino longe demais para a rota pelo mapa offline (até uns 30 km)':!offPM?(err?'sem internet e sem mapa offline instalado':'sem mapa offline instalado (Ajustes › Mapa offline)'):'nenhuma estrada do mapa offline liga você ao destino')}
-async function routeReq(from,to,alts){
+async function routeReq(from,to,alts,ms=25000){
   const loc=(p,h)=>Object.assign({lat:+(+p.lat).toFixed(6),lon:+(+p.lon).toFixed(6)},h!=null&&isFinite(h)?{heading:Math.round(norm360(h)),heading_tolerance:45}:{});
   const body={locations:[loc(from,from.hdg),loc(to)],costing:'motorcycle',costing_options:{motorcycle:{use_highways:cfg.navNoHwy?0:1,use_tolls:cfg.navNoToll?0:0.5,use_trails:0}},
     directions_options:{language:'pt-BR',units:'kilometers'},alternates:alts?2:0};
-  const j=await politeFetch(VALHALLA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},25000);
+  const j=await politeFetch(VALHALLA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},ms);
   if(!j.trip)throw new Error('sem rota');const rs=[j.trip,...(j.alternates||[]).map(a=>a&&a.trip).filter(Boolean)].map(parseTrip);
   return rs.sort((a,b)=>a.time-b.time)}   /* o Valhalla ordena pelo custo dele, não pelo tempo: a 1ª da lista é a mais rápida */
 
@@ -1030,7 +1042,7 @@ function navUpdate(){if(!nav||!fix)return;const rt=nav.rt,lq=nav.q;
   if(nav.arrived)return;
   /* fora da rota: 3 posições seguidas longe dela (com GPS bom) recalculam, no máximo a cada 8 s (20 s depois de uma falha) */
   const tol=Math.max(45,Math.min(fix.acc||20,60)+25);
-  if(q.d>tol&&(fix.acc||99)<=50){nav.off++;if(nav.off>=3&&!nav.busy&&fix.t-nav.lastRe>8000)navReroute()}else nav.off=0;
+  if(q.d>tol&&(fix.acc||99)<=50&&!rt.straight){nav.off++;if(nav.off>=3&&!nav.busy&&fix.t-nav.lastRe>8000)navReroute()}else nav.off=0;
   const v=speedKmh/3.6,far=speedKmh>80?1200:speedKmh>50?600:350,near=Math.max(45,v*7);
   const k=rt.man.findIndex((m,i)=>i>0&&m.along>q.along+3);nav.mi=k;
   if(k>0){const m=rt.man[k],dm=m.along-q.along,quiet=m.type===7||m.type===8;
@@ -1053,7 +1065,6 @@ function navRender(){if(!nav)return;const q=nav.q,rt=nav.rt;
 function navSide(){if(!fix||!nav.q)return false;const q=nav.q,tgt=nav.joined?rtAt(nav.rt,q.along+Math.max(40,speedKmh/3.6*5)):nav.rt.pts[0],b=brg(fix,tgt),m=nav.joined&&nav.mi>0?nav.rt.man[nav.mi]:null;
   $('#wpLabel').textContent='ROTA: '+nav.to.name;$('#cap').textContent=String(Math.round(b)).padStart(3,'0')+'°';$('#wpDist').textContent=fmtKm(m?m.along-q.along:hav(fix,tgt));
   $('#capArrow').style.transform='rotate('+(heading==null?b:b-heading)+'deg)';return true}
-function openExt(url){if(NATIVE){try{NP.nat.openUrl({url}).catch(()=>toast('Não consegui abrir o app',3000));return}catch(e){}}window.open(url,'_blank','noopener')}
 $('#navEnd').onclick=e=>{e.stopPropagation();navStop('Rota encerrada')};
 $('#navCard').onclick=()=>{if(!nav)return;const m=nav.mi>0?nav.rt.man[nav.mi]:null;if(m&&nav.q)say('Em '+spokenDist(m.along-nav.q.along)+', '+lc1(m.alert),true);else if(!nav.joined)say('Vá até o início da rota',true)};
 
@@ -1073,13 +1084,13 @@ function renderNavRecent(){const r=getRecent().sort((a,b)=>(b.fav|0)-(a.fav|0)),
   el.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.fav];LS.set('navRecent',getRecent().map(x=>same(x,p)?Object.assign(x,{fav:!x.fav}):x));renderNavRecent()});
   el.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.rm];LS.set('navRecent',getRecent().filter(x=>!same(x,p)));renderNavRecent()})}
 async function openNavDlg(){$('#navQ').value=navSel.to?navSel.to.name:'';$('#navFrom').value=navSel.from?navSel.from.name:'';$('#sNavToll').checked=cfg.navNoToll;$('#sNavHwy').checked=cfg.navNoHwy;
-  $('#navRes').innerHTML='';renderNavRecent();renderNavRoutes();$('#dlgNav').showModal();if(!await netOk()){toast('Sem a internet: escolha um recente, digite coordenadas ou toque longo no mapa (rota pelo mapa offline)',6000);return}$('#navQ').focus()}
+  $('#navRes').innerHTML='';renderNavRecent();renderNavRoutes();$('#dlgNav').showModal();if(!await netOk()){toast('Sem busca por internet: escolha um recente, digite coordenadas (-19.92, -43.94) ou toque longo no mapa (rota pelo mapa offline)',7000);return}$('#navQ').focus()}
 $('#bNav').onclick=()=>{if(nav){ask({title:'Rota em andamento',msg:'Destino: '+nav.to.name,options:[{label:'Escolher outro destino',value:'new'},{label:'Encerrar a rota',value:'end'}],ok:'OK'}).then(v=>{
     if(v==='new')openNavDlg();else if(v==='end')navStop('Rota encerrada')});return}openNavDlg()};
 ['navQ','navFrom'].forEach(id=>{const el=$('#'+id);el.oninput=()=>{navField=id==='navQ'?'to':'from';if(id==='navFrom'&&!el.value.trim())navSel.from=null;clearTimeout(navTmr);navTmr=setTimeout(()=>navSearch(el.value),650)};
   el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(navTmr);navField=id==='navQ'?'to':'from';navSearch(el.value)}}});
 $('#navFromMe').onclick=()=>{navSel.from=null;$('#navFrom').value='';if(navSel.to)navPlanRoutes()};
-async function navSearch(q){const my=++navSeq;if(String(q).trim().length<3){$('#navRes').innerHTML='';return}if(!LS.get('netOk',false)&&!await netOk())return;
+async function navSearch(q){const my=++navSeq;if(String(q).trim().length<3){$('#navRes').innerHTML='';return}if(!COORD_RE.test(String(q).trim())&&!LS.get('netOk',false)&&!await netOk())return;
   $('#navRes').innerHTML='<div class="small" style="padding:6px 0">Buscando…</div>';
   try{const r=await geoSearch(q);if(my!==navSeq)return;navResults=r;
     $('#navRes').innerHTML=r.length?r.map((p,i)=>'<div class="lr nvr" data-i="'+i+'"><span><b>'+esc(p.name)+'</b><br><span class="small">'+esc(p.sub)+(fix?' · '+fmtKm(hav(fix,p)):'')+'</span></span></div>').join(''):'<div class="small" style="padding:6px 0">Nada encontrado.</div>';
@@ -1172,7 +1183,7 @@ function parseCmd(t){const s=normTxt(t);if(!s)return null;
   if(/\b(posto|gasolina|combustivel|abastecer)\b/.test(s))return {a:'fuel'};
   if(/\bmarcar\b/.test(s)&&/\bradar\b/.test(s))return {a:'radar'};
   if(/\b(pausar|pausa|pause|parar|para a musica)\b/.test(s))return {a:'pause'};
-  if(/\b(proxima|proximo|pular|pula|avancar|avanca|trocar|troca|troque|mudar|muda|mude|outra)\b/.test(s))return {a:'next'};
+  if(/\b(proxima|proximo|pular|pula|avancar|avanca|trocar|troca|troque|mudar|muda|mude)\b/.test(s))return {a:'next'};
   if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
   if(/\b(aumentar|aumenta|aumente|mais alto|sobe)\b/.test(s))return {a:'volup'};
   if(/\b(abaixar|abaixa|abaixe|diminuir|diminui|diminua|mais baixo|baixar)\b/.test(s))return {a:'voldown'};
@@ -1770,7 +1781,7 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
+window.TN={offNavRoute,mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>
 </html>
