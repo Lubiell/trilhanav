@@ -3,7 +3,7 @@ Nativo simulado (Capacitor fake: impacto, SMS, ligação); o lado nativo de verd
 import asyncio, json, math, sys
 from playwright.async_api import async_playwright
 
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html?trilha=1'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)
@@ -144,7 +144,7 @@ async def main():
         n_all = await pg.evaluate("document.querySelectorAll('#dash .card').length")
         check('Painel mostra todos os mostradores por padrão, inclusive Autonomia e Clima', n_all == await pg.evaluate("TN.DASH.length") and 'AUTONOMIA' in await pg.text_content('#dash'))
         await pg.click('#dashEdit'); await pg.wait_for_timeout(200)
-        for k in ('coord', 'recn', 'corr', 'acc'):
+        for k in ('coord', 'recn', 'eta', 'acc'):
             await pg.click(f'#dashItems [data-dk="{k}"]')
         await pg.click('#dashBig'); await pg.evaluate("document.querySelector('#dlgDash').close()"); await pg.wait_for_timeout(200)
         r = await pg.evaluate("({n:document.querySelectorAll('#dash .card').length,big:document.querySelector('#dash').classList.contains('big'),txt:document.querySelector('#dash').textContent})")

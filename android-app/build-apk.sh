@@ -15,10 +15,9 @@ mkdir -p www
 find www -mindepth 1 -delete
 cp "$ROOT/index.html" "$ROOT/manifest.json" "$ROOT/icon.svg" "$ROOT/icon-192.png" "$ROOT/icon-512.png" www/
 cp -r "$ROOT/lib" www/lib
-mkdir -p www/lib/leaflet www/lib/pdfjs www/fonts/files
+mkdir -p www/lib/leaflet www/fonts/files
 cp "$NM/leaflet/dist/leaflet.js" "$NM/leaflet/dist/leaflet.css" www/lib/leaflet/
 cp -r "$NM/leaflet/dist/images" www/lib/leaflet/images
-cp "$NM/pdfjs-dist/build/pdf.min.js" "$NM/pdfjs-dist/build/pdf.worker.min.js" www/lib/pdfjs/
 cp "$NM/@capacitor/core/dist/capacitor.js" www/lib/capacitor.js
 for w in 700 900; do cp "$NM/@fontsource/orbitron/$w.css" "www/fonts/orbitron-$w.css"; cp "$NM"/@fontsource/orbitron/files/orbitron-*-$w-normal.woff2 www/fonts/files/; done
 for w in 400 600; do cp "$NM/@fontsource/inter/$w.css" "www/fonts/inter-$w.css"; cp "$NM"/@fontsource/inter/files/inter-*-$w-normal.woff2 www/fonts/files/; done

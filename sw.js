@@ -1,9 +1,7 @@
-const V='trilhanav-v14';
-const CORE=['./','index.html','manifest.json','icon.svg','lib/pmtiles.js','lib/protomaps-leaflet.js','lib/leaflet-rotate.js','lib/elevation/dist/leaflet-elevation.min.js','lib/elevation/dist/leaflet-elevation.min.css','lib/elevation/src/handlers/distance.js','lib/elevation/src/handlers/altitude.js','lib/elevation/src/handlers/slope.js','lib/elevation/images/elevation-position.svg','lib/elevation/images/elevation-pushpin.svg',
+const V='trilhanav-v15';
+const CORE=['./','index.html','manifest.json','icon.svg','lib/pmtiles.js','lib/protomaps-leaflet.js','lib/leaflet-rotate.js',
 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'];
+'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.all(CORE.map(u=>c.add(u).catch(()=>{})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V&&k!=='trilhanav-tiles').map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 /* o que entra no cache em tempo de uso: arquivos do próprio app, cdnjs e as fontes do Google (pedidas com CORS) */

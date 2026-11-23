@@ -4,7 +4,7 @@ testado à parte com o mesmo modelo Vosk e voz sintética pt-BR (ver CLAUDE.md).
 import asyncio, sys
 from playwright.async_api import async_playwright
 
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html?trilha=1'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)

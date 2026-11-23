@@ -26,7 +26,7 @@ async def newpage(b, native=True):
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: m.type == 'error' and errs.append(m.text))
-    await pg.goto('http://localhost:8765/index.html?trilha=1'); await pg.wait_for_timeout(1300)
+    await pg.goto('http://localhost:8765/index.html'); await pg.wait_for_timeout(1300)
     return pg, errs
 
 async def main():
@@ -43,8 +43,8 @@ async def main():
         check('o serviço tem título/mensagem de notificação (necessário para seguir com a tela apagada)', opt.get('backgroundMessage') and opt.get('backgroundTitle') == 'TrilhaNav' and opt.get('requestPermissions') is True and opt.get('stale') is False, str(opt))
         # posições vindas do serviço nativo entram como GPS normal
         r = await pg.evaluate('''()=>{const t=Date.now();for(let i=0;i<6;i++)__bgcb({latitude:-20,longitude:-44+i*0.0003,altitude:900,accuracy:6,speed:12,bearing:90,time:t+i*2000,simulated:false},undefined);
-          return {total:TN.st.total,gps:document.querySelector('#gpsTxt').textContent,spd:document.querySelector('#speed').textContent,hdg:document.querySelector('#hdgTxt').textContent}}''')
-        check('posições do serviço nativo alimentam odômetro, velocidade e rumo', r['total'] > 0.1 and r['gps'] == 'GPS ±6 m' and r['spd'] == '43' and '090' in r['hdg'], str(r))
+          return {total:TN.st.movKm,gps:document.querySelector('#gpsTxt').textContent,spd:document.querySelector('#speed').textContent,hdg:document.querySelector('#hdgTxt').textContent}}''')
+        check('posições do serviço nativo alimentam km rodados, velocidade e rumo', r['total'] > 0.1 and r['gps'] == 'GPS ±6 m' and r['spd'] == '43' and '090' in r['hdg'], str(r))
         r = await pg.evaluate('''()=>{__bgcb({latitude:-20,longitude:-43.99,altitude:null,accuracy:5,speed:null,bearing:null,time:Date.now()+99999},undefined);return document.querySelector('#gpsTxt').textContent}''')
         check('posição sem velocidade/rumo/altitude (null) não quebra', r == 'GPS ±5 m', r)
         r = await pg.evaluate('''()=>{__bgcb(undefined,{code:'NOT_AUTHORIZED'});return [document.querySelector('#gpsTxt').textContent,document.querySelector('#toast').textContent]}''')
@@ -61,8 +61,7 @@ async def main():
         await pg.click('#mNext'); await pg.click('#mPlay'); await pg.click('#mPrev')
         keys = await pg.evaluate("__calls.filter(c=>c[1]==='mediaKey').map(c=>c[2].key)")
         check('próxima / tocar-pausar / anterior mandam a tecla de mídia', keys == ['next', 'playpause', 'previous'], str(keys))
-        await pg.click('#mOpen'); await pg.wait_for_timeout(100)
-        check('"Abrir o Spotify" chama o app pelo pacote', await pg.evaluate("__calls.filter(c=>c[1]==='openApp').map(c=>c[2].package)") == ['com.spotify.music'])
+        check('um botão só do Spotify (sem o "Abrir o Spotify" duplicado)', await pg.evaluate("!document.querySelector('#mOpen')&&!!document.querySelector('#mSpotBg')"))
         await pg.evaluate("document.querySelector('#dlgMedia').close()")
         # teclas configuráveis do controle de guidão
         await pg.evaluate("document.querySelector('#bSet').click()")

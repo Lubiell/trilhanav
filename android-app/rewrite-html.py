@@ -15,8 +15,6 @@ def rep(old, new):
 rep('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css', 'lib/leaflet/leaflet.css')
 rep('<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>',
     '<script src="lib/capacitor.js"></script>\n<script src="lib/leaflet/leaflet.js"></script>')
-rep('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'lib/pdfjs/pdf.min.js')
-rep('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', 'lib/pdfjs/pdf.worker.min.js')
 rep('<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet" crossorigin="anonymous">',
     '<link rel="stylesheet" href="fonts/orbitron-700.css"><link rel="stylesheet" href="fonts/orbitron-900.css"><link rel="stylesheet" href="fonts/inter-400.css"><link rel="stylesheet" href="fonts/inter-600.css">')
 for bad in ('cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'):

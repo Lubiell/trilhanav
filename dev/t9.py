@@ -19,7 +19,7 @@ async def newpage(b, ctx=None):
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: m.type == 'error' and errs.append(m.text))
-    await pg.goto('http://localhost:8765/index.html?trilha=1'); await pg.wait_for_timeout(1300)
+    await pg.goto('http://localhost:8765/index.html'); await pg.wait_for_timeout(1300)
     return pg, errs
 
 async def list_text(pg):
@@ -65,7 +65,7 @@ async def main():
         lt = await list_text(pg)
         check('importar o mesmo arquivo duas vezes não sobrescreve ("t (2).gpx")', 't.gpx' in lt and 't (2).gpx' in lt, lt)
         await pg.click('[data-act=open][data-n="t.gpx"]'); await pg.wait_for_timeout(500)
-        check('abrir carrega o GPX e fecha o diálogo', await pg.evaluate('TN.wps.length') == 3 and not await pg.evaluate("document.querySelector('#dlgGpx').open"))
+        check('abrir mostra o trajeto no mapa e fecha o diálogo', await pg.evaluate('TN.track.length') > 1 and not await pg.evaluate("document.querySelector('#dlgGpx').open"))
         await pg.evaluate("document.querySelector('#bGpx').click()"); await pg.wait_for_timeout(300)
         await pg.click('[data-act=mv][data-n="t.gpx"]'); await pg.wait_for_timeout(200)
         opts = await pg.evaluate("[...document.querySelectorAll('#askSel option')].map(o=>o.textContent)")
@@ -78,20 +78,12 @@ async def main():
         await pg.click('[data-act=ren][data-n="t.gpx"]'); await pg.fill('#askIn', 'trilha1.gpx'); await pg.click('#askOk'); await pg.wait_for_timeout(400)
         lt = await list_text(pg)
         check('renomear', 'trilha1.gpx' in lt and '📄 t.gpx' not in lt, lt)
-        await pg.click('[data-act=open][data-n="trilha1.gpx"]'); await pg.wait_for_timeout(500)
-        # reabre o app sem a cópia do localStorage: tem que voltar do armazenamento do gerenciador
-        await pg.evaluate("localStorage.removeItem('tn_gpx')"); await pg.reload(); await pg.wait_for_timeout(1800)
-        check('depois de recarregar, o GPX volta da pasta (sem o localStorage)', await pg.evaluate('TN.wps.length') == 3 and 'Serra' in await pg.evaluate("JSON.parse(localStorage.getItem('tn_gpxPath')).parts.join('/')"))
-        await pg.evaluate("document.querySelector('#bGpx').click()"); await pg.wait_for_timeout(300)
-        await pg.click('[data-dir="Serra_Mantiqueira_b_"]'); await pg.wait_for_timeout(300)
-        await pg.click('#gSaveCur'); await pg.wait_for_timeout(400)
-        check('"Guardar o GPX aberto aqui" cria cópia sem sobrescrever', 'trilha1 (2).gpx' in await list_text(pg), await list_text(pg))
         await pg.click('[data-act=rm][data-n="trilha1.gpx"]'); await pg.wait_for_timeout(200)
         check('apagar pede confirmação', await pg.evaluate("document.querySelector('#dlgAsk').open") and 'Não dá para desfazer' in await pg.evaluate("document.querySelector('#askMsg').textContent"))
         await pg.click('#askNo'); await pg.wait_for_timeout(200)
         check('cancelar mantém o arquivo', 'trilha1.gpx' in await list_text(pg))
         await pg.click('[data-act=rm][data-n="trilha1.gpx"]'); await pg.click('#askOk'); await pg.wait_for_timeout(400)
-        check('confirmar apaga', 'trilha1.gpx' not in (await list_text(pg)).replace('trilha1 (2).gpx', ''), await list_text(pg))
+        check('confirmar apaga', 'trilha1.gpx' not in await list_text(pg), await list_text(pg))
         check('sem erros (gerenciador)', not errs, str(errs))
         await pg.context.close()
 

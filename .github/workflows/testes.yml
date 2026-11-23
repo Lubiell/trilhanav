@@ -1,0 +1,76 @@
+name: Testes
+# Roda os testes Playwright (dev/t*.py) em cada PR e em cada push no main, um teste por job.
+# O Chrome é o que já vem na imagem ubuntu-latest (/usr/bin/google-chrome); o Playwright só é o cliente.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: testes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        t: [t, t3, t4, t5, t7, t9, t11, t12, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Dependências dos testes
+        run: python3 -m pip install --quiet playwright==1.65.2 pillow==12.3.0
+      - name: Fixtures
+        working-directory: dev
+        run: python3 fixtures.py
+      - name: Servidor local
+        run: |
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8765/index.html >/dev/null && break; sleep 1; done
+      - name: ${{ matrix.t }}
+        working-directory: dev
+        run: python3 ${{ matrix.t }}.py
+
+  pacote-apk:
+    # t13: o pacote web do APK (android-app/www) abre sem CDN; t16 também roda nele
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Dependências
+        run: |
+          python3 -m pip install --quiet playwright==1.65.2 pillow==12.3.0
+          cd android-app && npm ci --ignore-scripts --no-audit --no-fund
+      - name: Pacote web
+        run: bash android-app/build-apk.sh --www-only
+      - name: Fixtures e servidores
+        run: |
+          (cd dev && python3 fixtures.py)
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          (cd android-app/www && python3 -m http.server 8766 >/dev/null 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:8766/index.html >/dev/null && curl -sf http://localhost:8765/index.html >/dev/null && break; sleep 1; done
+      - name: t13
+        working-directory: dev
+        run: python3 t13.py
+      - name: t16 no pacote do APK
+        working-directory: dev
+        run: python3 t16.py http://localhost:8766/index.html

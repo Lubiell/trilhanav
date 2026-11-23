@@ -3,7 +3,7 @@ Os serviços externos (Photon, Valhalla, Overpass) são simulados com page.route
 import asyncio, json, math, sys
 from playwright.async_api import async_playwright
 
-URL = 'http://localhost:8765/index.html?trilha=1'
+URL = 'http://localhost:8765/index.html'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)
@@ -102,7 +102,7 @@ async def main():
         r = await pg.evaluate('''(()=>{const bs=[...document.querySelectorAll('#bot .b, #moreGrid .b')];return {n:bs.length,svg:bs.filter(b=>b.querySelector('svg.ic use')).length,
           emoji:bs.filter(b=>/\\p{Extended_Pictographic}/u.test([...b.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(''))).length,
           refs:bs.map(b=>b.querySelector('use')&&b.querySelector('use').getAttribute('href')).filter(h=>!document.querySelector(h)).length}})()''')
-        check('barra de baixo: todos os botões com ícone SVG, sem emoji, sem símbolo faltando', r['n'] >= 21 and r['svg'] == r['n'] and r['emoji'] == 0 and r['refs'] == 0, str(r))
+        check('barra de baixo: todos os botões com ícone SVG, sem emoji, sem símbolo faltando', r['n'] >= 14 and r['svg'] == r['n'] and r['emoji'] == 0 and r['refs'] == 0, str(r))
         check('dec6 decodifica a polyline do Valhalla', await pg.evaluate('(s)=>{const p=TN.dec6(s);return p.length+"|"+p[30].lat.toFixed(6)+"|"+p[30].lon.toFixed(6)}', enc6(PTS)) == f'{len(PTS)}|{c[0]:.6f}|{c[1]:.6f}')
 
         # ---------- privacidade: nada sai antes do aviso ----------
@@ -214,18 +214,6 @@ async def main():
         check('sem rota: mensagem e opção de linha reta, sem Waze/Google Maps', 'Não consegui calcular' in txt and await pg.evaluate("!!document.querySelector('#navStraight')&&!document.querySelector('#navRoutes [data-ext]')"), txt[:100])
         await pg.evaluate("document.querySelector('#dlgNav').close()")
         check('fechar sem ir limpa a prévia', await pg.evaluate('!TN.navPlan&&!TN.nav'))
-
-        # ---------- tulipas de largada/chegada; altimetria redesenha ao girar ----------
-        g = '<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg>' + ''.join(f'<trkpt lat="{LAT0}" lon="{LON0 + i * 50 * KLON:.6f}"><ele>{800 + 50 * math.sin(i / 8):.1f}</ele></trkpt>' for i in range(60)) + '</trkseg></trk></gpx>'
-        await pg.evaluate('(x)=>TN.loadGPX(x,"e.gpx")', g); await pg.wait_for_timeout(400)
-        await pg.click('[data-pane=paneRb]'); await pg.wait_for_timeout(300)
-        tu = await pg.evaluate("[...document.querySelectorAll('#rbList .rbn')].map(r=>r.querySelector('img.tu')?'img':'vazio')")
-        check('Largada e Chegada com desenho (não mais quadrado vazio)', tu and tu[0] == 'img' and tu[-1] == 'img', str(tu))
-        await pg.evaluate("document.querySelector('#bElev').click()"); await pg.wait_for_timeout(1500)
-        w1 = await pg.evaluate("Math.round(document.querySelector('#elevDiv svg').getBoundingClientRect().width)")
-        await pg.set_viewport_size({'width': 800, 'height': 720}); await pg.wait_for_timeout(1500)
-        w2 = await pg.evaluate("(()=>{const s=document.querySelectorAll('#elevDiv svg');return [s.length?Math.round(s[0].getBoundingClientRect().width):0,document.querySelector('#elevDiv').clientWidth]})()")
-        check('altimetria se redimensiona quando a tela muda', w1 > 900 and abs(w2[0] - w2[1]) < 60, f'{w1} -> {w2}')
 
         # ---------- celular: cartão de navegação cabe em retrato e deitado ----------
         await pg.evaluate("TN.navStart(TN.parseTrip(%s),{name:'Destino com um nome bem comprido para testar',lat:%f,lon:%f})" % (json.dumps(trip(PTS)), DEST[0], DEST[1]))

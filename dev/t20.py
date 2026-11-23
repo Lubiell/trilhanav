@@ -3,7 +3,7 @@ Overpass (postos e limites) e Valhalla simulados com page.route; sensores com De
 import asyncio, json, math, sys
 from playwright.async_api import async_playwright
 
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html?trilha=1'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)
@@ -69,11 +69,10 @@ async def main():
 
         # ---------- barra: principais + Mais ----------
         r = await pg.evaluate("(()=>{const bot=document.querySelector('#bot');const bs=[...bot.querySelectorAll('.b')];return {n:bs.length,labels:bs.map(b=>b.querySelector('span').textContent),fit:bot.scrollWidth<=bot.clientWidth+1}})()")
-        check('barra com 8 botões (Roadbook, Mapa, Ir para, Painel, Telefone, Voz, Gravar, Mais) e cabe em 360 px sem rolar', r['n'] == 8 and r['labels'][-1] == 'Mais' and r['fit'], str(r))
+        check('barra com 7 botões (Mapa, Ir para, Painel, Telefone, Voz, Gravar, Mais; sem Roadbook) e cabe em 360 px sem rolar', r['n'] == 7 and r['labels'][0] == 'Mapa' and r['labels'][-1] == 'Mais' and r['fit'], str(r))
         await pg.click('#bMore'); await pg.wait_for_timeout(200)
         r = await pg.evaluate("[...document.querySelectorAll('#moreGrid .b span')].map(s=>s.textContent)")
-        check('"Mais" abre a grade com o resto (13 botões, com Postos e Música)', len(r) == 13 and 'Postos' in r and 'Música' in r and 'Arquivos' in r, str(r))
-        await pg.screenshot(path='/tmp/claude-0/-home-user/51ac65f6-457e-5d09-b14e-b860846fbcdb/scratchpad/png/t20_mais.png')
+        check('"Mais" abre a grade com o resto (7 botões, com Postos e Música; sem os de rali)', len(r) == 7 and 'Postos' in r and 'Música' in r and 'Arquivos' in r, str(r))
         await pg.click('#moreGrid #bSet'); await pg.wait_for_timeout(300)
         check('tocar em Ajustes na grade abre os Ajustes e fecha a grade', await pg.evaluate("document.querySelector('#dlgSet').open&&!document.querySelector('#dlgMore').open"))
 
@@ -95,7 +94,7 @@ async def main():
         await pg.click('#moreGrid #bGpx'); await pg.wait_for_timeout(300)
         async with pg.expect_file_chooser() as fc:
             await pg.click('#gOpen')
-        check('"Abrir PDF ou GPX" em Arquivos abre o seletor de arquivo', (await fc.value) is not None and not await pg.evaluate("document.querySelector('#dlgGpx').open"))
+        check('"Ver GPX no mapa" em Arquivos abre o seletor de arquivo', (await fc.value) is not None and not await pg.evaluate("document.querySelector('#dlgGpx').open"))
         n0 = await pg.evaluate("TN.radars.size")
         await pg.evaluate("TN.runCmd(TN.parseCmd('marcar radar'))")
         check('"Trilha, marcar radar" marca sem precisar tocar', await pg.evaluate("TN.radars.size") == n0 + 1 and (await pg.evaluate("TN.spoken.slice(-1)[0]")) == 'Radar marcado')
@@ -154,11 +153,6 @@ async def main():
         dash = await pg.text_content('#dash')
         check('Painel mostra Inclinação e Inclinação máxima', 'INCLINAÇÃO' in dash and 'E 30° · D' in dash, dash[-160:])
 
-        # ---------- cronômetro foi para "Mais": rodando, aparece em cima ----------
-        await pg.evaluate("document.querySelector('#bMore').click()"); await pg.wait_for_timeout(150)
-        await pg.dispatch_event('#moreGrid #bChrono', 'pointerdown'); await pg.dispatch_event('#moreGrid #bChrono', 'pointerup'); await pg.wait_for_timeout(1200)
-        check('cronômetro rodando aparece na barra de cima', await pg.is_visible('#chronoTop') and (await pg.text_content('#chronoTop')).startswith('⏱ 00:0'))
-        await pg.screenshot(path='/tmp/claude-0/-home-user/51ac65f6-457e-5d09-b14e-b860846fbcdb/scratchpad/png/t20.png')
         check('sem erros de página', not errs, str(errs[:3]))
         await b.close()
     print('\nRESULTADO:', 'tudo certo' if not FAILS else 'FALHAS: ' + '; '.join(FAILS))
