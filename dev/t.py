@@ -5,7 +5,7 @@ async def main():
         b=await p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--ignore-certificate-errors'])
         pg=await b.new_page(viewport={'width':1600,'height':720})
         errs=[];pg.on('pageerror',lambda e:errs.append(str(e)));pg.on('console',lambda m:m.type=='error' and errs.append(m.text))
-        await pg.goto('http://localhost:8765/index.html');await pg.wait_for_timeout(2500)
+        await pg.goto('http://localhost:8765/index.html?trilha=1');await pg.wait_for_timeout(2500)
         await pg.set_input_files('#fileIn','t.gpx');await pg.wait_for_timeout(800)
         # simular GPS manual pelos pontos
         r=await pg.evaluate('''()=>{const t=Date.now();for(let i=0;i<=100;i++){const lat=-23.55+i*0.0003*0.99,lon=-46.63+i*0.0002*0.99;TN.onPos({timestamp:t+i*2000,coords:{latitude:lat,longitude:lon,altitude:800,accuracy:5,speed:null,heading:null}})}

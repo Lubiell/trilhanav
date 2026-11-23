@@ -1,6 +1,6 @@
 {
   "name": "trilhanav-apk",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "private": true,
   "description": "Empacota o TrilhaNav (PWA) como APK com Capacitor: GPS com a tela apagada e controle de mídia.",
   "scripts": {

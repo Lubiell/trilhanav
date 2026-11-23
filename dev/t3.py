@@ -6,7 +6,7 @@ async def main():
         ctx=await b.new_context(viewport={'width':1600,'height':720})
         pg=await ctx.new_page()
         errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
-        await pg.goto('http://localhost:8765/index.html');await pg.wait_for_timeout(2000)
+        await pg.goto('http://localhost:8765/index.html?trilha=1');await pg.wait_for_timeout(2000)
         await pg.set_input_files('#offIn',['small.pmtiles.part2','small.pmtiles.part1','small.pmtiles.part3']);await pg.wait_for_timeout(4000)
         print(await pg.text_content('#offInfo'))
         await pg.reload();await pg.wait_for_timeout(2500)

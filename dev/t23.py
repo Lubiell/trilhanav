@@ -3,7 +3,7 @@ fallback quando o Valhalla falha, música (trocar/volume no guidão) e voz (test
 import asyncio, sys
 from playwright.async_api import async_playwright
 
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html?trilha=1'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)
@@ -129,6 +129,27 @@ async def main():
         r1 = await pg.evaluate("window.tnBack()"); r2 = await pg.evaluate("window.tnBack()")
         check('Voltar do Android fecha a janela; sem janela devolve false (app vai para segundo plano)', r1 is True and r2 is False and await pg.evaluate("document.querySelectorAll('dialog[open]').length") == 0)
         check('sem erros (APK)', not errs, str(errs))
+        # ===== funções de rali/trilha tiradas por padrão (sem ?trilha=1) =====
+        ctx = await b.new_context(viewport={'width': 360, 'height': 800}); await ctx.add_init_script(STUB + ";localStorage.setItem('tn_updT',String(Date.now()));")
+        pg = await ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
+        await pg.goto('http://localhost:8765/index.html'); await pg.wait_for_timeout(1500)
+        vis = await pg.evaluate('''()=>{const v=s=>{const e=document.querySelector(s);return !!e&&e.offsetParent!==null};
+          return {rb:v('#bot [data-pane=paneRb]'),total:v('#total'),partial:v('#partial'),map:document.querySelector('#paneMap').classList.contains('on'),
+            nav:v('#bNav'),painel:v('#bot [data-pane=paneDash]'),vel:v('#speed'),cap:v('#cap')}}''')
+        check('sem Roadbook na barra, sem TOTAL/PARCIAL; abre no Mapa; Ir para, Painel, velocidade e CAP continuam', vis == {'rb': False, 'total': False, 'partial': False, 'map': True, 'nav': True, 'painel': True, 'vel': True, 'cap': True}, str(vis))
+        await pg.evaluate("document.querySelector('#bMore').click()"); await pg.wait_for_timeout(300)
+        more = await pg.evaluate("[...document.querySelectorAll('#moreGrid button')].filter(b=>b.offsetParent!==null).map(b=>b.id)")
+        check('"Mais" sem Dividir, Altimetria, Waypoints, Voltar à trilha, Zerar parcial', not ({'bSplit', 'bElev', 'bWp', 'bBack', 'bResetP', 'bChrono'} & set(more)) and 'bSpot' in more and 'bSet' in more, str(more))
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close());document.querySelector('#bSet').click()"); await pg.wait_for_timeout(300)
+        sets = await pg.evaluate("(()=>{const d=document.querySelector('#dlgSet');const t=[...d.querySelectorAll('h3')].filter(h=>h.offsetParent!==null).map(h=>h.textContent);return {h:t,voice:document.querySelector('#sVoice').offsetParent!==null,keys:[...document.querySelectorAll('#keyList [data-a]')].map(b=>b.dataset.a)}})()")
+        check('Ajustes sem Odômetro/Roadbook; voz continua; teclas de rali somem', 'Odômetro' not in sets['h'] and 'Roadbook' not in sets['h'] and sets['voice'] and 'totPlus' not in sets['keys'] and 'mediaVolUp' in sets['keys'], str(sets))
+        dk = await pg.evaluate("TN.renderDash&&0||[...document.querySelectorAll('#dash [data-k]')].map(e=>e.dataset.k)")
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close());document.querySelector('#bot [data-pane=paneDash]').click()"); await pg.wait_for_timeout(300)
+        dk = await pg.evaluate("[...document.querySelectorAll('#dash [data-k]')].map(e=>e.dataset.k)")
+        check('Painel sem cronômetro, waypoints, restante da trilha e correção do odômetro', dk and not ({'chrono', 'wps', 'rest', 'corr'} & set(dk)), str(dk))
+        await pg.evaluate("document.querySelector('#sTrail').click()"); await pg.wait_for_timeout(2500)
+        check('a chave em Ajustes religa as funções de trilha', await pg.evaluate("!document.body.classList.contains('notrail')&&document.querySelector('#bot [data-pane=paneRb]').offsetParent!==null"))
+        check('sem erros (sem trilha)', not errs, str(errs))
         await b.close()
     print('\nRESULTADO:', 'tudo certo' if not FAILS else 'FALHOU ' + str(FAILS))
     sys.exit(1 if FAILS else 0)

@@ -20,7 +20,7 @@ async def main():
         pg.on('response', lambda r: r.status >= 400 and r.url.startswith('http://localhost:8766') and bad.append((r.status, r.url)))
         # sem internet: o que não for do próprio pacote falha (tiles externos são esperados)
         await pg.route('**/*', lambda r: r.continue_() if r.request.url.startswith('http://localhost') else r.abort())
-        await pg.goto('http://localhost:8766/index.html'); await pg.wait_for_timeout(2500)
+        await pg.goto('http://localhost:8766/index.html?trilha=1'); await pg.wait_for_timeout(2500)
         ext = sorted({u.split('/')[2] for u in reqs if not u.startswith('http://localhost')})
         check('nenhum pedido a CDN ou a Google Fonts (cdnjs, fonts.googleapis, fonts.gstatic)', not any(h in ('cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com') for h in ext), str(ext))
         check('nenhum arquivo do pacote devolveu erro 4xx/5xx', not bad, str(bad))

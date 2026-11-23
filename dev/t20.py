@@ -3,7 +3,7 @@ Overpass (postos e limites) e Valhalla simulados com page.route; sensores com De
 import asyncio, json, math, sys
 from playwright.async_api import async_playwright
 
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/index.html?trilha=1'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)

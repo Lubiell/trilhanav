@@ -8,7 +8,7 @@ def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)
     if not ok: FAILS.append(nome)
 
-URL = 'http://localhost:8765/index.html'
+URL = 'http://localhost:8765/index.html?trilha=1'
 K = 0.0095699
 M_LAT = 111194.9; M_LON = M_LAT * math.cos(math.radians(20))
 T0 = 1_000_000_000_000

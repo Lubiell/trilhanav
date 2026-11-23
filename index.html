@@ -123,6 +123,7 @@ body.portrait #bot .b span{font-size:9.5px}
 .sep{width:1px;height:36px;background:var(--line);margin:0 4px;flex:0 0 auto}
 #banner{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--bad);color:#fff;padding:8px 16px;border-radius:10px;font-weight:700;display:none;z-index:900;font-size:18px}
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#000c;color:#fff;padding:8px 14px;border-radius:8px;display:none;z-index:2000}
+body.notrail .trail{display:none!important}
 dialog{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:14px;max-width:min(560px,94vw);max-height:88vh;padding:0}
 dialog .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
 dialog .bd{padding:12px 16px;overflow:auto}
@@ -157,8 +158,8 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   </div>
   <div id="main">
     <div id="side">
-      <div class="card"><div class="row"><h4>TOTAL</h4><span class="small" id="multTxt"></span></div><div class="big" id="total">0.00</div></div>
-      <div class="card"><div class="row"><h4>PARCIAL</h4></div><div class="big" id="partial">0.00</div></div>
+      <div class="card trail"><div class="row"><h4>TOTAL</h4><span class="small" id="multTxt"></span></div><div class="big" id="total">0.00</div></div>
+      <div class="card trail"><div class="row"><h4>PARCIAL</h4></div><div class="big" id="partial">0.00</div></div>
       <div class="card"><div class="row"><h4>CAP A SEGUIR</h4><span class="small" id="wpLabel">—</span></div>
         <div class="row"><svg id="capArrow" viewBox="0 0 100 100"><path d="M50 6 L84 60 L60 60 L60 94 L40 94 L40 60 L16 60 Z" fill="var(--acc)"/></svg>
         <div><div class="mid" id="cap">---</div><div class="small" style="text-align:right" id="wpDist">—</div></div></div></div>
@@ -177,7 +178,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     </div>
   </div>
   <div id="bot">
-    <button class="b on" data-pane="paneRb"><svg class="ic"><use href="#i-rb"/></svg><span>Roadbook</span></button>
+    <button class="b on trail" data-pane="paneRb"><svg class="ic"><use href="#i-rb"/></svg><span>Roadbook</span></button>
     <button class="b" data-pane="paneMap"><svg class="ic"><use href="#i-map"/></svg><span>Mapa</span></button>
     <button class="b" id="bNav"><svg class="ic"><use href="#i-nav"/></svg><span>Ir para</span></button>
     <button class="b" data-pane="paneDash"><svg class="ic"><use href="#i-dash"/></svg><span>Painel</span></button>
@@ -195,6 +196,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 <div id="waCard" title="Toque para fechar"><div class="small" id="waApp"></div><div id="waT"></div><div id="waX"></div></div>
 
 <dialog id="dlgSet"><div class="hd"><b>Ajustes</b></div><div class="bd">
+  <div class="trail">
   <h3>Odômetro</h3>
   <label>Multiplicador de distância <input type="number" step="0.001" id="sMult"></label>
   <label>Ajuste por clique (km) <input type="number" step="0.01" id="sStep"></label>
@@ -204,29 +206,33 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Calibrar: distância do roadbook <input type="number" step="0.01" id="sCalRb" placeholder="ex. 10.00"></label>
   <label>Calibrar: distância medida no app <input type="number" step="0.01" id="sCalApp" placeholder="ex. 9.80"></label>
   <div style="padding:8px 0;display:flex;gap:8px"><button class="btn" id="bCal">Aplicar calibração</button><button class="btn r" id="bResetT">Zerar TOTAL</button></div>
+  </div>
   <h3>Navegação</h3>
-  <label>Raio de validação do waypoint (m) <input type="number" id="sWpR"></label>
-  <label>Alerta fora da trilha (m, 0 = desliga) <input type="number" id="sOff"></label>
+  <label class="trail">Raio de validação do waypoint (m) <input type="number" id="sWpR"></label>
+  <label class="trail">Alerta fora da trilha (m, 0 = desliga) <input type="number" id="sOff"></label>
   <label>Alerta de velocidade (km/h, 0 = desliga) <input type="number" id="sSpd"></label>
-  <label>Avanço automático de waypoint <input type="checkbox" id="sAuto"></label>
+  <label class="trail">Avanço automático de waypoint <input type="checkbox" id="sAuto"></label>
   <label>Girar o mapa com a direção <select id="sRotMode" style="width:auto"><option value="nav">só durante o Ir para</option><option value="always">sempre</option><option value="never">nunca</option></select></label>
   <label>Bússola do aparelho (rumo parado ou devagar) <input type="checkbox" id="sComp"></label>
   <label>Usar só o GPS acima de (km/h) <input type="number" id="sCompSpd"></label>
   <label>Ajuste da bússola (°) <input type="number" step="0.1" id="sCompOff"></label>
   <div class="small" id="compInfo"></div>
   <label>Som nos alertas <input type="checkbox" id="sSnd"></label>
-  <h3>Copiloto e zonas de velocidade</h3>
+  <h3>Voz<span class="trail"> do copiloto e zonas de velocidade</span></h3>
   <label>Copiloto por voz <input type="checkbox" id="sVoice"></label>
-  <label>Aviso com antecedência (s) <input type="number" id="sLead"></label>
+  <label class="trail">Aviso com antecedência (s) <input type="number" id="sLead"></label>
   <label>Volume da voz (0 a 1) <input type="number" step="0.1" min="0" max="1" id="sVoiceVol"></label>
-  <label>Zonas de velocidade <input type="checkbox" id="sZoneOn"></label>
-  <label>Tolerância dentro da zona (km/h) <input type="number" id="sZoneTol"></label>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bVoiceTest">Testar voz</button><button class="btn g" id="bZones">Zonas de velocidade…</button></div>
+  <label class="trail">Zonas de velocidade <input type="checkbox" id="sZoneOn"></label>
+  <label class="trail">Tolerância dentro da zona (km/h) <input type="number" id="sZoneTol"></label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bVoiceTest">Testar voz</button><button class="btn g trail" id="bZones">Zonas de velocidade…</button></div>
   <h3>Aparência</h3>
+  <label>Funções de rali/trilha (roadbook, GPX, waypoints, odômetro TOTAL/PARCIAL, zonas, voltar à trilha, altimetria, cronômetro) <input type="checkbox" id="sTrail"></label>
+  <div class="trail">
   <h3>Roadbook</h3>
   <label>Rolagem por clique (px) <input type="number" id="sScroll"></label>
   <label>Copiloto fala curvas a partir de (°) <input type="number" id="sNoteMin"></label>
   <label>Zerar parcial quando o roadbook mandar <input type="checkbox" id="sRbReset"></label>
+  </div>
   <h3>Controle de guidão / teclado</h3>
   <div class="small">Controles Bluetooth funcionam como teclado. Toque em "Definir" e aperte o botão do controle.</div>
   <div id="keyList"></div>
@@ -262,7 +268,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.6.2 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.6.3 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -316,14 +322,14 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" id="wxSrc"></div>
 </div></dialog>
 <dialog id="dlgMore"><div class="hd"><b>Mais</b></div><div class="bd"><div id="moreGrid">
-  <button class="b" id="bSplit"><svg class="ic"><use href="#i-split"/></svg><span>Dividir</span></button>
-  <button class="b" id="bElev"><svg class="ic"><use href="#i-elev"/></svg><span>Altimetria</span></button>
+  <button class="b trail" id="bSplit"><svg class="ic"><use href="#i-split"/></svg><span>Dividir</span></button>
+  <button class="b trail" id="bElev"><svg class="ic"><use href="#i-elev"/></svg><span>Altimetria</span></button>
   <button class="b" id="bGpx"><svg class="ic"><use href="#i-lib"/></svg><span>Arquivos</span></button>
-  <button class="b" id="bWp"><svg class="ic"><use href="#i-pin"/></svg><span>Waypoints</span></button>
-  <button class="b" id="bChrono"><svg class="ic"><use href="#i-chrono"/></svg><span id="chronoTxt">00:00</span></button>
+  <button class="b trail" id="bWp"><svg class="ic"><use href="#i-pin"/></svg><span>Waypoints</span></button>
+  <button class="b trail" id="bChrono"><svg class="ic"><use href="#i-chrono"/></svg><span id="chronoTxt">00:00</span></button>
   <button class="b" id="bNote"><svg class="ic"><use href="#i-note"/></svg><span>Nota</span></button>
-  <button class="b" id="bBack"><svg class="ic"><use href="#i-back"/></svg><span>Voltar à trilha</span></button>
-  <button class="b" id="bResetP"><svg class="ic"><use href="#i-reset"/></svg><span>Zerar parc.</span></button>
+  <button class="b trail" id="bBack"><svg class="ic"><use href="#i-back"/></svg><span>Voltar à trilha</span></button>
+  <button class="b trail" id="bResetP"><svg class="ic"><use href="#i-reset"/></svg><span>Zerar parc.</span></button>
   <button class="b" id="bFuel"><svg class="ic"><use href="#i-fuel"/></svg><span>Postos</span></button>
   <button class="b" id="bSpot"><svg class="ic"><use href="#i-music"/></svg><span>Música</span></button>
   <button class="b" id="bDay"><svg class="ic"><use href="#i-moon"/></svg><span id="dayTxt">Tema</span></button>
@@ -438,12 +444,15 @@ setInterval(()=>{const d=new Date();$('#clock').textContent=d.toTimeString().sli
 if(navigator.getBattery)navigator.getBattery().then(b=>{const u=()=>$('#bat').textContent=(b.charging?'⚡':'🔋')+' '+Math.round(b.level*100)+'%';u();b.onlevelchange=u;b.onchargingchange=u});
 
 /* ---------- telas ---------- */
-let curPane='paneRb',split=false;
+/* funções de rali/trilha: desligadas por padrão (o dono pediu para tirar); Ajustes › Aparência religa. ?trilha=1 liga (testes) */
+let TRAIL=!!LS.get('trailOn',false)||/[?&]trilha=1\b/.test(location.search);document.body.classList.toggle('notrail',!TRAIL);
+const TRAIL_KEYS=new Set(['rbDown','rbUp','totPlus','totMinus','resetPartial','nextWp','prevWp','chrono','nextPane']),TRAIL_DASH=new Set(['rest','wps','corr','chrono']);
+let curPane=TRAIL?'paneRb':'paneMap',split=false;
 function showPane(id){curPane=id;split=false;document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===id));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.toggle('on',b.dataset.pane===id));$('#bSplit').classList.remove('on');layoutSplit(false);if(id==='paneMap')setTimeout(mapShown,50);if(id==='paneDash')renderDash()}
 function layoutSplit(on){const rb=$('#paneRb'),mp=$('#paneMap');if(on){rb.classList.add('on');mp.classList.add('on');rb.style.right='50%';mp.style.left='50%'}else{rb.style.right='';mp.style.left=''}}
 document.querySelectorAll('#bot [data-pane]').forEach(b=>b.onclick=()=>showPane(b.dataset.pane));
 $('#bSplit').onclick=()=>{split=!split;if(split){document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.remove('on'));$('#bSplit').classList.add('on');layoutSplit(true);setTimeout(mapShown,50)}else showPane('paneRb')};
-function nextPane(){const order=['paneRb','paneMap','paneDash'];showPane(order[(order.indexOf(curPane)+1)%order.length])}
+function nextPane(){const order=TRAIL?['paneRb','paneMap','paneDash']:['paneMap','paneDash'];showPane(order[(order.indexOf(curPane)+1)%order.length])}
 let rzW=innerWidth,rzH=innerHeight,rzT=null;
 function orient(){document.body.classList.toggle('portrait',innerHeight>innerWidth)}addEventListener('resize',()=>{orient();map&&map.invalidateSize();
   clearTimeout(rzT);rzT=setTimeout(()=>{if(Math.abs(innerWidth-rzW)<40&&Math.abs(innerHeight-rzH)<40)return;rzW=innerWidth;rzH=innerHeight;if(typeof elevResize==='function')elevResize()},400)});orient();
@@ -1568,7 +1577,8 @@ function stopSim(){if(simT)clearInterval(simT);simT=null}
 /* o Painel mostra só os mostradores escolhidos (Personalizar), na ordem abaixo; "grandes" = menos colunas e números maiores */
 const DASH=[['spd','Velocidade'],['max','Vel. máxima'],['avg','Vel. média (em mov.)'],['mov','Tempo em movimento'],['alt','Altitude'],['hdg','Rumo'],['rest','Restante da trilha'],['wps','Waypoints'],
   ['range','Autonomia'],['wx','Clima'],['lim','Limite agora'],['lean','Inclinação'],['leanmax','Inclinação máxima'],['eta','Chegada (Ir para)'],['acc','Precisão GPS'],['coord','Coordenadas'],['recn','Pontos gravados'],['corr','Correção do odômetro'],['chrono','Cronômetro']];
-function dashSel(){const v=LS.get('dashSel',null);return Array.isArray(v)?v.filter(k=>DASH.some(d=>d[0]===k)):DASH.map(d=>d[0])}
+const dashList=()=>DASH.filter(d=>TRAIL||!TRAIL_DASH.has(d[0]));
+function dashSel(){const v=LS.get('dashSel',null);return Array.isArray(v)?v.filter(k=>dashList().some(d=>d[0]===k)):dashList().map(d=>d[0])}
 function renderDash(){const avg=st.movSec>0?st.movKm/(st.movSec/3600):0;const ok=wpState.filter(s=>s==='ok').length,miss=wpState.filter(s=>s==='miss').length;
   let rest='—';if(fix&&track.length>1){const r=distToTrack(fix);if(r){let s=hav(fix,track[r.i+1]);for(let i=r.i+1;i<track.length-1;i++)s+=hav(track[i],track[i+1]);rest=(s/1000).toFixed(1)+' km'}}
   const rk=rangeKm(),V={spd:Math.round(speedKmh)+' km/h',max:Math.round(st.maxSpd)+' km/h',avg:avg.toFixed(1)+' km/h',mov:hms(st.movSec),alt:fix&&fix.ele!=null?Math.round(fix.ele)+' m':'—',hdg:heading==null?'—':Math.round(heading)+'°',rest,
@@ -1579,11 +1589,11 @@ function renderDash(){const avg=st.movSec>0?st.movKm/(st.movSec/3600):0;const ok
   const sel=dashSel(),dl=$('#dash');dl.classList.toggle('big',!!cfg.dashBig);
   dl.innerHTML=DASH.filter(d=>sel.includes(d[0])).map(([k,l])=>'<div class="card'+(k==='range'&&rk!=null&&rk<=cfg.reserveKm?' warn':'')+'" data-k="'+k+'"><h4>'+l.toUpperCase()+'</h4><div class="mid">'+V[k]+'</div></div>').join('')||'<div class="small" style="padding:10px">Nenhum mostrador escolhido: toque em Personalizar.</div>'}
 function openDashEdit(){const sel=dashSel();$('#dashBig').checked=!!cfg.dashBig;
-  $('#dashItems').innerHTML=DASH.map(([k,l])=>'<label>'+l+' <input type="checkbox" data-dk="'+k+'"'+(sel.includes(k)?' checked':'')+'></label>').join('');
+  $('#dashItems').innerHTML=dashList().map(([k,l])=>'<label>'+l+' <input type="checkbox" data-dk="'+k+'"'+(sel.includes(k)?' checked':'')+'></label>').join('');
   $('#dashItems').querySelectorAll('[data-dk]').forEach(c=>c.onchange=()=>{LS.set('dashSel',[...$('#dashItems').querySelectorAll('[data-dk]')].filter(x=>x.checked).map(x=>x.dataset.dk));renderDash()});$('#dlgDash').showModal()}
 $('#dashEdit').onclick=openDashEdit;
 $('#dashBig').onchange=e=>{cfg.dashBig=e.target.checked;saveCfg();renderDash()};
-$('#dashAll').onclick=()=>{LS.set('dashSel',DASH.map(d=>d[0]));openDashEdit();renderDash()};
+$('#dashAll').onclick=()=>{LS.set('dashSel',dashList().map(d=>d[0]));openDashEdit();renderDash()};
 const hms=s=>{s=Math.floor(s);return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 
 /* ---------- cronômetro ---------- */
@@ -1755,7 +1765,7 @@ setInterval(autoTheme,60000);
 
 /* ---------- teclas / controle remoto ---------- */
 let learning=null;
-function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':esc(keys[a])||'—')+'</button></label>').join('');
+function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).filter(([a])=>TRAIL||!TRAIL_KEYS.has(a)).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':esc(keys[a])||'—')+'</button></label>').join('');
   $('#keyList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{learning=b.dataset.a;renderKeys()})}
 $('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
 const ACT={rbDown:()=>rbScroll(cfg.scroll),rbUp:()=>rbScroll(-cfg.scroll),totPlus:()=>adjTotal(cfg.step),totMinus:()=>adjTotal(-cfg.step),resetPartial:()=>{st.partial=0;saveOdo();renderOdo();beep(900,80)},nextWp:()=>setWp(st.wpIdx+1,'miss'),prevWp:()=>setWp(st.wpIdx-1),chrono:chronoToggle,zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,voice:()=>voiceCmd(false),answer:()=>runCmd({a:'answer'}),hangup:()=>runCmd({a:'end'}),mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous'),mediaVolUp:()=>runCmd({a:'volup'}),mediaVolDown:()=>runCmd({a:'voldown'})};
@@ -1788,6 +1798,8 @@ autoTheme();applyTheme();renderOdo();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(!TRAIL)showPane('paneMap');
+$('#sTrail').checked=TRAIL;$('#sTrail').onchange=e=>{LS.set('trailOn',e.target.checked);toast(e.target.checked?'Ligando as funções de rali/trilha…':'Desligando as funções de rali/trilha…',1500);setTimeout(()=>location.reload(),600)};
 window.TN={offNavRoute,mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},elevResize,st,cfg,onPos,loadGPX,cleanTrack,get track(){return track},NATIVE,get rtBack(){return rtBack},get rtLayer(){return rtLayer},routeBack,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,get rbNotes(){return rbNotes},get orInfo(){return orInfo},esc,map,toggleElev,get elevCtl(){return elevCtl},say,spoken,get zones(){return zones},get prog(){return prog},get events(){return events},rebuildZones,comp,onOrient,applyHeading,eulerHeading,projTrack,alignTotal,onWpValidated,get snapWarned(){return snapWarned},get wps(){return wps},get wpState(){return wpState},distToTrack};
 </script>
 </body>

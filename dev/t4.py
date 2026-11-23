@@ -15,7 +15,7 @@ async def main():
             if name==mode['corrupt']: body=body[:-1]+bytes([body[-1]^1])
             await route.fulfill(status=200,body=body,headers={'access-control-allow-origin':'*','content-type':'application/octet-stream'})
         await pg.route(BASE+'*',handler)
-        await pg.goto('http://localhost:8765/index.html');await pg.wait_for_timeout(1500)
+        await pg.goto('http://localhost:8765/index.html?trilha=1');await pg.wait_for_timeout(1500)
         await pg.evaluate('dlRetryMs=100')
         # 1) falha na parte 2 -> interrompido
         await pg.evaluate('downloadMap()');await pg.wait_for_timeout(1500)

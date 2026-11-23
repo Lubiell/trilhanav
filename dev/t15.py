@@ -3,7 +3,7 @@ Os serviços externos (Photon, Valhalla, Overpass) são simulados com page.route
 import asyncio, json, math, sys
 from playwright.async_api import async_playwright
 
-URL = 'http://localhost:8765/index.html'
+URL = 'http://localhost:8765/index.html?trilha=1'
 FAILS = []
 def check(nome, ok, extra=''):
     print(('OK   ' if ok else 'FALHA'), nome, extra)

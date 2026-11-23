@@ -34,7 +34,7 @@ async def newpage(b, offline=True):
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: m.type == 'error' and errs.append(m.text))
-    await pg.goto('http://localhost:8765/index.html'); await pg.wait_for_timeout(1200)
+    await pg.goto('http://localhost:8765/index.html?trilha=1'); await pg.wait_for_timeout(1200)
     if offline:
         await pg.set_input_files('#offIn', 'roads.pmtiles'); await pg.wait_for_timeout(3500)
     return pg, errs

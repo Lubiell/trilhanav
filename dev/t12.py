@@ -16,7 +16,7 @@ async def main():
         errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.on('console', lambda m: m.type == 'error' and errs.append(m.text))
-        await pg.goto('http://localhost:8765/index.html'); await pg.wait_for_timeout(1300)
+        await pg.goto('http://localhost:8765/index.html?trilha=1'); await pg.wait_for_timeout(1300)
 
         # ---- backup de ajustes malicioso ----
         evil = {'cfg': {'mult': 'x', 'wpR': 'abc', 'step': 0.05, 'dayMode': 'night', 'naoExiste': 'lixo', 'voice': 1, 'compSpd': 12},
