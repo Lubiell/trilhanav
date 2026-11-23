@@ -3,3 +3,4 @@ dev/*.png
 dev/rb.pdf
 dev/small.pmtiles*
 dev/dl/
+__pycache__/
