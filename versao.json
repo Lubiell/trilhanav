@@ -1,7 +1,7 @@
 {
- "version": "2.6.3",
- "code": 20603,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.6.3.apk",
- "sha256": "8a7d786728f1d2dc5ac54dcea0686ac6ce17e56dbf2bf85b4e2cc72849fb8482",
- "notes": "Funções de rali/trilha saíram da tela (religáveis em Ajustes › Aparência); janelas sem 'Fechar' (toque fora fecha e troca de janela); Voltar do Android fecha a janela; atualização sempre automática. ATENÇÃO: chave nova, desinstale a 2.6.2 antes."
+ "version": "2.7.0",
+ "code": 20700,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.0.apk",
+ "sha256": "e75a581f2fc79dba55a8e6df43f91eb2775bd7215a0626b0c8cde3fe05f0167c",
+ "notes": "App de moto sem as funções de rali. Sem internet: busca de cidades, ruas e lugares e rota longa pelo mapa offline. Correções de segurança. ATENÇÃO: chave nova, desinstale a versão anterior antes."
 }
