@@ -180,12 +180,12 @@ async def main():
         check('versao.json inválido: não instala', len(await calls('installApk')) == 1 and 'inválido' in await pg.text_content('#toast'))
         await pg.evaluate("document.querySelector('#dlgSet').close()")
 
-        # ---------- tecla do guidão ----------
-        await pg.evaluate("localStorage.setItem('tn_keys',JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('tn_keys')||'{}'),{voice:'KeyV'})))")
+        # ---------- o controle de guidão saiu (v2.7.2): uma tecla gravada antes não chama mais a voz ----------
+        await pg.evaluate("localStorage.setItem('tn_keys',JSON.stringify({voice:'KeyV'}))")
         await pg.reload(); await pg.wait_for_timeout(1200)
         n0 = len(await calls('listen'))
         await pg.keyboard.press('KeyV'); await pg.wait_for_timeout(300)
-        check('tecla do guidão configurada chama o comando de voz', len(await calls('listen')) == n0 + 1)
+        check('tecla gravada no tempo do controle de guidão não faz nada e o tn_keys sai', len(await calls('listen')) == n0 and await pg.evaluate("localStorage.getItem('tn_keys')") is None)
         await pg.screenshot(path='/tmp/claude-0/-home-user/51ac65f6-457e-5d09-b14e-b860846fbcdb/scratchpad/png/t16.png')
 
         # ---------- celular: tela da ligação em retrato ----------

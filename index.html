@@ -116,7 +116,6 @@ dialog input[type=checkbox]{width:24px;height:24px;min-height:0}
 [data-here]{white-space:nowrap}
 .btn.g{background:var(--card);color:var(--txt);border:1px solid var(--line)}
 .btn.r{background:var(--bad)}.btn:disabled{opacity:.5}
-.keyb{width:auto!important;min-width:110px}
 h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 .wpok{color:var(--ok)}.wpmiss{color:var(--bad)}
 .leaflet-container{background:#1b2a36}
@@ -185,10 +184,6 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Volume da voz (0 a 1) <input type="number" step="0.1" min="0" max="1" id="sVoiceVol"></label>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bVoiceTest">Testar voz</button></div>
   <h3>Aparência</h3>
-  <h3>Controle de guidão / teclado</h3>
-  <div class="small">Controles Bluetooth funcionam como teclado. Toque em "Definir" e aperte o botão do controle.</div>
-  <div id="keyList"></div>
-  <div style="padding:8px 0"><button class="btn g" id="bKeyDef">Restaurar teclas padrão</button></div>
   <h3>Clima</h3>
   <label>Mostrar temperatura e alertas de clima <input type="checkbox" id="sWx"></label>
   <label>Avisar por voz (chuva chegando, tempestade, vento forte, calor, frio, neblina) <input type="checkbox" id="sWxVoice"></label>
@@ -217,7 +212,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.1 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.2 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -257,12 +252,12 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div id="sosList"></div>
   <div class="nvf"><input id="sosNm" placeholder="Nome" style="max-width:120px"><input id="sosNum" type="tel" placeholder="Número"><button class="btn g" id="sosAdd">Adicionar</button></div>
   <div style="padding:6px 0"><button class="btn g" id="sosTestB">Testar (conta 10 s e manda SMS de teste)</button></div>
-  <div class="small">Andando a 25 km/h ou mais, um impacto forte e a moto parada por 15 s: o app conta 30 s (alarme e voz). Sem "Estou bem", "Trilha, cancelar" ou uma tecla do guidão, manda SMS com a sua localização para até 3 contatos e liga para o primeiro. Também dá para adicionar um contato da Agenda abaixo pelo botão SOS. Não é um equipamento certificado: pode falhar ou dar alarme falso.</div>
+  <div class="small">Andando a 25 km/h ou mais, um impacto forte e a moto parada por 15 s: o app conta 30 s (alarme e voz). Sem "Estou bem" ou "Trilha, cancelar", manda SMS com a sua localização para até 3 contatos e liga para o primeiro. Também dá para adicionar um contato da Agenda abaixo pelo botão SOS. Não é um equipamento certificado: pode falhar ou dar alarme falso.</div>
   <h3>Comandos de voz</h3>
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
   <label>Ouvir pelo microfone do fone/intercom Bluetooth (enquanto ligado, a música fica com qualidade de ligação) <input type="checkbox" id="sVoiceBt"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, atender", "Trilha, ligar para Maria", "Trilha, próxima música". Com a ligação tocando, basta "atender" ou "recusar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
-  <div class="small">Toque em <b>Voz</b> (ou na tecla do guidão configurada em Ajustes) e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
+  <div class="small">Toque em <b>Voz</b> e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
   <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
 </div></dialog>
 <dialog id="dlgWx"><div class="hd"><b>Clima</b></div><div class="bd">
@@ -333,11 +328,8 @@ const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JS
 const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true,voiceBt:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
-const ACTIONS={zoomIn:'Mapa: zoom +',zoomOut:'Mapa: zoom −',nextPane:'Trocar tela',lock:'Travar toque',mediaPlay:'Música: tocar/pausar',mediaNext:'Música: trocar (próxima)',mediaPrev:'Música: anterior',mediaVolUp:'Música: aumentar volume',mediaVolDown:'Música: abaixar volume',voice:'Comando de voz (falar)',answer:'Atender ligação',hangup:'Recusar / desligar ligação'};
-const DEFKEYS={zoomIn:'Equal',zoomOut:'Minus',nextPane:'Tab',lock:'KeyL',mediaPlay:'',mediaNext:'',mediaPrev:'',voice:'',answer:'',hangup:''};
-let keys=Object.assign({},DEFKEYS,LS.get('keys',{}));for(const k in keys)if(!(k in ACTIONS))delete keys[k];   /* teclas de ações que saíram (rali) */
-/* restos das funções de rali (até a v2.6.3): o GPX guardado podia ocupar MBs da cota do localStorage */
-try{for(const k of Object.keys(localStorage))if(/^tn_(gpx|gpxName|gpxKey|gpxPath|wpState|marks|chrono|trailOn|rbScroll_.*|zones_.*)$/.test(k))localStorage.removeItem(k)}catch(e){}
+/* restos das funções de rali (até a v2.6.3: o GPX guardado podia ocupar MBs da cota do localStorage) e das teclas do controle de guidão (até a v2.7.1) */
+try{for(const k of Object.keys(localStorage))if(/^tn_(keys|gpx|gpxName|gpxKey|gpxPath|wpState|marks|chrono|trailOn|rbScroll_.*|zones_.*)$/.test(k))localStorage.removeItem(k)}catch(e){}
 
 /* ---------- estado ---------- */
 /* estatísticas da viagem (Painel) */
@@ -361,7 +353,6 @@ if(navigator.getBattery)navigator.getBattery().then(b=>{const u=()=>$('#bat').te
 let curPane='paneMap';
 function showPane(id){curPane=id;document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===id));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.toggle('on',b.dataset.pane===id));if(id==='paneMap')setTimeout(mapShown,50);if(id==='paneDash')renderDash()}
 document.querySelectorAll('#bot [data-pane]').forEach(b=>b.onclick=()=>showPane(b.dataset.pane));
-function nextPane(){const order=['paneMap','paneDash'];showPane(order[(order.indexOf(curPane)+1)%order.length])}
 let rzW=innerWidth,rzH=innerHeight,rzT=null;
 function orient(){document.body.classList.toggle('portrait',innerHeight>innerWidth)}addEventListener('resize',()=>{orient();map&&map.invalidateSize();
   clearTimeout(rzT);rzT=setTimeout(()=>{if(Math.abs(innerWidth-rzW)<40&&Math.abs(innerHeight-rzH)<40)return;rzW=innerWidth;rzH=innerHeight},400)});orient();
@@ -1345,7 +1336,7 @@ function download(name,txt,type){const blob=new Blob([txt],{type});
 const bind=[['sVoiceVol','voiceVol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sSpd','spd',parseFloat],['sRadarDist','radarDist',parseFloat],['sTankL','tankL',parseFloat],['sKmL','kmL',parseFloat],['sReserveKm','reserveKm',parseFloat],['sLimTol','limTol',parseFloat],['sRadarTol','radarTol',parseFloat]];
 const binc=[['sVoice','voice'],['sComp','comp'],['sSnd','snd'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sVoiceAlways','voiceAlways'],['sVoiceBt','voiceBt'],['sCrashOn','crashOn'],['sLimOn','limOn']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sRotMode').value=rotMode();
-  radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
+  radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).')}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg()}});
 binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='crashOn')crashArmNow(true);if(k==='wx'){wxShow();if(cfg.wx)wxUpdate(true)}if(k==='voiceBt')nat('voiceBt',{on:!!cfg.voiceBt}).catch(()=>{});if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
 $('#sCompOff').addEventListener('change',()=>{cfg.compLearned=true;saveCfg()});
@@ -1360,11 +1351,11 @@ document.querySelectorAll('dialog').forEach(d=>{if(d.id==='dlgAsk')return;
 /* botão Voltar do Android (APK): fecha a janela de cima; sem janela aberta devolve false e o app vai para segundo plano */
 window.tnBack=()=>{const open=[...document.querySelectorAll('dialog[open]')];if(!open.length)return false;const d=open.find(x=>x.id==='dlgAsk')||open[open.length-1];d.close();return true};
 $('#bExport').onclick=exportGPX;
-$('#bBackup').onclick=()=>download('trilhanav_ajustes.json',JSON.stringify({cfg,keys,odo:st},null,1),'application/json');
+$('#bBackup').onclick=()=>download('trilhanav_ajustes.json',JSON.stringify({cfg,odo:st},null,1),'application/json');
 $('#bRestore').onclick=()=>$('#restoreIn').click();
 /* só entram chaves que o app conhece, do mesmo tipo e com tamanho razoável (um backup compartilhado não pode injetar nada) */
 const saneObj=(src,ref)=>{const o={};if(src&&typeof src==='object')for(const k of Object.keys(ref)){const v=src[k];if(typeof v===typeof ref[k]&&(typeof v!=='number'||isFinite(v))&&(typeof v!=='string'||v.length<=30))o[k]=v}return o};
-$('#restoreIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());Object.assign(cfg,saneObj(j.cfg,DEF));keys=Object.assign({},DEFKEYS,saneObj(j.keys,DEFKEYS));saveCfg();LS.set('keys',keys);fillSet();toast('Ajustes restaurados')}catch(err){toast('Arquivo inválido')}};
+$('#restoreIn').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text());Object.assign(cfg,saneObj(j.cfg,DEF));saveCfg();fillSet();toast('Ajustes restaurados')}catch(err){toast('Arquivo inválido')}};
 
 $('#bVoiceTest').onclick=voiceTest;
 
@@ -1456,14 +1447,6 @@ function themeNow(){if(cfg.dayMode==='day')return true;if(cfg.dayMode==='night')
 function autoTheme(){const d=themeNow();if(d!==cfg.day){cfg.day=d;saveCfg();applyTheme()}}
 setInterval(autoTheme,60000);
 
-/* ---------- teclas / controle remoto ---------- */
-let learning=null;
-function renderKeys(){$('#keyList').innerHTML=Object.entries(ACTIONS).map(([a,l])=>'<label>'+l+' <button class="btn g keyb" data-a="'+a+'">'+(learning===a?'Aperte…':esc(keys[a])||'—')+'</button></label>').join('');
-  $('#keyList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{learning=b.dataset.a;renderKeys()})}
-$('#bKeyDef').onclick=()=>{keys=Object.assign({},DEFKEYS);LS.set('keys',keys);renderKeys()};
-const ACT={zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),nextPane,lock:toggleLock,voice:()=>voiceCmd(false),answer:()=>runCmd({a:'answer'}),hangup:()=>runCmd({a:'end'}),mediaPlay:()=>media('playpause'),mediaNext:()=>media('next'),mediaPrev:()=>media('previous'),mediaVolUp:()=>runCmd({a:'volup'}),mediaVolDown:()=>runCmd({a:'voldown'})};
-addEventListener('keydown',e=>{if(sos&&sos.phase==='count'){e.preventDefault();sosCancel();return}if(learning){e.preventDefault();for(const k in keys)if(keys[k]===e.code)keys[k]='';keys[learning]=e.code;LS.set('keys',keys);learning=null;renderKeys();return}
-  if(!e.code||(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]')))return;const a=Object.keys(keys).find(k=>keys[k]===e.code);if(a&&ACT[a]){e.preventDefault();if(e.repeat&&!['zoomIn','zoomOut','mediaVolUp','mediaVolDown'].includes(a))return;ACT[a]()}});
 
 /* ---------- trava de toque, tela, tema ---------- */
 const shield=document.createElement('div');shield.style.cssText='position:fixed;inset:40px 0 0 0;z-index:1500;display:none';document.body.appendChild(shield);

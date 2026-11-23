@@ -1,4 +1,4 @@
-"""Correções da revisão de segurança: backup de ajustes, teclas, tile MVT malformado, GPX com ponto inválido."""
+"""Correções da revisão de segurança: backup de ajustes, tile MVT malformado, GPX com ponto inválido; digitar não aciona nada."""
 import asyncio, sys, json, os, tempfile
 from playwright.async_api import async_playwright
 
@@ -24,16 +24,16 @@ async def main():
         path = os.path.join(TMP, 'ajustes.json'); open(path, 'w').write(json.dumps(evil))
         await pg.evaluate("document.querySelector('#bSet').click()"); await pg.set_input_files('#restoreIn', path); await pg.wait_for_timeout(500)
         r = await pg.evaluate('''()=>({spd:TN.cfg.spd,radarDist:TN.cfg.radarDist,voiceVol:TN.cfg.voiceVol,dayMode:TN.cfg.dayMode,x:TN.cfg.naoExiste,voice:TN.cfg.voice,compSpd:TN.cfg.compSpd,
-          zoomOut:[...document.querySelectorAll('#keyList [data-a=zoomOut]')].map(b=>b.textContent)[0],lock:[...document.querySelectorAll('#keyList [data-a=lock]')].map(b=>b.textContent)[0],zoomIn:[...document.querySelectorAll('#keyList [data-a=zoomIn]')].map(b=>b.textContent)[0],pwn:window.__pwn})''')
+          pwn:window.__pwn,keys:localStorage.getItem('tn_keys'),toast:document.querySelector('#toast').textContent})''')
         check('valores de tipo errado são ignorados (spd/radarDist/voice)', r['spd'] == 0 and r['radarDist'] == 600 and r['voice'] is True, str(r))
-        check('valores válidos são aplicados (voiceVol, dayMode, compSpd, tecla lock)', r['voiceVol'] == 0.5 and r['dayMode'] == 'night' and r['compSpd'] == 12 and r['lock'] == 'KeyZ', str(r))
+        check('valores válidos são aplicados (voiceVol, dayMode, compSpd)', r['voiceVol'] == 0.5 and r['dayMode'] == 'night' and r['compSpd'] == 12 and 'restaurados' in r['toast'], str(r))
         check('chave desconhecida não entra', r['x'] is None)
-        check('tecla com HTML e tecla gigante são recusadas (voltam ao padrão)', r['zoomOut'] == 'Minus' and r['zoomIn'] == 'Equal', str((r['zoomOut'], r['zoomIn'])))
+        check('backup antigo com teclas do controle de guidão: as teclas são ignoradas (nada gravado, nada executado)', r['keys'] is None and r['pwn'] is None, str(r))
         check('nada executou', r['pwn'] is None)
-        # mesmo que um valor estranho já esteja no localStorage, as teclas aparecem escapadas
+        # um tn_keys antigo (até a v2.7.1) sai do localStorage ao abrir e não é mostrado em lugar nenhum
         await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({zoomOut:'<img src=x onerror=window.__pwn=2>'}))}''')
         await pg.reload(); await pg.wait_for_timeout(1200); await pg.evaluate("document.querySelector('#bSet').click()"); await pg.wait_for_timeout(300)
-        check('tecla já gravada com HTML aparece como texto', await pg.evaluate("window.__pwn===undefined&&document.querySelector('#keyList [data-a=zoomOut]').textContent.startsWith('<img')"))
+        check('tn_keys antigo com HTML é apagado e não roda nada', await pg.evaluate("window.__pwn===undefined&&localStorage.getItem('tn_keys')===null&&!document.querySelector('#keyList')"))
         await pg.evaluate("document.querySelector('#dlgSet').close()")
 
         # ---- teclas gravadas de ações que saíram (rali) não ficam ativas e não quebram ----
@@ -43,7 +43,7 @@ async def main():
         for k in ('ArrowDown', 'ArrowRight', 'Enter'): await pg.keyboard.press(k)
         await pg.wait_for_timeout(200)
         r = await pg.evaluate("({k:Object.keys(JSON.parse(localStorage.getItem('tn_keys')||'{}')),gpx:localStorage.getItem('tn_gpx'),wp:localStorage.getItem('tn_wpState')})")
-        check('teclas antigas do rali (setas, Enter) não dão erro e os restos do rali saem do localStorage', len(errs) == n0 and r['gpx'] is None and r['wp'] is None, str((errs[n0:], r)))
+        check('teclas antigas (setas, Enter) não dão erro e os restos do rali e das teclas saem do localStorage', len(errs) == n0 and r['gpx'] is None and r['wp'] is None and r['k'] == [], str((errs[n0:], r)))
 
         # ---- tile MVT malformado ----
         r = await pg.evaluate('''()=>{const out={};
@@ -58,7 +58,7 @@ async def main():
         check('tile truncado ou com tamanho absurdo dá erro rápido, sem travar', r['ms'] < 500 and 'sem erro' not in (r['a'], ), str(r))
         check('geometria com contagem gigante não gira em laço', r['ms'] < 500, str(r['c']))
 
-        # ---- digitar nota não dispara as teclas do controle ----
+        # ---- digitar nota não dispara nada (zoom, trava de toque) ----
         await pg.evaluate('()=>{TN.onPos({timestamp:Date.now(),coords:{latitude:-20,longitude:-44,altitude:0,accuracy:5,speed:0,heading:null}})}')
         z0 = await pg.evaluate('TN.map.getZoom()')
         await pg.evaluate("document.querySelector('#bNote').click()"); await pg.click('#noteTx')

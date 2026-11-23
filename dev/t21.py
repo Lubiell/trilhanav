@@ -81,17 +81,20 @@ async def main():
         await pg.click('#sosOk'); await pg.wait_for_timeout(200)
         check('"Estou bem" cancela: nada enviado', not await pg.is_visible('#sosBox') and not await calls('sendSms') and (await spoken())[-1] == 'Aviso cancelado')
 
-        # ---------- cancelar por voz e por tecla ----------
+        # ---------- cancelar por voz (a tecla do guidão saiu na v2.7.2: uma tecla não cancela mais) ----------
         for modo in ('voz', 'tecla'):
             await ride(45, 6); await pg.evaluate("TN.onImpact({g:6})")
             for _ in range(2): await ride(0, 1, step=0)
             await pg.wait_for_timeout(15300)
             if modo == 'voz':
                 await pg.evaluate("TN.runCmd(TN.parseCmd('estou bem'))")
+                await pg.wait_for_timeout(200)
+                check('cancelar por voz ("estou bem")', await pg.evaluate("TN.sos") is None and not await calls('sendSms'))
             else:
-                await pg.keyboard.press('PageDown')
-            await pg.wait_for_timeout(200)
-            check(f'cancelar por {modo} ("estou bem" / tecla do guidão)', await pg.evaluate("TN.sos") is None and not await calls('sendSms'))
+                await pg.keyboard.press('PageDown'); await pg.wait_for_timeout(200)
+                check('uma tecla não cancela mais o aviso (sem controle de guidão)', await pg.evaluate("TN.sos&&TN.sos.phase") == 'count', str(await pg.evaluate("TN.sos&&TN.sos.phase")))
+                await pg.evaluate("TN.runCmd(TN.parseCmd('estou bem'))"); await pg.wait_for_timeout(200)
+                check('e o "estou bem" cancela em seguida', await pg.evaluate("TN.sos") is None and not await calls('sendSms'))
 
         # ---------- sem resposta: SMS + ligação ----------
         await ride(45, 6); await pg.evaluate("TN.onImpact({g:6})")

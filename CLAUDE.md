@@ -2,9 +2,11 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.1, 23/11/2026)
+## Estado (v2.7.2, 23/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
+
+**v2.7.2:** a pedido do dono ("remover o controle de guidão, ele não é usado") saiu o controle de guidão: teclas configuráveis nos Ajustes (`ACTIONS`/`DEFKEYS`/`renderKeys`), atalhos de teclado (=, −, Tab, L), "trocar tela" (`nextPane`) e a tecla que cancelava o SOS (cancela com "Estou bem" ou "Trilha, cancelar"). O `tn_keys` é apagado ao abrir; o backup de ajustes não leva mais `keys` (um backup antigo continua aceito, as teclas são ignoradas). A trava de toque (cadeado) e os botões de música ficam.
 
 **v2.7.1:** primeiro retorno do celular do dono na 2.6.3: o download do mapa de MG parava com "Download interrompido: An operation that depends on state cached in an interface object was made but the state had changed since it was read from disk" (`NotReadableError`): reler a parte logo depois de gravar falha no Android dele. Agora o SHA-256 é conferido nos bytes que chegaram pela rede (sem reler o arquivo) e o `PartsSource` refaz a leitura com um `File` novo (`handles`, `staleFile`). `t25` reproduz o erro. E a 2.7.0 não instalou por cima da 2.6.3 ("conflito com um pacote já existente": chave diferente). **A 2.7.1 é a primeira com a chave fixa** (certificado SHA-256 `c7654768…5da8dd1`): o dono ainda precisa desinstalar a 2.6.3 uma vez; daí em diante as atualizações instalam por cima.
 
@@ -31,7 +33,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v18`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v19`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin`, `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
@@ -42,11 +44,11 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Ir para**: Photon + Valhalla (moto, pt-BR, até 3 alternativas) com rede; sem rede, busca e rota pelo mapa offline (acima). Cartão de manobra, voz curva a curva, recálculo, chegada, recentes/favoritos, "De" opcional, toque longo no mapa, "Seguir em linha reta". Aviso de privacidade antes do 1º pedido (`tn_netOk`).
 - **Voz e telefone (APK)**: TTS nativo que abaixa a música; assistente Vosk sempre ligado com a palavra "Trilha" (`TrilhaVoiceService`, microfone do capacete por SCO com `cfg.voiceBt`); atender/recusar/ligar, WhatsApp (mensagens e chamadas pela notificação), música atual e Spotify, "Trilha, ir para…", clima, postos, autonomia.
 - **Radares** (Overpass `maps.mail.ru`), **limite da via** (`maxspeed`), **clima** (Open-Meteo, reserva MET Norway), **postos**, **inclinação** (giroscópio × velocidade), **autonomia**, **SOS** (queda → SMS + ligação; padrão desligado).
-- **Gravação** de trilha (GPX, com **notas e fotos**, exporta GPX ou ZIP), **Arquivos** (pastas no OPFS; ver GPX no mapa), **Painel** personalizável (`DASH`), tema dia/noite pelo sol, teclas do controle de guidão, trava de toque.
+- **Gravação** de trilha (GPX, com **notas e fotos**, exporta GPX ou ZIP), **Arquivos** (pastas no OPFS; ver GPX no mapa), **Painel** personalizável (`DASH`), tema dia/noite pelo sol, trava de toque (cadeado).
 
 ### Onde o app guarda coisas
 
-- `localStorage` (prefixo `tn_`): `cfg`, `keys`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) podem sobrar nos aparelhos e são ignoradas.
+- `localStorage` (prefixo `tn_`): `cfg`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) e do controle de guidão (`keys`, até a v2.7.1) são apagadas ao abrir.
 - OPFS: `gpx/` (pastas; `gpx/Gravações/`), `notas/<sessão>/`, `mapa-dl/` (partes do mapa + `manifest.json`), `mapa.pmtiles`, `radares.json`, `busca.json` (índice de cidades da busca offline).
 
 ## Fluxo de trabalho e de release
@@ -62,7 +64,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Combinado para depois**: mandar a localização por voz, paradas no caminho no Ir para, histórico de viagens.
 - **Licença**: `leaflet-rotate` é GPL-3.0 (código aberto obrigatório); o repositório ainda não tem `LICENSE` próprio (decisão do dono).
 - **Origem compartilhada** (`lubiell.github.io`): só importa se o site voltar.
-- Ideias: nomes de rua na voz da rota offline (o grafo não guarda o nome da via), busca offline de ruas longe de você (hoje só a 6 km), controle de câmeras pelo guidão.
+- Ideias: nomes de rua na voz da rota offline (o grafo não guarda o nome da via), busca offline de ruas longe de você (hoje só a 6 km).
 
 ## Armadilhas já encontradas
 
@@ -83,7 +85,6 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - Estado do modo cidade e dos radares é `var` (não `let`): `updateNav`/`checkAlerts` podem rodar antes do bloco.
 - Linhas de lista com botões dentro de `<label>`: tocar no texto dispara o primeiro botão. Usar `div.lr`.
 - `map.fitBounds` com a aba Mapa oculta dá zoom `NaN`; só enquadrar com o mapa visível (`fitTrack`/`mapShown`).
-- Atalhos de teclado não valem em `input/textarea/select` nem com `e.code` vazio.
 - Texto vindo de GPX/backup/mapa nunca entra em `innerHTML` sem `esc()`.
 - **MVT próprio** (`mvtLayer`): depois das feições de uma camada é preciso `p=end`. Ponto (tipo 1) vira "linha" de 1 vértice. O cruzamento de ruas só existe se as duas vias tiverem vértice ali (no OSM têm; no mapa de teste foi preciso pôr).
 - **Rota offline**: o centro de uma cidade (ponto do `places`) pode ficar a centenas de metros do vértice de rua mais perto; por isso a entrada/saída cai para os 6 nós mais perto a até 3 km. A mesma estrada em zooms diferentes não coincide (o zoom baixo é simplificado): portais.
@@ -107,7 +108,7 @@ python3 fixtures.py --clean
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/teclas/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler.
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler.
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 
