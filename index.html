@@ -194,7 +194,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="row"><button class="btn ok" id="callAns">Atender</button><button class="btn r" id="callEnd">Recusar</button></div></div>
 <div id="waCard" title="Toque para fechar"><div class="small" id="waApp"></div><div id="waT"></div><div id="waX"></div></div>
 
-<dialog id="dlgSet"><div class="hd"><b>Ajustes</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgSet"><div class="hd"><b>Ajustes</b></div><div class="bd">
   <h3>Odômetro</h3>
   <label>Multiplicador de distância <input type="number" step="0.001" id="sMult"></label>
   <label>Ajuste por clique (km) <input type="number" step="0.01" id="sStep"></label>
@@ -265,7 +265,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" style="padding-top:8px">TrilhaNav v2.6.2 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
-<dialog id="dlgMedia"><div class="hd"><b>Música</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
   <div id="mNow">Nada tocando</div>
   <div style="display:flex;gap:10px;justify-content:center;padding:6px 0 14px"><button class="btn g" id="mPrev" style="font-size:26px;padding:12px 20px">⏮</button><button class="btn" id="mPlay" style="font-size:26px;padding:12px 24px">⏯</button><button class="btn g" id="mNext" style="font-size:26px;padding:12px 20px">⏭</button></div>
   <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding-bottom:8px"><button class="btn g" id="mVolDn">Volume −</button><button class="btn g" id="mVolUp">Volume +</button></div>
@@ -273,7 +273,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" style="padding-top:10px;text-align:center">O Spotify continua tocando em segundo plano. Os botões mandam o comando para o player que estiver tocando (Spotify, YouTube Music…). A música atual aparece quando o acesso a notificações está liberado (em Telefone).</div>
 </div></dialog>
 
-<dialog id="dlgNav"><div class="hd"><b>Ir para (rota por ruas)</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgNav"><div class="hd"><b>Ir para (rota por ruas)</b></div><div class="bd">
   <div class="nvf"><span class="small">De</span><input id="navFrom" placeholder="Minha posição (GPS)" autocomplete="off" enterkeyhint="search"><button class="btn g" id="navFromMe" title="Partir da minha posição">GPS</button></div>
   <div class="nvf"><span class="small">Para</span><input id="navQ" placeholder="Endereço, lugar ou -19.92, -43.94" autocomplete="off" enterkeyhint="search"></div>
   <div id="navRes"></div><div id="navRoutes"></div>
@@ -282,7 +282,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <h3>Favoritos e recentes</h3><div id="navRecent"></div>
   <div class="small">Busca: Photon (komoot) · Rota para moto: Valhalla (FOSSGIS) · Radares e ruas © colaboradores do OpenStreetMap. Sem internet, a rota sai pelas estradas do mapa offline baixado no app (até uns 30 km); o destino pode ser um recente, um favorito, uma coordenada ou um toque longo no mapa.</div>
 </div></dialog>
-<dialog id="dlgPhone"><div class="hd"><b>Telefone, WhatsApp e voz</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgPhone"><div class="hd"><b>Telefone, WhatsApp e voz</b></div><div class="bd">
   <div id="phPerm"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn" id="phReq">Permitir telefone, agenda e microfone</button><button class="btn" id="phNotif">Liberar acesso a notificações</button><button class="btn g" id="phApp">Informações do app</button></div>
   <div class="small" id="phHint"></div>
@@ -310,12 +310,12 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">Toque em <b>Voz</b> (ou na tecla do guidão configurada em Ajustes) e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
   <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
 </div></dialog>
-<dialog id="dlgWx"><div class="hd"><b>Clima</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgWx"><div class="hd"><b>Clima</b></div><div class="bd">
   <div id="wxNow" style="font-size:18px;font-weight:700;padding-bottom:6px"></div><div id="wxAl"></div><div id="wxHours"></div>
   <div style="padding:8px 0"><button class="btn g" id="wxRefresh">Atualizar</button></div>
   <div class="small" id="wxSrc"></div>
 </div></dialog>
-<dialog id="dlgMore"><div class="hd"><b>Mais</b><button class="btn g" data-close>Fechar</button></div><div class="bd"><div id="moreGrid">
+<dialog id="dlgMore"><div class="hd"><b>Mais</b></div><div class="bd"><div id="moreGrid">
   <button class="b" id="bSplit"><svg class="ic"><use href="#i-split"/></svg><span>Dividir</span></button>
   <button class="b" id="bElev"><svg class="ic"><use href="#i-elev"/></svg><span>Altimetria</span></button>
   <button class="b" id="bGpx"><svg class="ic"><use href="#i-lib"/></svg><span>Arquivos</span></button>
@@ -330,7 +330,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <button class="b" id="bFull"><svg class="ic"><use href="#i-full"/></svg><span>Tela cheia</span></button>
   <button class="b" id="bSet"><svg class="ic"><use href="#i-set"/></svg><span>Ajustes</span></button>
 </div></div></dialog>
-<dialog id="dlgFuel"><div class="hd"><b>Combustível</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgFuel"><div class="hd"><b>Combustível</b></div><div class="bd">
   <h3>Autonomia</h3>
   <div class="mid" id="rangeInfo" style="text-align:left;padding:4px 0"></div>
   <label>Tanque (litros) <input type="number" step="0.5" id="sTankL"></label>
@@ -341,7 +341,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small" id="fuelInfo" style="padding-bottom:6px"></div><div id="fuelList"></div>
   <div class="small" style="padding-top:8px">Postos num raio de 8 km, do OpenStreetMap (pode faltar posto ou estar desatualizado). Por voz: "Trilha, posto mais perto".</div>
 </div></dialog>
-<dialog id="dlgDash"><div class="hd"><b>Personalizar o Painel</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgDash"><div class="hd"><b>Personalizar o Painel</b></div><div class="bd">
   <label>Mostradores grandes (menos por linha, números maiores) <input type="checkbox" id="dashBig"></label>
   <h3>Mostrar</h3><div id="dashItems"></div>
   <div style="padding:8px 0"><button class="btn g" id="dashAll">Mostrar todos</button></div>
@@ -349,14 +349,14 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 <dialog id="dlgAsk"><div class="hd"><b id="askT"></b></div><div class="bd"><div id="askMsg" class="small" style="padding-bottom:8px"></div><input id="askIn" style="width:100%"><select id="askSel" style="width:100%"></select>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px"><button class="btn g" id="askNo">Cancelar</button><button class="btn" id="askOk">OK</button></div></div></dialog>
 
-<dialog id="dlgGpx"><div class="hd"><b>Arquivos: roadbooks e trilhas</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgGpx"><div class="hd"><b>Arquivos: roadbooks e trilhas</b></div><div class="bd">
   <div id="gpxCrumb" class="small" style="padding-bottom:6px"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:8px"><button class="btn" id="gOpen">Abrir PDF ou GPX</button><button class="btn g" id="gImport">Guardar GPX aqui</button><button class="btn g" id="gNewDir">Nova pasta</button><button class="btn g" id="gSaveCur">Guardar o GPX aberto aqui</button></div>
   <div id="gpxList"></div>
   <input type="file" id="gImportIn" accept=".gpx,application/gpx+xml,.xml" multiple hidden>
 </div></dialog>
 
-<dialog id="dlgNote"><div class="hd"><b>Nota na trilha</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgNote"><div class="hd"><b>Nota na trilha</b></div><div class="bd">
   <div class="small" id="noteWhere"></div>
   <textarea id="noteTx" rows="3" placeholder="O que tem aqui? (perigo, ponto de água, lama…)" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px;font:inherit"></textarea>
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 0"><button class="btn g" id="notePhoto">📷 Foto</button><span class="small" id="notePhInfo"></span></div>
@@ -365,7 +365,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <h3>Notas desta gravação</h3><div id="noteList"></div>
 </div></dialog>
 
-<dialog id="dlgZones"><div class="hd"><b>Zonas de velocidade</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgZones"><div class="hd"><b>Zonas de velocidade</b></div><div class="bd">
   <div class="small">Aparecem sozinhas quando o GPX tem waypoints chamados "VEL 40" (ou "LIMITE 30", "ZV 50") até um "FIM". Aqui você cria as suas, em km do trilho (o botão "aqui" usa a sua posição).</div>
   <label>Início (km do trilho) <span><input type="number" step="0.01" id="zFrom"> <button class="btn g" data-here="zFrom">aqui</button></span></label>
   <label>Fim (km do trilho) <span><input type="number" step="0.01" id="zTo"> <button class="btn g" data-here="zTo">aqui</button></span></label>
@@ -374,7 +374,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div id="zList"></div>
 </div></dialog>
 
-<dialog id="dlgWp"><div class="hd"><b>Waypoints</b><button class="btn g" data-close>Fechar</button></div><div class="bd">
+<dialog id="dlgWp"><div class="hd"><b>Waypoints</b></div><div class="bd">
   <div style="display:flex;gap:8px;padding-bottom:8px"><button class="btn g" id="bPrevWp">◀ Anterior</button><button class="btn g" id="bNextWp">Pular ▶</button><button class="btn g" id="bMarkWp">+ Marcar aqui</button></div>
   <div style="display:flex;gap:8px;padding-bottom:8px;flex-wrap:wrap"><button class="btn g" id="bValWp">✔ Validar este</button><button class="btn g" id="bAlignWp">Alinhar TOTAL ao roadbook</button></div>
   <div id="wpSummary" class="small"></div>
@@ -1640,6 +1640,13 @@ $('#sCompOff').addEventListener('change',()=>{cfg.compLearned=true;saveCfg()});
 $('#bResetT').onclick=()=>{lean.maxL=0;lean.maxR=0;st.total=0;st.partial=0;st.maxSpd=0;st.movSec=0;st.movKm=0;st.snapKm=null;st.snapTot=null;st.corr=0;st.nCorr=0;saveOdo();renderOdo();toast('TOTAL zerado')};
 $('#bSet').onclick=()=>{fillSet();$('#dlgSet').showModal()};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+/* sem botão "Fechar": tocar fora da janela fecha e o toque segue para o que estiver embaixo (tocar em outro botão da barra já troca de janela).
+   A confirmação (dlgAsk) continua pedindo resposta. */
+document.querySelectorAll('dialog').forEach(d=>{if(d.id==='dlgAsk')return;
+  d.addEventListener('click',e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)return;
+    d.close();const el=document.elementFromPoint(e.clientX,e.clientY),b=el&&el.closest('button,a,.b,[data-i],[data-rc]');if(b&&!b.closest('dialog'))b.click()})});
+/* botão Voltar do Android (APK): fecha a janela de cima; sem janela aberta devolve false e o app vai para segundo plano */
+window.tnBack=()=>{const open=[...document.querySelectorAll('dialog[open]')];if(!open.length)return false;const d=open.find(x=>x.id==='dlgAsk')||open[open.length-1];d.close();return true};
 $('#bExport').onclick=exportGPX;
 $('#bBackup').onclick=()=>download('trilhanav_ajustes.json',JSON.stringify({cfg,keys,odo:st},null,1),'application/json');
 $('#bRestore').onclick=()=>$('#restoreIn').click();

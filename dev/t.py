@@ -19,7 +19,7 @@ async def main():
         await pg.click('[data-pane=paneMap]');await pg.wait_for_timeout(1500);await pg.screenshot(path='map.png')
         await pg.click('[data-pane=paneDash]');await pg.wait_for_timeout(300);await pg.screenshot(path='dash.png')
         await pg.evaluate("document.querySelector('#bSet').click()");await pg.wait_for_timeout(300);await pg.screenshot(path='set.png')
-        await pg.click('[data-close]');
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close())");
         await pg.set_viewport_size({'width':420,'height':860});await pg.click('[data-pane=paneRb]');await pg.wait_for_timeout(300);await pg.screenshot(path='port.png')
         print('errs',errs)
         await b.close()

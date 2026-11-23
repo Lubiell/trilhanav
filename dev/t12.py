@@ -34,7 +34,7 @@ async def main():
         await pg.evaluate('''()=>{localStorage.setItem('tn_keys',JSON.stringify({chrono:'<img src=x onerror=window.__pwn=2>'}))}''')
         await pg.reload(); await pg.wait_for_timeout(1200); await pg.evaluate("document.querySelector('#bSet').click()"); await pg.wait_for_timeout(300)
         check('tecla já gravada com HTML aparece como texto', await pg.evaluate("window.__pwn===undefined&&document.querySelector('#keyList [data-a=chrono]').textContent.startsWith('<img')"))
-        await pg.click('#dlgSet [data-close]')
+        await pg.evaluate("document.querySelector('#dlgSet').close()")
 
         # ---- tile MVT malformado ----
         r = await pg.evaluate('''()=>{const out={};
@@ -67,7 +67,7 @@ async def main():
         # toque duplo em "Salvar nota"
         await pg.fill('#noteTx', 'uma só'); await pg.evaluate("()=>{const b=document.querySelector('#noteSave');b.click();b.click()}"); await pg.wait_for_timeout(700)
         check('toque duplo em Salvar cria uma nota só', await pg.evaluate('TN.rnotes.length') == 1, str(await pg.evaluate('TN.rnotes.length')))
-        await pg.click('#dlgNote [data-close]')
+        await pg.evaluate("document.querySelector('#dlgNote').close()")
 
         # ---- tile MVT com camadas fora de ordem e campo desconhecido ----
         r = await pg.evaluate("""()=>{const vi=n=>{const o=[];while(n>127){o.push((n&127)|128);n=Math.floor(n/128)}o.push(n);return o};

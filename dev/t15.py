@@ -212,7 +212,7 @@ async def main():
         await pg.click('#navRecent [data-rc="0"]'); await pg.wait_for_timeout(1500)
         txt = await pg.text_content('#navRoutes')
         check('sem rota: mensagem e opção de linha reta, sem Waze/Google Maps', 'Não consegui calcular' in txt and await pg.evaluate("!!document.querySelector('#navStraight')&&!document.querySelector('#navRoutes [data-ext]')"), txt[:100])
-        await pg.click('#dlgNav [data-close]')
+        await pg.evaluate("document.querySelector('#dlgNav').close()")
         check('fechar sem ir limpa a prévia', await pg.evaluate('!TN.navPlan&&!TN.nav'))
 
         # ---------- tulipas de largada/chegada; altimetria redesenha ao girar ----------
