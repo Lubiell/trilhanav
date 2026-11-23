@@ -217,7 +217,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.6.3 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.0 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -235,7 +235,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Evitar pedágio <input type="checkbox" id="sNavToll"></label>
   <label>Evitar rodovias <input type="checkbox" id="sNavHwy"></label>
   <h3>Favoritos e recentes</h3><div id="navRecent"></div>
-  <div class="small">Busca: Photon (komoot) · Rota para moto: Valhalla (FOSSGIS) · Radares e ruas © colaboradores do OpenStreetMap. Sem internet, a rota sai pelas estradas do mapa offline baixado no app (até uns 30 km); o destino pode ser um recente, um favorito, uma coordenada ou um toque longo no mapa.</div>
+  <div class="small">Busca: Photon (komoot) · Rota para moto: Valhalla (FOSSGIS) · Radares e ruas © colaboradores do OpenStreetMap. Sem internet, a busca e a rota usam o mapa offline baixado no app: cidades de todo o mapa e ruas e lugares a uns 6 km de você; o destino também pode ser um recente, um favorito, uma coordenada ou um toque longo no mapa.</div>
 </div></dialog>
 <dialog id="dlgPhone"><div class="hd"><b>Telefone, WhatsApp e voz</b></div><div class="bd">
   <div id="phPerm"></div>
@@ -524,24 +524,25 @@ async function voiceTest(){if(!cfg.voice){toast('Voz desligada: ligue "Copiloto 
   else toast('No navegador a voz para com a tela apagada e não abaixa a música. Para isso use o APK',6000)}
 /* ---------- rota offline pelo mapa baixado (camada roads do PMTiles) ---------- */
 /* Sem internet: lê os tiles da camada "roads" do mapa offline, monta o grafo de estradas e acha o caminho (A*). */
-/* decodificador mínimo de tile vetorial (MVT/protobuf): só linhas da camada "roads" */
-function mvtRoads(buf){const u=new Uint8Array(buf),td=new TextDecoder(),out=[];let p=0;
+/* decodificador mínimo de tile vetorial (MVT/protobuf): feições de uma camada (gt 2 = linhas, 1 = pontos; ponto vira uma "linha" de 1 vértice) */
+const mvtRoads=buf=>mvtLayer(buf,'roads',2);
+function mvtLayer(buf,layer,gt){const u=new Uint8Array(buf),td=new TextDecoder(),out=[];let p=0;
   const vint=()=>{let r=0,m=1,b;do{if(p>=u.length)throw new Error('tile truncado');b=u[p++];r+=(b&127)*m;m*=128}while(b&128);return r};
   const skip=w=>{if(w===0)vint();else if(w===1)p+=8;else if(w===2){const l=vint();p+=l}else if(w===5)p+=4};
   while(p<u.length){const tag=vint(),f=Math.floor(tag/8),w=tag&7;if(f!==3||w!==2){skip(w);continue}
     const end=vint()+p;if(end>u.length)throw new Error('tile inválido');let name='',ext=4096;const keys=[],vals=[],feats=[];
     while(p<end){const t=vint(),ff=Math.floor(t/8),ww=t&7;
-      if(ff===1&&ww===2){const l=vint();name=td.decode(u.subarray(p,p+l));p+=l}
+      if(ff===1&&ww===2){const l=vint();name=td.decode(u.subarray(p,p+l));p+=l;if(name!==layer){p=end;break}}   /* camada que não interessa: pula sem ler chaves e valores */
       else if(ff===2&&ww===2){const l=vint();feats.push([p,p+l]);p+=l}
       else if(ff===3&&ww===2){const l=vint();keys.push(td.decode(u.subarray(p,p+l)));p+=l}
       else if(ff===4&&ww===2){const e2=vint()+p;let v=null;while(p<e2){const t2=vint(),f2=Math.floor(t2/8),w2=t2&7;
           if(f2===1&&w2===2){const l2=vint();v=td.decode(u.subarray(p,p+l2));p+=l2}else if(f2===7&&w2===0)v=!!vint();else if((f2===4||f2===5)&&w2===0)v=vint();else skip(w2)}vals.push(v);p=e2}
       else if(ff===5&&ww===0)ext=vint();else skip(ww)}
-    p=end;if(name!=='roads')continue;
+    p=end;if(name!==layer)continue;
     for(const [a,b] of feats){p=a;let type=0,tags=[],geom=[];
       while(p<b){const t=vint(),ff=Math.floor(t/8),ww=t&7;if(ff===3&&ww===0)type=vint();
         else if((ff===2||ff===4)&&ww===2){const e2=vint()+p,arr=[];while(p<e2)arr.push(vint());p=e2;if(ff===2)tags=arr;else geom=arr}else skip(ww)}
-      if(type!==2)continue;const props={};for(let i=0;i+1<tags.length;i+=2)props[keys[tags[i]]]=vals[tags[i+1]];
+      if(type!==gt)continue;const props={};for(let i=0;i+1<tags.length;i+=2)props[keys[tags[i]]]=vals[tags[i+1]];
       let x=0,y=0,i=0,cur=null;const lines=[];
       while(i<geom.length){const c=geom[i++],cmd=c&7;let n=(c-cmd)/8;if(cmd!==7)n=Math.min(n,Math.floor((geom.length-i)/2));for(let k=0;k<n;k++){if(cmd===7)continue;const dx=geom[i++],dy=geom[i++];x+=dx%2?-(dx+1)/2:dx/2;y+=dy%2?-(dy+1)/2:dy/2;if(cmd===1){cur=[[x,y]];lines.push(cur)}else if(cur)cur.push([x,y])}}
       out.push({props,lines,ext})}
@@ -556,12 +557,12 @@ function roadFactor(kind,det){if(RT_SKIP.has(kind)||RT_SKIP.has(det))return 0;
   if(det==='footway'||det==='pedestrian'||det==='cycleway')return 2;if(kind==='path'||det==='path'||det==='bridleway')return 1.35;
   if(det==='track')return 1.1;if(kind==='other')return 1.15;return 1}
 /* grafo: vértices a menos de 1,5 m viram um nó só; ponta solta (recorte na borda do tile) que encosta no meio de outra via divide a via ali */
-function buildRoadGraph(polys,lat0,lon0){const kx=Math.cos(rad(lat0))*R*Math.PI/180,ky=R*Math.PI/180,nd=[],grid=new Map(),CELL=2;
+function buildRoadGraph(polys,lat0,lon0,portal){const kx=Math.cos(rad(lat0))*R*Math.PI/180,ky=R*Math.PI/180,nd=[],grid=new Map(),CELL=2;
   const nodeAt=(lat,lon)=>{const x=(lon-lon0)*kx,y=(lat-lat0)*ky,cx=Math.floor(x/CELL),cy=Math.floor(y/CELL);let best=-1,bd=1.5;
     for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const l=grid.get((cx+a)+','+(cy+b));if(l)for(const id of l){const d=Math.hypot(nd[id].x-x,nd[id].y-y);if(d<bd){bd=d;best=id}}}
-    if(best>=0)return best;const id=nd.length;nd.push({x,y,lat,lon});const k=cx+','+cy;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(id);return id};
-  const E=[],seen=new Map();
-  for(const pl of polys){let prev=-1;for(const [la,lo] of pl.pts){const id=nodeAt(la,lo);if(prev>=0&&id!==prev){const k=prev<id?prev+'_'+id:id+'_'+prev,i=seen.get(k);if(i!=null){if(pl.f<E[i].f)E[i].f=pl.f}else{seen.set(k,E.length);E.push({a:prev,b:id,f:pl.f})}}prev=id}}
+    if(best>=0)return best;const id=nd.length;nd.push({x,y,lat,lon,lv:curLv});const k=cx+','+cy;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(id);return id};
+  const E=[],seen=new Map();let curLv=0;
+  for(const pl of polys){curLv=pl.lv||0;let prev=-1;for(const [la,lo] of pl.pts){const id=nodeAt(la,lo);if(prev>=0&&id!==prev){const k=prev<id?prev+'_'+id:id+'_'+prev,i=seen.get(k);if(i!=null){if(pl.f<E[i].f)E[i].f=pl.f}else{seen.set(k,E.length);E.push({a:prev,b:id,f:pl.f})}}prev=id}}
   const deg=new Uint16Array(nd.length);E.forEach(e=>{deg[e.a]++;deg[e.b]++});
   const SC=30,sg=new Map();E.forEach((e,i)=>{const A=nd[e.a],B=nd[e.b];for(let cx=Math.floor((Math.min(A.x,B.x)-3)/SC);cx<=Math.floor((Math.max(A.x,B.x)+3)/SC);cx++)for(let cy=Math.floor((Math.min(A.y,B.y)-3)/SC);cy<=Math.floor((Math.max(A.y,B.y)+3)/SC);cy++){const k=cx+','+cy;if(!sg.has(k))sg.set(k,[]);sg.get(k).push(i)}});
   const splits=new Map();
@@ -570,39 +571,62 @@ function buildRoadGraph(polys,lat0,lon0){const kx=Math.cos(rad(lat0))*R*Math.PI/
       if(Math.hypot(A.x+t*dx-P.x,A.y+t*dy-P.y)<=2.5){if(!splits.has(i))splits.set(i,[]);splits.get(i).push({t,n});break}}}
   const adj=nd.map(()=>[]),link=(a,b,f)=>{const c=Math.hypot(nd[a].x-nd[b].x,nd[a].y-nd[b].y)*f;adj[a].push({to:b,c});adj[b].push({to:a,c})};
   E.forEach((e,i)=>{const sp=splits.get(i);if(!sp){link(e.a,e.b,e.f);return}sp.sort((p,q)=>p.t-q.t);let a=e.a;for(const q of sp){link(a,q.n,e.f);a=q.n}link(a,e.b,e.f)});
+  /* portais: a mesma estrada desenhada em zooms diferentes não cai no mesmo ponto (o zoom baixo é simplificado); liga nós de níveis diferentes a até "portal" metros */
+  if(portal){const PG=new Map(),PC=portal;nd.forEach((n,i)=>{if(!n.lv)return;const k=Math.floor(n.x/PC)+','+Math.floor(n.y/PC);if(!PG.has(k))PG.set(k,[]);PG.get(k).push(i)});
+    nd.forEach((n,i)=>{if(n.lv)return;const cx=Math.floor(n.x/PC),cy=Math.floor(n.y/PC);let bj=-1,bd=PC;
+      for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const l=PG.get((cx+a)+','+(cy+b));if(l)for(const j of l){const d=Math.hypot(nd[j].x-n.x,nd[j].y-n.y);if(d<bd){bd=d;bj=j}}}
+      if(bj>=0)link(i,bj,1.5)})}
   return {nd,adj}}
 function heapPush(h,k,v){h.push([k,v]);let i=h.length-1;while(i>0){const p=(i-1)>>1;if(h[p][0]<=h[i][0])break;[h[p],h[i]]=[h[i],h[p]];i=p}}
 function heapPop(h){const top=h[0],last=h.pop();if(h.length){h[0]=last;let i=0;for(;;){const l=2*i+1,r=l+1;let m=i;if(l<h.length&&h[l][0]<h[m][0])m=l;if(r<h.length&&h[r][0]<h[m][0])m=r;if(m===i)break;[h[m],h[i]]=[h[i],h[m]];i=m}}return top}
 function mkRoute(pts){const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+hav(pts[i-1],pts[i]);return {pts,cum,len:cum[cum.length-1]}}
-/* lê as linhas da camada "roads" dos tiles a..b no zoom z */
-async function roadPolys(z,a,b){const polys=[],jobs=[];for(let x=a.x;x<=b.x;x++)for(let y=a.y;y<=b.y;y++)jobs.push((async()=>{try{const r=await offPM.getZxy(z,x,y);if(!r)return;
-    for(const f of mvtRoads(r.data)){const fac=roadFactor(f.props.kind,f.props.kind_detail);if(!fac)continue;for(const ln of f.lines)if(ln.length>1)polys.push({f:fac,pts:ln.map(([px,py])=>t2ll(z,x,y,px,py,f.ext))})}}catch(e){}})());
-  await Promise.all(jobs);return polys}
-/* "Ir para" sem internet: rota pelas estradas do mapa offline até um ponto qualquer (A*). Tenta o zoom 14 (todas as estradas e trilhas) e,
-   se a área passar de RT_MAXT tiles ou não houver ligação, o 13 e o 12 (só as vias maiores). rtTooBig: nenhum zoom coube (destino longe demais). */
-const RT_MAXT=100;let rtTooBig=false;
+/* lê as linhas da camada "roads" de uma lista de tiles no zoom z (lv: nível no grafo, 0 = detalhado) */
+async function roadPolysT(z,tiles,lv=0){const polys=[];await Promise.all(tiles.map(async({x,y})=>{try{const r=await offPM.getZxy(z,x,y);if(!r)return;
+    for(const f of mvtRoads(r.data)){const fac=roadFactor(f.props.kind,f.props.kind_detail);if(!fac)continue;for(const ln of f.lines)if(ln.length>1)polys.push({f:fac,lv,pts:ln.map(([px,py])=>t2ll(z,x,y,px,py,f.ext))})}}catch(e){}}));
+  return polys}
+const boxTiles=(a,b)=>{const t=[];for(let x=a.x;x<=b.x;x++)for(let y=a.y;y<=b.y;y++)t.push({x,y});return t};
+async function roadPolys(z,a,b){return roadPolysT(z,boxTiles(a,b))}
+/* tiles de z em volta de q (raio m metros) */
+function tilesAround(q,m,z){const dl=m/111194.9,dn=dl/Math.cos(rad(q.lat));return boxTiles(ll2t(q.lat+dl,q.lon-dn,z),ll2t(q.lat-dl,q.lon+dn,z))}
+/* tiles de z num corredor de W metros para cada lado da linha reta p→dest */
+function corridorTiles(p,dest,z,W){const m=new Map(),n=Math.max(1,Math.ceil(hav(p,dest)/2000));
+  for(let i=0;i<=n;i++){const f=i/n;for(const t of tilesAround({lat:p.lat+(dest.lat-p.lat)*f,lon:p.lon+(dest.lon-p.lon)*f},W,z))m.set(t.x+'_'+t.y,t)}
+  return [...m.values()]}
+/* A* no grafo de estradas, da posição p (entra por um nó a até R0 m) ao destino (sai por um nó a até R0 m) */
+function astarRoute(nd,adj,p,dest,R0){
+  /* entra/sai pelos nós a até R0 m; se não houver (centro da cidade, ponto no meio de um quarteirão), pelos 6 mais perto a até 3 km */
+  const pick=q=>{const a=nd.map((n,i)=>({i,d:hav(q,n)}));let w=a.filter(o=>o.d<=R0);if(!w.length)w=a.filter(o=>o.d<=3000);return w.sort((u,v)=>u.d-v.d).slice(0,12)};
+  const near=pick(p),endC=new Map();pick(dest).forEach(o=>endC.set(o.i,1.5*o.d));
+  if(!near.length||!endC.size)return null;
+  const g=new Float64Array(nd.length).fill(Infinity),prev=new Int32Array(nd.length).fill(-1),h=[],H=i=>hav(nd[i],dest);
+  near.forEach(o=>{g[o.i]=1.5*o.d;heapPush(h,g[o.i]+H(o.i),o.i)});
+  let best=Infinity,bestN=-1;
+  while(h.length){const [f,u]=heapPop(h);if(f>=best)break;const gu=g[u];if(f>gu+H(u)+1e-6)continue;const ec=endC.get(u);if(ec!=null&&gu+ec<best){best=gu+ec;bestN=u}
+    const pu=prev[u],bin=pu>=0?Math.atan2(nd[u].x-nd[pu].x,nd[u].y-nd[pu].y):null;
+    for(const e of adj[u]){let c=e.c;
+      /* curva custa como 40 m a mais: entre caminhos iguais (malha de ruas) prefere o de menos curvas, para a voz não mandar virar a cada quarteirão */
+      if(bin!=null){let da=Math.abs(Math.atan2(nd[e.to].x-nd[u].x,nd[e.to].y-nd[u].y)-bin);if(da>Math.PI)da=2*Math.PI-da;if(da>0.7)c+=40}
+      const ng=gu+c;if(ng<g[e.to]){g[e.to]=ng;prev[e.to]=u;heapPush(h,ng+H(e.to),e.to)}}}
+  if(bestN<0)return null;
+  const path=[];for(let u=bestN;u>=0;u=prev[u])path.push({lat:nd[u].lat,lon:nd[u].lon});path.reverse();
+  return mkRoute([{lat:p.lat,lon:p.lon},...path,{lat:dest.lat,lon:dest.lon}])}
+/* "Ir para" sem internet: rota pelas estradas do mapa offline até um ponto qualquer (A*).
+   Perto (área de até RT_MAXT tiles no zoom 14): todas as estradas e trilhas.
+   Longe: estradas do zoom 14 num raio de RT_END m da partida e do destino + as vias maiores do zoom 12, 11 ou 10 num corredor entre os dois,
+   ligadas por portais onde a mesma estrada aparece nos dois zooms. rtTooBig: nenhum zoom coube (destino longe demais). */
+const RT_MAXT=100,RT_MAXC=160,RT_END=2500;let rtTooBig=false;
 async function offlineRouteTo(p,dest){rtTooBig=false;if(!offPM||!offH)return null;let tried=false;
-  const dist=hav(p,dest),mg=Math.max(1500,dist*0.25)/111194.9,lat0=(p.lat+dest.lat)/2,lon0=(p.lon+dest.lon)/2,mgLon=mg/Math.cos(rad(lat0));
-  for(let z=Math.min(offH.maxZoom,14);z>=12;z--){
-    const a=ll2t(Math.max(p.lat,dest.lat)+mg,Math.min(p.lon,dest.lon)-mgLon,z),b=ll2t(Math.min(p.lat,dest.lat)-mg,Math.max(p.lon,dest.lon)+mgLon,z);
-    if((b.x-a.x+1)*(b.y-a.y+1)>RT_MAXT)continue;tried=true;
-    const polys=await roadPolys(z,a,b);if(!polys.length)continue;
-    const {nd,adj}=buildRoadGraph(polys,lat0,lon0),R0=z>=14?250:600;
-    const near=nd.map((n,i)=>({i,d:hav(p,n)})).filter(o=>o.d<=R0).sort((u,v)=>u.d-v.d).slice(0,12);
-    const endC=new Map();nd.forEach((n,i)=>{const d=hav(n,dest);if(d<=R0)endC.set(i,1.5*d)});
-    if(!near.length||!endC.size)continue;
-    const g=new Float64Array(nd.length).fill(Infinity),prev=new Int32Array(nd.length).fill(-1),h=[],H=i=>hav(nd[i],dest);
-    near.forEach(o=>{g[o.i]=1.5*o.d;heapPush(h,g[o.i]+H(o.i),o.i)});
-    let best=Infinity,bestN=-1;
-    while(h.length){const [f,u]=heapPop(h);if(f>=best)break;const gu=g[u];if(f>gu+H(u)+1e-6)continue;const ec=endC.get(u);if(ec!=null&&gu+ec<best){best=gu+ec;bestN=u}
-      const pu=prev[u],bin=pu>=0?Math.atan2(nd[u].x-nd[pu].x,nd[u].y-nd[pu].y):null;
-      for(const e of adj[u]){let c=e.c;
-        /* curva custa como 40 m a mais: entre caminhos iguais (malha de ruas) prefere o de menos curvas, para a voz não mandar virar a cada quarteirão */
-        if(bin!=null){let da=Math.abs(Math.atan2(nd[e.to].x-nd[u].x,nd[e.to].y-nd[u].y)-bin);if(da>Math.PI)da=2*Math.PI-da;if(da>0.7)c+=40}
-        const ng=gu+c;if(ng<g[e.to]){g[e.to]=ng;prev[e.to]=u;heapPush(h,ng+H(e.to),e.to)}}}
-    if(bestN<0)continue;
-    const path=[];for(let u=bestN;u>=0;u=prev[u])path.push({lat:nd[u].lat,lon:nd[u].lon});path.reverse();
-    return mkRoute([{lat:p.lat,lon:p.lon},...path,{lat:dest.lat,lon:dest.lon}])}
+  const dist=hav(p,dest),lat0=(p.lat+dest.lat)/2,lon0=(p.lon+dest.lon)/2,zs=Math.min(offH.maxZoom,14);
+  {const mg=Math.max(1500,dist*0.25)/111194.9,mgLon=mg/Math.cos(rad(lat0));
+    const a=ll2t(Math.max(p.lat,dest.lat)+mg,Math.min(p.lon,dest.lon)-mgLon,zs),b=ll2t(Math.min(p.lat,dest.lat)-mg,Math.max(p.lon,dest.lon)+mgLon,zs);
+    if((b.x-a.x+1)*(b.y-a.y+1)<=RT_MAXT){tried=true;const polys=await roadPolys(zs,a,b);
+      if(polys.length){const {nd,adj}=buildRoadGraph(polys,lat0,lon0);const r=astarRoute(nd,adj,p,dest,250);if(r)return r}}}
+  const W=Math.max(8000,Math.min(dist*0.15,40000));
+  for(const zc of [12,11,10]){if(zc>=zs||zc<offH.minZoom)continue;const cor=corridorTiles(p,dest,zc,W);if(cor.length>RT_MAXC)continue;tried=true;
+    const ends=new Map();for(const q of [p,dest])for(const t of tilesAround(q,RT_END,zs))ends.set(t.x+'_'+t.y,t);
+    const [hi,lo]=await Promise.all([roadPolysT(zs,[...ends.values()],0),roadPolysT(zc,cor,1)]);
+    if(!lo.length)continue;
+    const {nd,adj}=buildRoadGraph([...hi,...lo],lat0,lon0,40);const r=astarRoute(nd,adj,p,dest,hi.length?250:800);if(r)return r}
   rtTooBig=!tried;return null}
 /* transforma a rota offline no formato do "Ir para" (manobras com o mesmo cartão e a mesma voz das rotas da internet) */
 function offNavRoute(rt,straight){const man=[{type:1,txt:'Siga',alert:'Siga',pre:'Siga',street:'',exit:0,along:0,len:0}];
@@ -651,11 +675,49 @@ const lc1=t=>t?t.charAt(0).toLowerCase()+t.slice(1):t;
 function placeOf(f){const p=(f&&f.properties)||{},c=((f&&f.geometry)||{}).coordinates||[];const street=[p.street,p.housenumber].filter(Boolean).join(', ');
   return {name:String(p.name||street||p.city||'Lugar').slice(0,80),sub:[p.name&&street?street:'',p.district||p.locality,p.city,p.state].filter(Boolean).join(' · ').slice(0,120),lat:+c[1],lon:+c[0]}}
 const COORD_RE=/^(-?\d{1,2}\.\d+)\s*[,;\s]\s*(-?\d{1,3}\.\d+)$/;
-async function geoSearch(q){q=String(q||'').trim();const m=COORD_RE.exec(q);
+async function geoSearch(q,prog){q=String(q||'').trim();const m=COORD_RE.exec(q);
   if(m){const lat=+m[1],lon=+m[2];if(Math.abs(lat)<=90&&Math.abs(lon)<=180)return [{name:'Coordenada',sub:lat.toFixed(5)+', '+lon.toFixed(5),lat,lon}]}
   if(q.length<3)return [];const near=fix||LS.get('lastPos',null);
-  const j=await politeFetch(PHOTON+'?q='+encodeURIComponent(q)+'&limit=8'+(near&&isFinite(near.lat)?'&lat='+near.lat.toFixed(2)+'&lon='+near.lon.toFixed(2):''));
-  return (j.features||[]).map(placeOf).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180)}
+  /* com internet (e o aviso aceito) busca no Photon; sem ela, ou se falhar, nos nomes do mapa offline */
+  if(navigator.onLine!==false&&LS.get('netOk',false)){try{
+      const j=await politeFetch(PHOTON+'?q='+encodeURIComponent(q)+'&limit=8'+(near&&isFinite(near.lat)?'&lat='+near.lat.toFixed(2)+'&lon='+near.lon.toFixed(2):''),undefined,offPM?8000:20000);
+      const r=(j.features||[]).map(placeOf).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180);if(r.length||!offPM)return r}
+    catch(e){if(!offPM)throw e}}
+  if(!offPM)throw new Error('sem internet e sem mapa offline instalado (Ajustes › Mapa offline)');
+  return offSearch(q,prog)}
+/* ---- busca sem internet: nomes do mapa offline ----
+   Cidades e vilas: "places" do zoom 10 do mapa inteiro, lidos uma vez e guardados no aparelho (busca.json, refeito se o mapa mudar).
+   Ruas com nome, povoados e lugares (posto, hospital…): lidos na hora no zoom 14 num raio de SRCH_R de você (ou do centro do mapa). */
+const SRCH_Z=10,SRCH_R=6000;let srchIdx=null;
+const offKey=()=>offH?[offH.minLon,offH.minLat,offH.maxLon,offH.maxLat,offH.maxZoom,offH.tileDataLength].join('_'):'';
+const PLK={city:'Cidade',town:'Cidade',village:'Vila',hamlet:'Povoado',suburb:'Bairro',neighbourhood:'Bairro',quarter:'Bairro',isolated_dwelling:'Sítio',farm:'Fazenda'};
+const POK={fuel:'Posto',hospital:'Hospital',clinic:'Clínica',pharmacy:'Farmácia',police:'Polícia',restaurant:'Restaurante',fast_food:'Lanchonete',cafe:'Café',hotel:'Hotel',guest_house:'Pousada',bank:'Banco',atm:'Caixa eletrônico',supermarket:'Supermercado',school:'Escola',place_of_worship:'Igreja',parking:'Estacionamento',camp_site:'Camping',waterfall:'Cachoeira',peak:'Pico',viewpoint:'Mirante',attraction:'Atração'};
+const plLabel=pr=>PLK[pr.kind_detail]||PLK[pr.kind]||'Lugar';
+async function readPts(z,tiles,layer){const out=[];await Promise.all(tiles.map(async({x,y})=>{try{const r=await offPM.getZxy(z,x,y);if(!r)return;
+    for(const f of mvtLayer(r.data,layer,1)){const nm=f.props['name:pt']||f.props.name;if(!nm)continue;for(const ln of f.lines){const [la,lo]=t2ll(z,x,y,ln[0][0],ln[0][1],f.ext);out.push({name:String(nm).slice(0,80),lat:la,lon:lo,pr:f.props})}}}catch(e){}}));
+  return out}
+async function placeIndex(prog){const key=offKey();if(srchIdx&&srchIdx.key===key)return srchIdx;
+  try{const j=JSON.parse(await (await fsRead([],'busca.json')).text());if(j&&j.key===key&&Array.isArray(j.items)){srchIdx=j;return j}}catch(e){}
+  const z=Math.max(offH.minZoom,Math.min(SRCH_Z,offH.maxZoom)),tiles=boxTiles(ll2t(offH.maxLat,offH.minLon,z),ll2t(offH.minLat,offH.maxLon,z)),items=new Map();
+  for(let i=0;i<tiles.length;i+=24){for(const q of await readPts(z,tiles.slice(i,i+24),'places')){const k=normTxt(q.name)+'|'+q.lat.toFixed(3)+'|'+q.lon.toFixed(3);
+      if(!items.has(k))items.set(k,[q.name,+q.lat.toFixed(5),+q.lon.toFixed(5),plLabel(q.pr),+q.pr.population||0])}
+    if(prog)prog(Math.min(100,Math.round((i+24)/tiles.length*100)))}
+  srchIdx={key,items:[...items.values()]};try{await fsWrite([],'busca.json',JSON.stringify(srchIdx))}catch(e){}return srchIdx}
+async function nearNames(ref){const z=Math.min(14,offH.maxZoom),tiles=tilesAround(ref,SRCH_R,z),out=[],streets=new Map();if(tiles.length>64)return out;
+  const [pl,po]=await Promise.all([readPts(z,tiles,'places'),readPts(z,tiles,'pois')]);
+  pl.forEach(q=>out.push([q.name,q.lat,q.lon,plLabel(q.pr),+q.pr.population||0]));po.forEach(q=>out.push([q.name,q.lat,q.lon,POK[q.pr.kind]||POK[q.pr.kind_detail]||'Lugar',0]));
+  /* rua com nome: o ponto dela mais perto de você */
+  await Promise.all(tiles.map(async({x,y})=>{try{const r=await offPM.getZxy(z,x,y);if(!r)return;for(const f of mvtRoads(r.data)){const nm=f.props['name:pt']||f.props.name;if(!nm)continue;
+      for(const ln of f.lines)for(const [px,py] of ln){const [la,lo]=t2ll(z,x,y,px,py,f.ext),d=hav(ref,{lat:la,lon:lo}),o=streets.get(nm);if(!o||d<o.d)streets.set(nm,{d,la,lo,k:f.props.kind})}}}catch(e){}}));
+  streets.forEach((v,nm)=>out.push([String(nm).slice(0,80),v.la,v.lo,v.k==='path'?'Estrada/trilha':'Rua',0]));return out}
+async function offSearch(q,prog){const nq=normTxt(q),toks=nq.split(' ').filter(Boolean);if(nq.length<2)return [];
+  const ref=fix||LS.get('lastPos',null)||(()=>{const c=map.getCenter();return {lat:c.lat,lon:c.lng}})();
+  const [idx,loc]=await Promise.all([placeIndex(prog),nearNames(ref).catch(()=>[])]),seen=new Set(),res=[];
+  for(const [name,lat,lon,lab,pop] of [...loc,...idx.items]){const nn=normTxt(name),ws=nn.split(' ');
+    if(!toks.every(t=>ws.some(w=>w.startsWith(t))))continue;
+    const k=nn+'|'+Math.round(lat*200)+'|'+Math.round(lon*200);if(seen.has(k))continue;seen.add(k);
+    const d=hav(ref,{lat,lon})/1000;res.push({name,sub:lab+' · mapa offline',lat,lon,score:(nn===nq?100:nn.startsWith(nq)?60:30)+Math.min(20,Math.log10(1+pop)*4)-Math.min(40,d/5)})}
+  return res.sort((a,b)=>b.score-a.score).slice(0,8)}
 
 /* ---- rota (Valhalla, perfil moto) ---- */
 const MANG={2:90,3:-90,5:90,6:-90,9:35,10:90,11:140,12:178,13:-178,14:-140,15:-90,16:-35,18:35,19:-35,20:45,21:-45,23:20,24:-20,37:30,38:-30};
@@ -678,7 +740,7 @@ function parseTrip(t){let pts=[];const man=[];((t&&t.legs)||[]).forEach(L=>{cons
 async function anyRoute(from,to,alts){let err=null;
   if(navigator.onLine!==false&&LS.get('netOk',false)){try{return await routeReq(from,to,alts,offPM?8000:25000)}catch(e){err=e}}
   const r=await offNavReq(from,to);if(r)return [r];
-  throw new Error(rtTooBig?'destino longe demais para a rota pelo mapa offline (até uns 30 km)':!offPM?(err?'sem internet e sem mapa offline instalado':'sem mapa offline instalado (Ajustes › Mapa offline)'):'nenhuma estrada do mapa offline liga você ao destino')}
+  throw new Error(rtTooBig?'destino longe demais para a rota pelo mapa offline':!offPM?(err?'sem internet e sem mapa offline instalado':'sem mapa offline instalado (Ajustes › Mapa offline)'):'nenhuma estrada do mapa offline liga você ao destino')}
 async function routeReq(from,to,alts,ms=25000){
   const loc=(p,h)=>Object.assign({lat:+(+p.lat).toFixed(6),lon:+(+p.lon).toFixed(6)},h!=null&&isFinite(h)?{heading:Math.round(norm360(h)),heading_tolerance:45}:{});
   const body={locations:[loc(from,from.hdg),loc(to)],costing:'motorcycle',costing_options:{motorcycle:{use_highways:cfg.navNoHwy?0:1,use_tolls:cfg.navNoToll?0:0.5,use_trails:0}},
@@ -756,18 +818,18 @@ function renderNavRecent(){const r=getRecent().sort((a,b)=>(b.fav|0)-(a.fav|0)),
   el.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.fav];LS.set('navRecent',getRecent().map(x=>same(x,p)?Object.assign(x,{fav:!x.fav}):x));renderNavRecent()});
   el.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const p=r[+b.dataset.rm];LS.set('navRecent',getRecent().filter(x=>!same(x,p)));renderNavRecent()})}
 async function openNavDlg(){$('#navQ').value=navSel.to?navSel.to.name:'';$('#navFrom').value=navSel.from?navSel.from.name:'';$('#sNavToll').checked=cfg.navNoToll;$('#sNavHwy').checked=cfg.navNoHwy;
-  $('#navRes').innerHTML='';renderNavRecent();renderNavRoutes();$('#dlgNav').showModal();if(!await netOk()){toast('Sem busca por internet: escolha um recente, digite coordenadas (-19.92, -43.94) ou toque longo no mapa (rota pelo mapa offline)',7000);return}$('#navQ').focus()}
+  $('#navRes').innerHTML='';renderNavRecent();renderNavRoutes();$('#dlgNav').showModal();if(!await netOk()){toast('Sem internet: a busca e a rota usam o mapa offline (cidades, ruas e lugares perto de você), recentes, coordenadas ou toque longo no mapa',7000);return}$('#navQ').focus()}
 $('#bNav').onclick=()=>{if(nav){ask({title:'Rota em andamento',msg:'Destino: '+nav.to.name,options:[{label:'Escolher outro destino',value:'new'},{label:'Encerrar a rota',value:'end'}],ok:'OK'}).then(v=>{
     if(v==='new')openNavDlg();else if(v==='end')navStop('Rota encerrada')});return}openNavDlg()};
 ['navQ','navFrom'].forEach(id=>{const el=$('#'+id);el.oninput=()=>{navField=id==='navQ'?'to':'from';if(id==='navFrom'&&!el.value.trim())navSel.from=null;clearTimeout(navTmr);navTmr=setTimeout(()=>navSearch(el.value),650)};
   el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(navTmr);navField=id==='navQ'?'to':'from';navSearch(el.value)}}});
 $('#navFromMe').onclick=()=>{navSel.from=null;$('#navFrom').value='';if(navSel.to)navPlanRoutes()};
-async function navSearch(q){const my=++navSeq;if(String(q).trim().length<3){$('#navRes').innerHTML='';return}if(!COORD_RE.test(String(q).trim())&&!LS.get('netOk',false)&&!await netOk())return;
+async function navSearch(q){const my=++navSeq;if(String(q).trim().length<3){$('#navRes').innerHTML='';return}
   $('#navRes').innerHTML='<div class="small" style="padding:6px 0">Buscando…</div>';
-  try{const r=await geoSearch(q);if(my!==navSeq)return;navResults=r;
+  try{const r=await geoSearch(q,pc=>{if(my===navSeq)$('#navRes').innerHTML='<div class="small" style="padding:6px 0">Preparando a busca no mapa offline (só na primeira vez): '+pc+'%</div>'});if(my!==navSeq)return;navResults=r;
     $('#navRes').innerHTML=r.length?r.map((p,i)=>'<div class="lr nvr" data-i="'+i+'"><span><b>'+esc(p.name)+'</b><br><span class="small">'+esc(p.sub)+(fix?' · '+fmtKm(hav(fix,p)):'')+'</span></span></div>').join(''):'<div class="small" style="padding:6px 0">Nada encontrado.</div>';
     $('#navRes').querySelectorAll('[data-i]').forEach(el=>el.onclick=()=>navPick(navResults[+el.dataset.i]))}
-  catch(e){if(my===navSeq)$('#navRes').innerHTML='<div class="small" style="padding:6px 0">A busca falhou ('+esc((e&&e.message)||'sem internet')+'). Dá para digitar coordenadas: -19.92, -43.94</div>'}}
+  catch(e){if(my===navSeq)$('#navRes').innerHTML='<div class="small" style="padding:6px 0">A busca falhou ('+esc((e&&e.message)||'sem internet')+'). Dá para digitar coordenadas (-19.92, -43.94) ou tocar e segurar no mapa.</div>'}}
 function navPick(p){if(!p)return;$('#navRes').innerHTML='';if(navField==='from'){navSel.from=p;$('#navFrom').value=p.name}else{navSel.to=p;$('#navQ').value=p.name}if(navSel.to)navPlanRoutes()}
 async function navPlanRoutes(){const to=navSel.to;if(!to)return;const from=navSel.from||(fix?{lat:fix.lat,lon:fix.lon,hdg:speedKmh>8?gpsHdg:null}:LS.get('lastPos',null));
   if(!from||!Number.isFinite(+from.lat)){$('#navRoutes').innerHTML='<div class="small" style="padding:6px 0">Sem posição do GPS: escolha o ponto de partida em "De".</div>';return}
@@ -1004,8 +1066,7 @@ async function goPlace(q){q=String(q||'').trim();if(!q){say('Não entendi o luga
   const from=fix?{lat:fix.lat,lon:fix.lon,hdg:speedKmh>8?gpsHdg:null}:null;if(!from){say('Sem GPS para calcular a rota');return}
   const nq=normTxt(q);let to=getRecent().find(p=>{const n=normTxt(p.name);return n===nq||(nq.length>=4&&n.includes(nq))})||null;
   toast('Procurando "'+q.slice(0,40)+'"…',5000);
-  try{if(!to){if(!LS.get('netOk',false)){say('Sem internet só vou para os recentes e favoritos');toast('Para buscar endereço, toque em "Ir para" uma vez e aceite o aviso de internet. Sem ela: recentes, favoritos ou toque longo no mapa',7000);return}
-      const r=await geoSearch(q);if(!r.length){say('Não achei '+q);return}to=r[0]}
+  try{if(!to){const r=await geoSearch(q);if(!r.length){say('Não achei '+q);return}to=r[0]}
     const rs=await anyRoute(from,to,false);addRecent(to);navStart(rs[0],to,null);toast('Indo para '+to.name+(to.sub?' · '+to.sub:''),6000)}
   catch(e){say('Não consegui calcular a rota');toast('Rota: '+errTxt(e),5000)}}
 
@@ -1416,7 +1477,7 @@ loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* atalhos internos só para os testes automatizados (navegador controlado: navigator.webdriver); no uso normal não ficam expostos */
-if(navigator.webdriver)window.TN={offNavRoute,mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
+if(navigator.webdriver)window.TN={offSearch,placeIndex,get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
 </script>
 </body>
 </html>

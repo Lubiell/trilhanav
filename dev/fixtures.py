@@ -1,6 +1,6 @@
 """Gera (ou apaga, com --clean) as fixtures dos testes que não ficam no repositório.
 Usado igual aqui e na CI (.github/workflows/testes.yml). Rodar de dentro de dev/:
-    python3 fixtures.py          # gera rb.pdf, small.pmtiles(+part1..3) e dl/
+    python3 fixtures.py          # gera rb.pdf, small.pmtiles(+part1..3), dl/ e testmap.pmtiles (make_testmap.py)
     python3 fixtures.py --clean  # apaga
 small.pmtiles = roads.pmtiles + 5 MB de zeros no fim (o leitor PMTiles ignora o que vem depois dos dados),
 para dar 3 partes de 2 MB no teste de instalação/download em partes."""
@@ -11,7 +11,7 @@ os.chdir(HERE)
 PARTS = ['small.pmtiles.part1', 'small.pmtiles.part2', 'small.pmtiles.part3']
 
 if '--clean' in sys.argv:
-    for f in ['rb.pdf', 'small.pmtiles'] + PARTS:
+    for f in ['rb.pdf', 'small.pmtiles', 'testmap.pmtiles'] + PARTS:
         if os.path.exists(f):
             os.remove(f)
     shutil.rmtree('dl', ignore_errors=True)
@@ -37,4 +37,6 @@ for name in PARTS:
     b = open(name, 'rb').read()
     man.append({'f': name, 'size': len(b), 'sha256': hashlib.sha256(b).hexdigest()})
 json.dump({'id': 'teste-1', 'label': 'Teste', 'size': sum(p['size'] for p in man), 'parts': man}, open('dl/manifest.json', 'w'))
-print('fixtures prontas: rb.pdf, small.pmtiles (+3 partes), dl/')
+import make_testmap  # noqa: E402
+make_testmap.build(os.path.join(HERE, 'testmap.pmtiles'))
+print('fixtures prontas: rb.pdf, small.pmtiles (+3 partes), dl/, testmap.pmtiles')
