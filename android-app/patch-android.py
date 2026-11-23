@@ -75,3 +75,14 @@ if os.path.exists(cx):
     c = re.sub(r'(<color name="ic_launcher_background">)[^<]*(</color>)', r'\g<1>#0d1620\g<2>', c)
     open(cx, 'w', encoding='utf-8').write(c)
 print('projeto Android ajustado')
+
+# 6) Gradle wrapper: confere o SHA-256 da distribuição baixada (checksum oficial de services.gradle.org).
+#    Se o Capacitor mudar a versão do Gradle, o build para aqui: acrescente a versão nova com o .sha256 oficial dela.
+GRADLE_SHA = {'gradle-8.14.3-all.zip': 'ed1a8d686605fd7c23bdf62c7fc7add1c5b23b2bbc3721e661934ef4a4911d7c'}
+wp = os.path.join(adir, 'gradle', 'wrapper', 'gradle-wrapper.properties')
+w = open(wp, encoding='utf-8').read()
+m = re.search(r'distributionUrl=.*/(gradle-[^/\s]+\.zip)', w)
+if not m or m.group(1) not in GRADLE_SHA:
+    sys.exit('patch-android: Gradle sem checksum conhecido: ' + (m.group(1) if m else '?') + ' (atualize GRADLE_SHA)')
+w = re.sub(r'\ndistributionSha256Sum=.*', '', w).rstrip('\n') + '\ndistributionSha256Sum=' + GRADLE_SHA[m.group(1)] + '\n'
+open(wp, 'w', encoding='utf-8').write(w)

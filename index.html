@@ -4,10 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0d1620">
+<!-- CSP só na versão web: o APK (Capacitor) injeta o próprio código no WebView e o rewrite-html.py tira esta linha -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://cdnjs.cloudflare.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://server.arcgisonline.com; connect-src 'self' https://raw.githubusercontent.com https://photon.komoot.io https://valhalla1.openstreetmap.de https://maps.mail.ru https://api.open-meteo.com https://api.met.no https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://server.arcgisonline.com; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>TrilhaNav</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet" crossorigin="anonymous">
 <style>
 :root{--bg:#0d1620;--panel:#12202c;--card:#162837;--line:#24394b;--txt:#e8eef3;--mut:#8aa0b2;--acc:#1e9be0;--ok:#3cc46b;--warn:#f0a020;--bad:#e64545}
@@ -314,7 +316,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
 
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous"></script>
 <script src="lib/leaflet-rotate.js"></script>
 <script src="lib/pmtiles.js"></script>
 <script src="lib/protomaps-leaflet.js"></script>
@@ -1413,7 +1415,8 @@ autoTheme();applyTheme();showPane('paneMap');startGPS();
 loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-window.TN={offNavRoute,mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
+/* atalhos internos só para os testes automatizados (navegador controlado: navigator.webdriver); no uso normal não ficam expostos */
+if(navigator.webdriver)window.TN={offNavRoute,mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
 </script>
 </body>
 </html>
