@@ -257,12 +257,12 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">O download usa uns 1,4 GB de internet e de espaço. Faça no Wi-Fi; se cair, é só tocar de novo que ele continua.</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn" id="bOffDl">Baixar mapa de Minas Gerais (1,4 GB)</button><button class="btn g" id="bOffMap">Instalar de arquivo</button><button class="btn r" id="bOffDel">Remover</button></div>
   <input type="file" id="offIn" accept=".pmtiles,.part1,.part2,.part3,.part4,application/octet-stream" multiple hidden>
-  <h3>Simulação</h3>
-  <label>Simular GPS seguindo o GPX <input type="checkbox" id="sSim"></label>
-  <label>Velocidade simulada (km/h) <input type="number" id="sSimV"></label>
+  <h3 class="trail">Simulação</h3>
+  <label class="trail">Simular GPS seguindo o GPX <input type="checkbox" id="sSim"></label>
+  <label class="trail">Velocidade simulada (km/h) <input type="number" id="sSimV"></label>
   <h3>Atualização</h3>
   <div class="small" id="updInfo">Atualização automática só no app (APK).</div>
-  <label>Procurar atualização ao abrir (1 vez a cada 12 h) <input type="checkbox" id="sUpdAuto"></label>
+  <div class="small">O app procura atualização sozinho ao abrir (no máximo 1 vez a cada 12 h) e avisa quando houver versão nova.</div>
   <div style="padding:8px 0"><button class="btn g" id="bUpd">Procurar atualização agora</button></div>
   <h3>Dados</h3>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
@@ -1519,7 +1519,7 @@ async function checkUpdate(manual){if(!NATIVE){if(manual)toast('Atualização au
 $('#bUpd').onclick=()=>checkUpdate(true);
 if(NATIVE){try{NP.nat.addListener('call',onCall);NP.nat.addListener('wacall',o=>onCall(Object.assign({},o||{},{src:'wa',number:''})));NP.nat.addListener('whatsapp',onWa);NP.nat.addListener('media',onMedia);NP.nat.addListener('heard',onHeard);NP.nat.addListener('voice',onVoiceState);
     NP.nat.addListener('update',p=>{if(p&&p.pct>=0)toast('Baixando a atualização… '+p.pct+'%',120000)})}catch(e){}
-  if(cfg.updAuto&&Date.now()-(+LS.get('updT',0)||0)>12*3600e3)setTimeout(()=>checkUpdate(false),8000);
+  if(Date.now()-(+LS.get('updT',0)||0)>12*3600e3)setTimeout(()=>checkUpdate(false),8000);
   /* agenda (nomes para o assistente) e assistente sempre ligado: o serviço de microfone só pode começar com o app na tela */
   setTimeout(async()=>{let st={};try{st=await nat('phoneStatus')||{}}catch(e){}if(st.contacts)await loadContacts(false);voiceAlwaysStart(false)},1500)}
 
@@ -1638,7 +1638,7 @@ $('#bMarkWp').onclick=()=>{if(!fix){toast('Sem GPS');return}const m={i:Math.min(
 
 /* ---------- ajustes ---------- */
 const bind=[['sNoteMin','noteMin',parseFloat],['sLead','lead',parseFloat],['sVoiceVol','voiceVol',parseFloat],['sZoneTol','zoneTol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sMult','mult',parseFloat],['sStep','step',parseFloat],['sWpR','wpR',parseFloat],['sOff','off',parseFloat],['sSpd','spd',parseFloat],['sScroll','scroll',parseFloat],['sSimV','simV',parseFloat],['sRadarDist','radarDist',parseFloat],['sTankL','tankL',parseFloat],['sKmL','kmL',parseFloat],['sReserveKm','reserveKm',parseFloat],['sLimTol','limTol',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sUpdAuto','updAuto'],['sVoiceAlways','voiceAlways'],['sVoiceBt','voiceBt'],['sCrashOn','crashOn'],['sLimOn','limOn']];
+const binc=[['sRbReset','rbReset'],['sVoice','voice'],['sZoneOn','zoneOn'],['sSnap','snap'],['sLearn','learn'],['sComp','comp'],['sAuto','auto'],['sSnd','snd'],['sSim','sim'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sVoiceAlways','voiceAlways'],['sVoiceBt','voiceBt'],['sCrashOn','crashOn'],['sLimOn','limOn']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sTotal').value=fmt(st.total);$('#sRotMode').value=rotMode();
   radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).');renderKeys()}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg();renderOdo()}});
