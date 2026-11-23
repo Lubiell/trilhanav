@@ -96,6 +96,14 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build();
+    // com o microfone do capacete ligado o Bluetooth fica no canal de ligação (SCO): a voz tem de sair por ele, senão não chega ao fone
+    private final AudioAttributes attrsBt = new AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build();
+    private AudioAttributes curAttrs = attrs;
+    private boolean ttsFailed = false;
+    private boolean langOk = false;
 
     @Override
     public void load() {
@@ -110,8 +118,11 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         }
         startPhoneWatch();
         tts = new TextToSpeech(getContext(), status -> {
-            if (status != TextToSpeech.SUCCESS) return;
-            tts.setLanguage(new Locale("pt", "BR"));
+            if (status != TextToSpeech.SUCCESS) { ttsFailed = true; return; }
+            int lr = tts.setLanguage(new Locale("pt", "BR"));
+            langOk = lr != TextToSpeech.LANG_MISSING_DATA && lr != TextToSpeech.LANG_NOT_SUPPORTED;
+            // sem a voz em português instalada o Android fica mudo: fala na voz padrão do aparelho
+            if (!langOk) tts.setLanguage(Locale.getDefault());
             tts.setAudioAttributes(attrs);
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 // enquanto o app fala, o assistente não escuta (senão ouviria o próprio "diga atender")
@@ -132,9 +143,10 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
 
     private void focusOn() {
         if (Build.VERSION.SDK_INT >= 26 && audio != null) {
-            if (focus == null) {
+            if (focus == null || focus.getAudioAttributes() != curAttrs) {
+                if (focus != null) audio.abandonAudioFocusRequest(focus);
                 focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                    .setAudioAttributes(attrs)
+                    .setAudioAttributes(curAttrs)
                     .build();
             }
             audio.requestAudioFocus(focus);
@@ -148,9 +160,13 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     }
 
     private void speakNow(String text, float volume, boolean urgent) {
+        AudioAttributes want = TrilhaVoiceService.onHeadset() ? attrsBt : attrs;
+        if (want != curAttrs) { curAttrs = want; tts.setAudioAttributes(want); }
+        focusOn(); // abaixa a música antes de começar a falar (e não depois)
         Bundle p = new Bundle();
         p.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
-        tts.speak(text, urgent ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p, "tn" + System.nanoTime());
+        int r = tts.speak(text, urgent ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p, "tn" + System.nanoTime());
+        if (r != TextToSpeech.SUCCESS) focusOff();
     }
 
     @PluginMethod
@@ -169,6 +185,30 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
             speakNow(text, volume, urgent);
         }
         call.resolve();
+    }
+
+    /** Estado da voz: ready (motor pronto), failed (sem motor de voz), langOk (voz pt-BR instalada), headset (saindo pelo fone). */
+    @PluginMethod
+    public void ttsStatus(PluginCall call) {
+        JSObject o = new JSObject();
+        o.put("ready", ttsReady);
+        o.put("failed", ttsFailed);
+        o.put("langOk", langOk);
+        o.put("headset", TrilhaVoiceService.onHeadset());
+        call.resolve(o);
+    }
+
+    /** Abre a tela do Android para baixar os dados da voz. */
+    @PluginMethod
+    public void installVoice(PluginCall call) {
+        Intent i = new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("sem tela de instalação de voz");
+        }
     }
 
     /** Manda a tecla de mídia ao player que estiver ativo: playpause, play, pause, next, previous, stop. */

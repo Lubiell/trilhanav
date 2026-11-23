@@ -23,6 +23,7 @@ jobs:
       - name: Compilar o APK
         working-directory: android-app
         run: |
+          python3 -m pip install --user --quiet pillow
           npm ci --ignore-scripts --no-audit --no-fund
           bash build-apk.sh
       - uses: actions/upload-artifact@v4

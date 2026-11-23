@@ -2,9 +2,11 @@
 
 App de navegação off-road no estilo do DMD2 (roadbook PDF/OpenRally, GPX, odômetro de rali), feito como PWA de um arquivo só, com versão APK (Capacitor). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.6.1, 17/11/2026)
+## Estado (v2.6.2, 23/11/2026)
 
 Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (merge commit `4de6888`). **Nada disto rodou em celular real.**
+
+**v2.6.2 (23/11/2026, PR #3, sobre a 2.6.1):** o dono pediu "não usar Waze nem Google Maps, usar os mapas baixados no próprio app": saíram os botões/opções do Waze e do Google Maps; o "Ir para" usa `anyRoute` (Valhalla quando há rede e `netOk`, senão ou se falhar `offNavReq` = A* `offlineRouteTo` sobre a camada `roads` do mapa offline, z14→z12, até `RT_MAXT`=100 tiles, curva custa +40 m para não zigue-zaguear em malha; `offNavRoute` gera as manobras no formato do Valhalla; sem ligação, botão "Seguir em linha reta"); toque longo no mapa = destino; "Trilha, ir para" e postos também caem no offline (recentes/favoritos sem internet). Voz: com o microfone do capacete ligado (`TrilhaVoiceService.onHeadset()`), o TTS sai com `USAGE_VOICE_COMMUNICATION` (pelo SCO; antes saía como navegação e podia não chegar ao fone — [Provável] causa do "não consegui ouvir"); foco com redução pedido *antes* de falar; sem voz pt-BR cai na voz padrão; `ttsStatus`/`installVoice` e o "Testar voz" com diagnóstico; navegador destrava a voz no 1º toque. Música: "trocar" vira próxima; volume +/− nas teclas do guidão (`mediaVolUp`/`mediaVolDown`). `t23`. **Chave:** a 2.6.1 foi assinada com uma chave de depuração perdida; a 2.6.2 saiu do workflow do GitHub (chave nova a cada compilação): o dono desinstalou a 2.6.1 antes. Ver pendência da chave.
 
 **v2.6.1 (17/11/2026):** assistente pelo microfone do fone/intercom Bluetooth (`cfg.voiceBt`, padrão ligado por escolha do dono, sabendo que a música fica com qualidade de ligação): `TrilhaVoiceService` com `AudioRecord` próprio (VOICE_COMMUNICATION + `setPreferredDevice`), canal SCO por `setCommunicationDevice` (Android 12+) ou `startBluetoothSco`, rechecado a cada 15 s; solta o microfone em ligação/escuta do Google. Nunca testado com fone de verdade. APK 2.6.1 publicado (a 2.5.0 saiu do branch `apk`).
 
@@ -75,6 +77,8 @@ Roteiro combinado: **7 de 7 etapas feitas**, mergeadas na `main` pelo PR #1 (mer
 
 ## Pendências
 
+- **Chave de assinatura fixa (decisão do dono):** cada compilação no GitHub gera chave nova, então cada APK novo exige desinstalar o anterior (apaga trilhas, notas e mapa). Solução proposta: gerar uma keystore, guardar no Drive do dono e num secret do repositório (`DEBUG_KEYSTORE_B64`) e o `apk.yml` usar a mesma sempre. Não pôr a chave no repositório público.
+
 - **Combinado para a 2.7 (17/11/2026), depois do teste do dono na 2.6.0:** primeiro corrigir o que ele relatar (GPS, ligação do WhatsApp, voz, SOS); depois, no mesmo APK: mandar a localização por voz ("Trilha, mandar minha localização para Maria", SMS com o link do mapa e a hora de chegada no Ir para), paradas no caminho no Ir para (Valhalla aceita vários `locations`; voz "Trilha, parar no posto") e histórico de viagens (registro por saída com km, tempo, velocidades, inclinação máxima e a trilha, no aparelho).
 0. **Publicar a v2.0.1 + v2.1.0 no site** (só a pedido do dono): merge do PR #2 e `git push origin origin/main:gh-pages`. O APK 2.1.0 já está no branch `apk`. Antes ou depois do merge, vale passar pelo `reviewer` o diff `f370a03..3ae9f0d` (v2.0.1, revisão não terminou) e o da v2.1 (`817642e..HEAD`), que só foi verificado por teste.
 1. **Testar em celular real**: a v2.3 (GPS em "GPS ---" corrigido? assistente com vento/capacete, bateria com o microfone sempre ligado, WhatsApp pelo diagnóstico da tela Telefone) e a v2.2 inteira (atender/recusar pelo app e por voz — `endCall`/`acceptRingingCall` são obsoletos e alguns fabricantes bloqueiam —, ligar por nome, WhatsApp com "configurações restritas" do Android 13+, música atual, `spotifyPlay`, o instalador da atualização);  o modo cidade inteiro (voz curva a curva na rua, recálculo, radares, botão Waze no APK) nunca rodou fora do navegador de teste; bússola (a declinação é aprendida pelo GPS; pode variar entre aparelhos), GPS com a tela apagada, voz nativa, controle de música, o APK e o mapa em tela real. O APK foi conferido por dentro (manifest, permissões, assinatura, classes, assets sem CDN), nunca em uso. Em especial, só um aparelho mostra: se a tela de compartilhar abre ao exportar no APK, se o seletor de arquivos do Android deixa escolher `.gpx`/`.pmtiles`, e se o odômetro anda sozinho parado com sinal ruim (o filtro é: desloca ≥3 m ou velocidade >3 km/h).
@@ -132,7 +136,7 @@ Referência de lógica de tripmaster: mattogodoy/open-rally-computer (GPL-3: nã
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && for t in t t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22; do python3 $t.py; done
+cd dev && for t in t t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23; do python3 $t.py; done
 ```
 
 Precisa do pacote Python `playwright` (os testes usam `/usr/bin/google-chrome`) e de Pillow nos testes t9. Fixtures que **não** ficam no repositório (gerar e colocar em `dev/` antes de rodar; apagar depois):
