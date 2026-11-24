@@ -582,9 +582,12 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     }
 
     @Override
-    public void onHeard(String text) {
+    public void onHeard(String text, java.util.List<String> alts) {
         JSObject o = new JSObject();
         o.put("text", text);
+        JSArray a = new JSArray();
+        for (String t : alts) a.put(t);
+        o.put("alts", a);
         notifyListeners("heard", o);
     }
 

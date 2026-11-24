@@ -120,7 +120,7 @@ async def main():
         MODE['dest_rain'] = True
         c = await pg.evaluate("TN.parseCmd('ir para a Praça da Estação')")
         check('"ir para a Praça da Estação" vira destino', c == {'a': 'go', 'where': 'praça da estação'}, str(c))
-        check('"encerrar rota" ≠ desligar ligação; "vamos para" também é destino', await pg.evaluate("[TN.parseCmd('encerrar rota').a,TN.parseCmd('cancelar navegação').a,TN.parseCmd('vamos para o centro').where,TN.parseCmd('ir para').where]") == ['stopnav', 'stopnav', 'centro', 'para'])
+        check('"encerrar rota" ≠ desligar ligação; "vamos para" também é destino', await pg.evaluate("[TN.parseCmd('encerrar rota').a,TN.parseCmd('cancelar navegação').a,TN.parseCmd('vamos para o centro').where,TN.parseCmd('ir para').where]") == ['stopnav', 'stopnav', 'centro', ''])
         await pg.evaluate("TN.runCmd(TN.parseCmd('ir para a Praça da Estação'))"); await pg.wait_for_timeout(3000)
         r = await pg.evaluate("({nav:!!TN.nav,to:TN.nav&&TN.nav.to.name,map:document.querySelector('#paneMap').classList.contains('on')})")
         check('voz procura o lugar e já começa a rota (sem tocar na tela)', r == {'nav': True, 'to': 'Praça da Estação', 'map': True} and 'q=praça da estação' in unquote(calls['photon'][-1]).lower() and calls['valhalla'] == 1, str(r))
