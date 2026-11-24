@@ -961,10 +961,12 @@ const CMDL={play:'tocar',pause:'pausar',next:'próxima música',prev:'música an
 const beepOk=()=>{beep(1500,70);setTimeout(()=>beep(1500,70),130)},beepNo=()=>beep(330,320);
 /* diagnóstico da voz: as últimas 10 frases ouvidas e o que o app fez com cada uma. Só na memória (some ao fechar o app) */
 var vLog=[];
-function vLogAdd(src,text,alts,res){vLog.unshift({t:Date.now(),src,text:String(text||'').slice(0,80),alts:(alts||[]).map(a=>String(a).slice(0,80)).filter(a=>a&&a!==text).slice(0,2),res});
+function vLogAdd(src,text,alts,res){text=String(text||'').slice(0,80);const p=vLog[0];
+  if(p&&p.src===src&&p.text===text&&p.res===res){p.n=(p.n||1)+1;p.t=Date.now();if($('#dlgPhone').open)renderVLog();return}
+  vLog.unshift({t:Date.now(),src,text,alts:(alts||[]).map(a=>String(a).slice(0,80)).filter(a=>a&&a!==text).slice(0,2),res});
   vLog.length=Math.min(vLog.length,10);if($('#dlgPhone').open)renderVLog()}
 function renderVLog(){const el=$('#vLog');if(!el)return;
-  el.innerHTML=vLog.length?vLog.map(x=>'<div class="lr"><span><span class="small">'+new Date(x.t).toTimeString().slice(0,8)+' · '+(x.src==='g'?'botão Voz':'assistente')+'</span><br>"'+esc(x.text)+'"'+
+  el.innerHTML=vLog.length?vLog.map(x=>'<div class="lr"><span><span class="small">'+new Date(x.t).toTimeString().slice(0,8)+' · '+(x.src==='g'?'botão Voz':'assistente')+(x.n>1?' · '+x.n+' vezes':'')+'</span><br>"'+esc(x.text)+'"'+
     (x.alts.length?' <span class="small">(ou: '+x.alts.map(a=>'"'+esc(a)+'"').join(', ')+')</span>':'')+'<br><b>'+esc(x.res)+'</b></span></div>').join(''):'<div class="small" style="padding:6px 0">Nada ouvido desde que o app abriu.</div>'}
 const nat=(fn,o)=>{if(!NATIVE)return Promise.reject(new Error('só no app (APK)'));try{return NP.nat[fn](o||{})}catch(e){return Promise.reject(e)}};
 const errTxt=e=>String((e&&e.message)||e||'erro').slice(0,160);
@@ -1003,7 +1005,7 @@ async function voiceCmd(){if(!NATIVE){toast('Comandos de voz só funcionam no ap
   try{const r=await nat('listen',{ms:7000}),texts=(r&&r.texts||[]).map(String);let c=null;for(const t of texts){c=parseCmd(t);if(c)break}
     if(!c){vLogAdd('g',texts[0]||'(nada)',texts.slice(1),'não entendi');beepNo();say('Não entendi'+(texts[0]?': '+texts[0].slice(0,60):''));return}
     vLogAdd('g',texts[0]||'',texts.slice(1),'comando: '+CMDL[c.a]);beepOk();toast('🎤 '+(texts[0]||'').slice(0,60),2500);await runCmd(c)}
-  catch(e){const m=errTxt(e);say(/permiss/.test(m)?'Permita o microfone em Telefone':'Não entendi');if(/permiss|indispon/.test(m))toast(m,5000)}
+  catch(e){const m=errTxt(e);vLogAdd('g','(nada)',[],'erro da escuta: '+m.slice(0,60));beepNo();say(/permiss/.test(m)?'Permita o microfone em Telefone':'Não entendi');if(/permiss|indispon/.test(m))toast(m,5000)}
   finally{voiceBusy=false;$('#bVoice').classList.remove('on')}}
 function onWa(o){o=o||{};const m={app:String(o.app||'WhatsApp').slice(0,30),title:String(o.title||'').slice(0,80),text:String(o.text||'').slice(0,500),t:+o.t||Date.now()};if(!m.title||!m.text)return;
   if(waMsgs.some(x=>x.title===m.title&&x.text===m.text&&Math.abs(x.t-m.t)<120000))return;
@@ -1061,7 +1063,7 @@ function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off']
 /* o que o assistente ouviu: só age com "trilha" na frase ou logo depois de armado (botão Voz / "trilha" sozinho); no aviso de queda, "cancelar" e "estou bem" valem sem "trilha" */
 function onHeard(o){const cl=t=>String(t||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   const show=t=>String(t||'').replace(/\[unk\]/g,'…').replace(/\s+/g,' ').trim().toLowerCase(),alts=(Array.isArray(o&&o.alts)?o.alts:[]).slice(0,3),orig=show(o&&o.text),altsS=alts.map(show);
-  const raw=cl(o&&o.text);if(!raw){if(orig)vLogAdd('v',orig,altsS,'ignorado: nada que o app conheça');return}
+  const raw=cl(o&&o.text);if(!raw){if(orig)vLogAdd('v','…',[],'ignorado: nada que o app conheça (ruído?)');return}
   const i=raw.search(/\btrilha\b/),armed=Date.now()<vArmedT,sosOn=!!(sos&&sos.phase==='count');let rest;
   if(i>=0)rest=raw.slice(i+6).trim();else if(armed||sosOn)rest=raw;else{vLogAdd('v',orig,altsS,'ignorado: sem "Trilha"');return}
   if(!rest){vLogAdd('v',orig,altsS,'"Trilha": esperando o comando');vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}

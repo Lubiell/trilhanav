@@ -121,6 +121,14 @@ async def main():
         check('diagnóstico: "não entendi"', (await vlog())[0] == ['v', 'trilha mapa', 'não entendi'], str((await vlog())[:1]))
         n0 = len(await spoken()); await heard('trilha de a o')
         check('só palavras soltas ("de a o"): diz apenas "Não entendi"', (await said_after(n0)) == ['Não entendi'])
+        b0 = len(await beeps()); await heard('trilha'); await heard('de a o'); await pg.wait_for_timeout(100)
+        check('"trilha" sozinho e depois frase que não é comando: bipe de arme e um grave', (await beeps())[b0:] == [1000, 330], str((await beeps())[b0:]))
+        k0 = len(await calls('mediaKey')); await heard('pausar'); await heard('pausar')
+        check('… e ainda dá para repetir o comando sem "trilha" (uma vez só, nos 6 s)', (await calls('mediaKey'))[k0:] == [{'key': 'pause'}], str((await calls('mediaKey'))[k0:]))
+        n_log = len(await vlog())
+        for k in range(5): await heard('[unk] [unk]' if k % 2 else '[unk]')
+        r = await pg.evaluate('TN.vLog[0]')
+        check('diagnóstico: ruído repetido vira uma linha só, com a contagem', len(await vlog()) == min(10, n_log + 1) and r['text'] == '…' and r['n'] == 5 and 'ruído' in r['res'], str(r))
 
         # ---------- 4) ligação: só os botões da tela ----------
         n0 = len(await spoken())
@@ -138,9 +146,10 @@ async def main():
         # ---------- 5) aviso de queda: "cancelar" vale sem "trilha"; música sem "trilha" não ----------
         await pg.evaluate("document.querySelector('#sosTestB').click()"); await pg.wait_for_timeout(300)
         check('teste do aviso de queda contando', await pg.evaluate("TN.sos&&TN.sos.phase") == 'count')
-        k0 = len(await calls('mediaKey')); await heard('próxima música')
-        check('no aviso, frase de música sem "trilha" não faz nada', len(await calls('mediaKey')) == k0 and await pg.evaluate("TN.sos&&TN.sos.phase") == 'count')
-        await heard('cancelar'); await pg.wait_for_timeout(200)
+        k0 = len(await calls('mediaKey')); b0 = len(await beeps()); await heard('próxima música'); await heard('bom dia'); await pg.wait_for_timeout(250)
+        check('no aviso, frase de música ou conversa sem "trilha" não faz nada nem bipa', len(await calls('mediaKey')) == k0 and await pg.evaluate("TN.sos&&TN.sos.phase") == 'count' and (await beeps())[b0:] == [], str((await beeps())[b0:]))
+        b0 = len(await beeps()); await heard('cancelar'); await pg.wait_for_timeout(250)
+        check('no aviso, "cancelar" bipa que entendeu', (await beeps())[b0:] == [1500, 1500], str((await beeps())[b0:]))
         check('no aviso, "cancelar" sem "trilha" cancela (nada enviado)', await pg.evaluate("TN.sos") is None and not await calls('sendSms') and (await spoken())[-1] == 'Aviso cancelado')
 
         # ---------- 6) botão Voz (escuta do Google) com o assistente desligado ----------
@@ -150,7 +159,9 @@ async def main():
         check('botão Voz: "ir para Ouro Preto" não faz nada', (await said_after(n0)) == ['Não entendi: ir para Ouro Preto'] and not await pg.evaluate('!!TN.nav'), str(await said_after(n0)))
         k0 = len(await calls('mediaKey')); b0 = len(await beeps()); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
         check('botão Voz: "próxima" passa, com os dois bipes (depois do bipe de "fale agora")', (await calls('mediaKey'))[k0:] == [{'key': 'next'}] and (await beeps())[b0:] == [1000, 1500, 1500], str((await beeps())[b0:]))
-        check('diagnóstico: frase do botão Voz', (await vlog())[0] == ['g', 'próxima', 'comando: próxima música'] and (await vlog())[1] == ['g', 'ir para Ouro Preto', 'não entendi'], str((await vlog())[:2]))
+        await pg.click('#bVoice'); await pg.wait_for_timeout(400)
+        check('botão Voz sem resposta da escuta: aparece no diagnóstico como erro', (await vlog())[0][0] == 'g' and (await vlog())[0][2].startswith('erro da escuta'), str((await vlog())[:1]))
+        check('diagnóstico: frase do botão Voz', (await vlog())[1] == ['g', 'próxima', 'comando: próxima música'] and (await vlog())[2] == ['g', 'ir para Ouro Preto', 'não entendi'], str((await vlog())[:3]))
 
         # ---------- 7) tela: diagnóstico, dica do intercomunicador; nada guardado ----------
         for k in range(12): await heard('conversa %d' % k)
