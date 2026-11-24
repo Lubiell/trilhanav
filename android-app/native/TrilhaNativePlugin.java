@@ -575,6 +575,32 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         call.resolve();
     }
 
+    /** Sair do app (v2.7.6): para os serviços que o app iniciou (assistente de voz, GPS em segundo plano), fecha a tela e a tira dos
+     *  recentes e encerra o processo. Serviço parado com stopService não volta sozinho (START_STICKY só reinicia serviço iniciado). */
+    @PluginMethod
+    public void exitApp(PluginCall call) {
+        Context c = getContext();
+        c.stopService(new Intent(c, TrilhaVoiceService.class));
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                for (android.app.ActivityManager.RunningServiceInfo s : am.getRunningServices(50)) {
+                    if (c.getPackageName().equals(s.service.getPackageName()) && !s.service.getClassName().endsWith("TrilhaNotifService")) {
+                        c.stopService(new Intent().setComponent(s.service));
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        call.resolve();
+        final android.app.Activity a = getActivity();
+        final Handler h = new Handler(Looper.getMainLooper());
+        h.postDelayed(() -> {
+            if (a != null) a.finishAndRemoveTask();
+            h.postDelayed(() -> android.os.Process.killProcess(android.os.Process.myPid()), 400);
+        }, 150);
+    }
+
     @PluginMethod
     public void voiceWords(PluginCall call) {
         TrilhaVoiceService.setGrammar(grammarOf(call));

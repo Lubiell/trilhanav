@@ -72,7 +72,7 @@ async def main():
         check('barra com 7 botões (Mapa, Ir para, Painel, Telefone, Voz, Gravar, Mais; sem Roadbook) e cabe em 360 px sem rolar', r['n'] == 7 and r['labels'][0] == 'Mapa' and r['labels'][-1] == 'Mais' and r['fit'], str(r))
         await pg.click('#bMore'); await pg.wait_for_timeout(200)
         r = await pg.evaluate("[...document.querySelectorAll('#moreGrid .b span')].map(s=>s.textContent)")
-        check('"Mais" abre a grade com o resto (7 botões, com Postos e Música; sem os de rali)', len(r) == 7 and 'Postos' in r and 'Música' in r and 'Arquivos' in r, str(r))
+        check('"Mais" abre a grade com o resto (8 botões, com Postos, Música e Sair do app; sem os de rali)', len(r) == 8 and 'Postos' in r and 'Música' in r and 'Arquivos' in r and r[-1] == 'Sair do app', str(r))
         await pg.click('#moreGrid #bSet'); await pg.wait_for_timeout(300)
         check('tocar em Ajustes na grade abre os Ajustes e fecha a grade', await pg.evaluate("document.querySelector('#dlgSet').open&&!document.querySelector('#dlgMore').open"))
 
