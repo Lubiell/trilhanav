@@ -31,10 +31,10 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 | Onde | O que tem |
 |---|---|
-| `main` | o código: v2.7.0 (merge do PR #3, `902a52e`, 23/11/2026; o PR #2 entrou junto) |
+| `main` | o código: v2.7.4 (merge do PR #10, `3f3fa3a`, 24/11/2026) |
 | `gh-pages` | https://lubiell.github.io/trilhanav/: desde a v2.7.0 só uma página de download (lê o `versao.json` e mostra o link do APK mais novo) e um `sw.js` que apaga o app antigo (PWA) do navegador de quem já tinha aberto. O código dessa página não está no `main` (só no `gh-pages`) |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.7.3.apk` (atual, 56 MB, **chave fixa** `c7654768…`; traz `lib/vosk-words.txt`), 2.7.2 e 2.7.1 (mesma chave), 2.6.3, 2.0.1, 2.0.0; `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.3.apk, SHA-256 `75a430f68484cdb3949ea7d2a004f851c2bb39cd4dafb4eb9e0f2261e5bbc40d` |
+| `apk` (órfão) | `trilhanav-2.7.4.apk` (atual, 56 MB, **chave fixa** `c7654768…`; voz só música), 2.7.3 e 2.7.2 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.1 saiu do branch, fica no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.4.apk, SHA-256 `dce47849ba71d9fb0302b59874f317d3ee67a72856e4fc8543d0d59a4ca0edca` |
 | `claude/loving-lovelace-yzb96l` | branch de trabalho das sessões do Claude (recomeçado do `main` depois de cada merge) |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (código via `git archive`) e a pasta **"TrilhaNav - chave do APK (NAO APAGAR)"**: `trilhanav_chave_apk.p12` (PKCS12, alias `trilhanav`, 30 anos) + `trilhanav_chave_apk_senha.txt`. Só ali; nunca no git nem no chat em claro |
 
