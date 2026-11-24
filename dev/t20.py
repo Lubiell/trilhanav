@@ -95,9 +95,7 @@ async def main():
         async with pg.expect_file_chooser() as fc:
             await pg.click('#gOpen')
         check('"Ver GPX no mapa" em Arquivos abre o seletor de arquivo', (await fc.value) is not None and not await pg.evaluate("document.querySelector('#dlgGpx').open"))
-        n0 = await pg.evaluate("TN.radars.size")
-        await pg.evaluate("TN.runCmd(TN.parseCmd('marcar radar'))")
-        check('"Trilha, marcar radar" marca sem precisar tocar', await pg.evaluate("TN.radars.size") == n0 + 1 and (await pg.evaluate("TN.spoken.slice(-1)[0]")) == 'Radar marcado')
+        check('"marcar radar" por voz saiu (voz só para música; marcar pelo botão)', await pg.evaluate("TN.parseCmd('marcar radar')") is None)
 
         # ---------- postos ----------
         await pg.evaluate("document.querySelector('#bMore').click()"); await pg.wait_for_timeout(150)
@@ -108,12 +106,8 @@ async def main():
         await pg.click('#fuelList [data-fgo="0"]'); await pg.wait_for_timeout(1500)
         check('"Ir" faz a rota até o posto', await pg.evaluate("TN.nav&&TN.nav.to.name") == 'Posto <b>Perto</b>')
         await pg.evaluate("TN.navStop()")
-        c = await pg.evaluate("['posto mais perto','preciso abastecer','gasolina'].map(t=>TN.parseCmd(t).a)")
-        check('voz: "posto mais perto", "preciso abastecer", "gasolina" → postos', c == ['fuel', 'fuel', 'fuel'], str(c))
-        await pg.evaluate("TN.runCmd(TN.parseCmd('posto mais perto'))"); await pg.wait_for_timeout(2500)
-        sp = await pg.evaluate("TN.spoken.slice(-3)")
-        check('"Trilha, posto mais perto": fala o posto e a distância e já começa a rota', any(x.startswith('Posto mais perto: Posto <b>Perto</b>, a 800 metros') for x in sp) and await pg.evaluate("!!TN.nav"), str(sp))
-        await pg.evaluate("TN.navStop()")
+        c = await pg.evaluate("['posto mais perto','preciso abastecer','gasolina'].map(t=>TN.parseCmd(t))")
+        check('posto por voz saiu (voz só para música; postos pela tela)', c == [None, None, None], str(c))
 
         # ---------- limite da via ----------
         for i in range(3):

@@ -1,4 +1,4 @@
-"""v2.4: mapa gira sozinho durante o "Ir para", "Trilha, ir para <lugar>" por voz e clima/temperatura com alertas.
+"""v2.4: mapa gira sozinho durante o "Ir para" (o "Trilha, ir para <lugar>" por voz saiu na v2.7.4) e clima/temperatura com alertas.
 Photon, Valhalla, Open-Meteo e MET Norway simulados com page.route (nada de internet de verdade no teste)."""
 import asyncio, json, math, sys
 from urllib.parse import unquote
@@ -112,18 +112,18 @@ async def main():
         check('cota do Open-Meteo estourada: usa o MET Norway', calls['met'] >= 1 and d['src'] == 'MET Norway' and d['kind'] == 'rain' and round(d['temp']) == 18, str({k: d[k] for k in ('src', 'kind', 'temp')}))
         MODE['om'] = 'ok'
         await pg.evaluate("TN.wxUpdate(true)"); await pg.wait_for_timeout(1500)
-        w = await pg.evaluate("(()=>{TN.runCmd(TN.parseCmd('clima'));return TN.spoken.slice(-1)[0]})()")
-        check('voz: "Trilha, clima" fala temperatura e situação', w.startswith('27 graus, nublado'), w)
+        c = await pg.evaluate("[TN.parseCmd('clima'),TN.parseCmd('ir para a Praça da Estação'),TN.parseCmd('encerrar rota')]")
+        check('"clima", "ir para" e "encerrar rota" por voz saíram (voz só para música)', c == [None, None, None], str(c))
 
-        # ---------- "ir para" por voz ----------
+        # ---------- "Ir para" pela tela ----------
         await pg.evaluate("TN.cfg.wx=true")
         MODE['dest_rain'] = True
-        c = await pg.evaluate("TN.parseCmd('ir para a Praça da Estação')")
-        check('"ir para a Praça da Estação" vira destino', c == {'a': 'go', 'where': 'praça da estação'}, str(c))
-        check('"encerrar rota" ≠ desligar ligação; "vamos para" também é destino', await pg.evaluate("[TN.parseCmd('encerrar rota').a,TN.parseCmd('cancelar navegação').a,TN.parseCmd('vamos para o centro').where,TN.parseCmd('ir para').where]") == ['stopnav', 'stopnav', 'centro', ''])
-        await pg.evaluate("TN.runCmd(TN.parseCmd('ir para a Praça da Estação'))"); await pg.wait_for_timeout(3000)
+        await pg.evaluate("TN.openNavDlg()"); await pg.wait_for_timeout(300)
+        await pg.fill('#navQ', 'Praça da Estação'); await pg.press('#navQ', 'Enter'); await pg.wait_for_timeout(1500)
+        await pg.click('#navRes [data-i="0"]'); await pg.wait_for_timeout(1500)
+        await pg.click('#navRoutes [data-go="0"]'); await pg.wait_for_timeout(800)
         r = await pg.evaluate("({nav:!!TN.nav,to:TN.nav&&TN.nav.to.name,map:document.querySelector('#paneMap').classList.contains('on')})")
-        check('voz procura o lugar e já começa a rota (sem tocar na tela)', r == {'nav': True, 'to': 'Praça da Estação', 'map': True} and 'q=praça da estação' in unquote(calls['photon'][-1]).lower() and calls['valhalla'] == 1, str(r))
+        check('"Ir para" procura o lugar e começa a rota', r == {'nav': True, 'to': 'Praça da Estação', 'map': True} and 'q=praça da estação' in unquote(calls['photon'][-1]).lower() and calls['valhalla'] == 1, str((r, calls['valhalla'])))
         sp = await spoken()
         check('previsão no destino: "Tempestade prevista no destino por volta das HH:MM"', any(x.startswith('Tempestade prevista no destino por volta das') for x in sp), str(sp[-3:]))
 
@@ -132,13 +132,14 @@ async def main():
         await pg.wait_for_timeout(200)
         b1 = await pg.evaluate("Math.round(TN.map.getBearing())")
         check('durante a rota o mapa gira com a direção (rumo 90° → mapa a 270°), mesmo com "Mapa gira" desligado', b1 == 270 and not await pg.evaluate('TN.cfg.rot'), str(b1))
-        await pg.evaluate("TN.runCmd(TN.parseCmd('encerrar rota'))"); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#navEnd').click()"); await pg.wait_for_timeout(200)
         b2 = await pg.evaluate("Math.round(TN.map.getBearing())")
-        check('"encerrar rota" para a rota e o mapa volta ao norte', not await pg.evaluate('!!TN.nav') and b2 == 0, str(b2))
-        await pg.evaluate("TN.cfg.navRot=false"); await pg.evaluate("TN.runCmd(TN.parseCmd('ir para praça da estação'))"); await pg.wait_for_timeout(2500)
+        check('"Sair" encerra a rota e o mapa volta ao norte', not await pg.evaluate('!!TN.nav') and b2 == 0, str(b2))
+        await pg.evaluate("TN.cfg.navRot=false"); await pg.evaluate("TN.openNavDlg()"); await pg.wait_for_timeout(300)
+        await pg.click('#navRecent [data-rc="0"]'); await pg.wait_for_timeout(1500); await pg.click('#navRoutes [data-go="0"]'); await pg.wait_for_timeout(500)
         await pg.evaluate(FIX, [PTS[5][0], PTS[5][1], 12, 90, t]); t += 1000
         check('com "Mapa gira durante a rota" desligado, não gira', await pg.evaluate("Math.round(TN.map.getBearing())") == 0)
-        check('destino falado já nos recentes é usado sem nova busca', len(calls['photon']) == 1)
+        check('destino dos recentes é usado sem nova busca', len(calls['photon']) == 1)
 
         # ---------- celular: temperatura cabe na barra de cima ----------
         await pg.set_viewport_size({'width': 360, 'height': 780}); await pg.wait_for_timeout(400)

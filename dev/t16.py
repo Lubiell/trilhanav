@@ -1,4 +1,4 @@
-"""v2.2: telefone (atender/recusar/ligar), WhatsApp, música atual, comandos de voz e atualização do APK.
+"""v2.2: telefone (atender/recusar/ligar pela tela), WhatsApp, música atual, comandos de voz (só música desde a v2.7.4) e atualização do APK.
 O lado nativo (Capacitor + TrilhaNativePlugin) é simulado: o que se testa é o app. Ligação, WhatsApp e microfone de verdade
 só no celular (não há emulador Android neste ambiente)."""
 import asyncio, json, sys
@@ -49,75 +49,52 @@ async def main():
         r = await pg.evaluate("['bPhone','bVoice'].map(id=>!!document.querySelector('#'+id+' svg.ic use'))")
         check('botões Telefone e Voz na barra, com ícone', r == [True, True])
 
-        # ---------- intérprete de comandos ----------
-        casos = {'Atender': 'answer', 'atende aí': 'answer', 'recusar': 'end', 'Desligar a ligação': 'end', 'ligar para Maria': 'call:maria',
-                 'Liga pro João da Silva': 'call:joão da silva', 'telefonar para a mãe': 'call:mãe', 'pausar': 'pause', 'próxima música': 'next',
-                 'música anterior': 'prev', 'aumentar o volume': 'volup', 'abaixa o volume': 'voldown', 'tocar Spotify': 'play', 'toca música': 'play',
-                 'ler mensagens': 'read', 'ler as mensagens do WhatsApp': 'read', 'cancelar': 'none', 'bom dia': None}
-        res = await pg.evaluate("(cs)=>Object.fromEntries(cs.map(t=>{const c=TN.parseCmd(t);return [t,c?c.a+(c.who?':'+c.who:''):null]}))", list(casos))
+        # ---------- intérprete de comandos: só música (v2.7.4) ----------
+        casos = {'pausar': 'pause', 'próxima música': 'next', 'música anterior': 'prev', 'aumentar o volume': 'volup', 'abaixa o volume': 'voldown',
+                 'tocar Spotify': 'play', 'toca música': 'play', 'cancelar': 'none', 'bom dia': None,
+                 'Atender': None, 'recusar': None, 'ligar para Maria': None, 'Liga pro João da Silva': None, 'ler mensagens': None}
+        res = await pg.evaluate("(cs)=>Object.fromEntries(cs.map(t=>{const c=TN.parseCmd(t);return [t,c?c.a:null]}))", list(casos))
         bad = {k: (res[k], v) for k, v in casos.items() if res[k] != v}
-        check('frases em português viram o comando certo (desligar não vira "ligar")', not bad, str(bad))
+        check('frases de música viram o comando certo; atender/ligar/ler por voz saíram', not bad, str(bad))
 
-        # ---------- ligação chegando: atender por voz ----------
-        await pg.evaluate("__listenQ.push(['bom dia','atender'])")
+        # ---------- ligação chegando: botões da tela (a escuta de "atender/recusar" saiu na v2.7.4) ----------
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})")
         await pg.wait_for_timeout(300)
-        r = await pg.evaluate("({on:document.querySelector('#callBox').classList.contains('on'),who:document.querySelector('#callWho').textContent,ans:getComputedStyle(document.querySelector('#callAns')).display})")
-        check('ligação chegando: tela com o nome e os botões Atender/Recusar', r['on'] and r['who'] == 'Maria Souza' and r['ans'] != 'none', str(r))
-        check('voz anuncia quem liga e pede "atender ou recusar"', (await spoken())[-1] == 'Ligação de Maria Souza. Diga atender ou recusar')
+        r = await pg.evaluate("({on:document.querySelector('#callBox').classList.contains('on'),who:document.querySelector('#callWho').textContent,ans:getComputedStyle(document.querySelector('#callAns')).display,st:document.querySelector('#callSt').textContent})")
+        check('ligação chegando: tela com o nome e os botões Atender/Recusar', r['on'] and r['who'] == 'Maria Souza' and r['ans'] != 'none' and r['st'] == 'Ligação chegando', str(r))
+        check('voz anuncia quem liga', (await spoken())[-1] == 'Ligação de Maria Souza')
         await pg.wait_for_timeout(4600)
-        check('o app escuta sozinho e "atender" atende', len(await calls('listen')) == 1 and len(await calls('answerCall')) == 1)
+        check('o app não abre a escuta sozinho', not await calls('listen') and not await calls('answerCall'))
+        await pg.click('#callAns'); await pg.wait_for_timeout(100)
+        check('botão Atender atende', len(await calls('answerCall')) == 1)
         await pg.evaluate("__emit('call',{state:'offhook',number:'',name:''})"); await pg.wait_for_timeout(100)
         r = await pg.evaluate("({on:document.querySelector('#callBox').classList.contains('on'),b:document.querySelector('#callEnd').textContent,who:document.querySelector('#callWho').textContent})")
         check('em ligação: botão Desligar e nome mantido', r == {'on': True, 'b': 'Desligar', 'who': 'Maria Souza'}, str(r))
         await pg.evaluate("__emit('call',{state:'idle',number:'',name:''})"); await pg.wait_for_timeout(100)
         check('ligação terminou: tela some', not await pg.evaluate("document.querySelector('#callBox').classList.contains('on')"))
 
-        # ---------- recusar por voz; número desconhecido ----------
-        await pg.evaluate("__listenQ.push(['recusar'])")
-        await pg.evaluate("__emit('call',{state:'ringing',number:'',name:''})"); await pg.wait_for_timeout(5200)
-        check('número desconhecido + "recusar" recusa', (await spoken())[-1].startswith('Ligação de número desconhecido') or 'Ligação de número desconhecido. Diga atender ou recusar' in await spoken())
-        check('"recusar" chama endCall', len(await calls('endCall')) == 1)
+        # ---------- recusar pelo botão; número desconhecido ----------
+        await pg.evaluate("__emit('call',{state:'ringing',number:'',name:''})"); await pg.wait_for_timeout(300)
+        check('número desconhecido é anunciado', (await spoken())[-1] == 'Ligação de número desconhecido')
+        await pg.click('#callEnd'); await pg.wait_for_timeout(100)
+        check('botão Recusar chama endCall', len(await calls('endCall')) == 1)
         await pg.evaluate("__emit('call',{state:'idle'})")
-        # sem resposta: não faz nada
-        await pg.evaluate("__emit('call',{state:'ringing',number:'123',name:'X'})"); await pg.wait_for_timeout(4500)
-        check('sem resposta de voz, não atende nem recusa', len(await calls('answerCall')) == 1 and len(await calls('endCall')) == 1)
         await pg.evaluate("document.querySelector('#dlgSet').showModal()")
         await pg.evaluate("__emit('call',{state:'ringing',number:'123',name:'X'})"); await pg.wait_for_timeout(100)
         check('ligação chegando fecha o diálogo aberto (senão bloqueia os botões)', not await pg.evaluate("document.querySelector('#dlgSet').open"))
         await pg.click('#callAns', timeout=3000); await pg.wait_for_timeout(100)
-        check('botão Atender da tela também atende', len(await calls('answerCall')) == 2)
+        check('botão Atender funciona com o diálogo que estava aberto', len(await calls('answerCall')) == 2)
         await pg.evaluate("__emit('call',{state:'idle'})")
 
-        # ---------- fazer ligação por voz ----------
-        await pg.evaluate("__contacts=[{name:'Maria Souza',number:'+55 31 99999-0000'}];__listenQ.push(['ligar para Maria'])")
-        await pg.click('#bVoice'); await pg.wait_for_timeout(500)
-        fc = await calls('findContacts')
-        r = await pg.evaluate("({on:document.querySelector('#callBox').classList.contains('on'),st:document.querySelector('#callSt').textContent,b:document.querySelector('#callEnd').textContent})")
-        check('"ligar para Maria": busca na agenda e mostra "Ligando em 3 s" com Cancelar', fc and fc[-1]['q'] == 'maria' and r['on'] and 'Ligando' in r['st'] and r['b'] == 'Cancelar', f'{fc} {r}')
-        check('voz confirma o nome antes de ligar', (await spoken())[-1] == 'Ligando para Maria Souza')
-        await pg.wait_for_timeout(3700)
-        pc = await calls('placeCall')
-        check('depois de 3,5 s liga para o número (só dígitos)', pc == [{'number': '+5531999990000'}], str(pc))
-        await pg.evaluate("__emit('call',{state:'offhook'})"); await pg.wait_for_timeout(100)
-        check('ligação feita: tela mostra o nome de quem chamei', await pg.text_content('#callWho') == 'Maria Souza')
-        await pg.evaluate("__emit('call',{state:'idle'})")
-        # cancelar dentro dos 3 s
-        await pg.evaluate("__listenQ.push(['ligar para Maria'],['cancelar ligação'])")
-        await pg.click('#bVoice'); await pg.wait_for_timeout(600); await pg.click('#bVoice'); await pg.wait_for_timeout(4000)
-        check('"cancelar/desligar" nos 3 s cancela a ligação', len(await calls('placeCall')) == 1 and not await pg.evaluate("document.querySelector('#callBox').classList.contains('on')"))
-        # favoritos primeiro; vários contatos -> escolher na tela
-        await pg.evaluate("localStorage.setItem('tn_phFav',JSON.stringify([{name:'Mãe',number:'3133334444'}]));__listenQ.push(['ligar para mãe'])")
-        n0 = len(await calls('findContacts'))
-        await pg.click('#bVoice'); await pg.wait_for_timeout(4200)
-        check('favorito é achado sem consultar a agenda', len(await calls('findContacts')) == n0 and (await calls('placeCall'))[-1] == {'number': '3133334444'})
-        await pg.evaluate("__contacts=[{name:'João Silva',number:'1'},{name:'João Pedro',number:'2'}];__listenQ.push(['ligar para João'])")
-        await pg.click('#bVoice'); await pg.wait_for_timeout(600)
+        # ---------- tela do telefone: escolher e favoritar ----------
+        await pg.evaluate("TN.openPhone([{name:'João Silva',number:'1'},{name:'João Pedro',number:'2'}])"); await pg.wait_for_timeout(300)
         r = await pg.evaluate("({open:document.querySelector('#dlgPhone').open,n:document.querySelectorAll('#phRes [data-rcall]').length})")
-        check('dois "João": pede para escolher na tela, não liga sozinho', r == {'open': True, 'n': 2} and len(await calls('placeCall')) == 2, str(r))
+        check('tela do telefone lista os contatos com Ligar', r == {'open': True, 'n': 2}, str(r))
         await pg.click('#phRes [data-fav="1"]'); await pg.wait_for_timeout(100)
         check('☆ adiciona aos favoritos', 'João Pedro' in await pg.text_content('#phFavs'))
-        await pg.evaluate("document.querySelector('#dlgPhone').close()")
+        await pg.click('#phFavs [data-call="0"]'); await pg.wait_for_timeout(3800)
+        check('Ligar do favorito liga depois de 3,5 s (só dígitos)', (await calls('placeCall'))[-1:] == [{'number': '2'}], str(await calls('placeCall')))
+        await pg.evaluate("__emit('call',{state:'idle'})")
 
         # ---------- música ----------
         for frase, metodo, arg in [('próxima música', 'mediaKey', {'key': 'next'}), ('pausar', 'mediaKey', {'key': 'pause'}), ('aumentar o volume', 'volume', {'dir': 'up'}), ('tocar música', 'spotifyPlay', {})]:
@@ -148,8 +125,6 @@ async def main():
         await pg.evaluate("__emit('whatsapp',{app:'WhatsApp',title:'Bia',text:'durante a ligação',t:3000})"); await pg.wait_for_timeout(100)
         check('durante a ligação a mensagem não é lida em voz alta', len(await spoken()) == m0)
         await pg.evaluate("__emit('call',{state:'idle'})")
-        await pg.evaluate("__listenQ.push(['ler mensagens'])"); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
-        check('"ler mensagens" lê as últimas', (await spoken())[-1].startswith('Mensagem de Bia: durante a ligação. Mensagem de Ana: Oi'))
         ls = await pg.evaluate("Object.keys(localStorage).map(k=>localStorage.getItem(k)).join(' ')")
         check('texto das mensagens não fica guardado no aparelho', 'Chego em 5' not in ls and 'durante a ligação' not in ls)
 
