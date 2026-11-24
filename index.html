@@ -81,6 +81,7 @@ body.navOn #banner{top:96px}
 #radBox.on{display:flex}#radBox.over{animation:pisca .5s steps(2) infinite}
 #radBox b{font-family:Orbitron,monospace;font-size:26px}#radBox span{font-size:11px;font-weight:700;margin-top:3px}
 @keyframes pisca{50%{background:#ffd200}}
+.radmk.radk{background:#ffb000;color:#111;border-color:#111;font-size:15px}
 .radmk{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #d11;color:#111;font:700 10px/20px sans-serif;text-align:center;box-shadow:0 1px 4px #0008}
 .nvf{display:flex;gap:8px;align-items:center;padding:4px 0}.nvf .small{width:34px}.nvf input{flex:1;width:auto!important;font-size:16px}
 #callBox{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1700;display:none;width:min(440px,92vw);background:var(--panel);border:2px solid var(--acc);border-radius:18px;padding:16px;box-shadow:0 10px 40px #000a;text-align:center}
@@ -192,13 +193,14 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Mostrar o limite de velocidade da rua (OpenStreetMap) <input type="checkbox" id="sLimOn"></label>
   <label>Tolerância acima do limite da via (km/h) <input type="number" step="1" id="sLimTol"></label>
   <div class="small">Placa no canto do mapa e alerta ao passar do limite. Onde o OpenStreetMap não tem o limite da rua, a placa não aparece (vale o "Alerta de velocidade" acima). Precisa de internet para baixar a região.</div>
-  <h3>Radares</h3>
-  <label>Avisar de radares (OpenStreetMap) <input type="checkbox" id="sRadar"></label>
+  <h3>Radares e avisos</h3>
+  <label>Avisar de radares e avisos (OpenStreetMap e os seus) <input type="checkbox" id="sRadar"></label>
+  <label>Avisar de lombadas (acima de 25 km/h) <input type="checkbox" id="sLomb"></label>
   <label>Avisar a partir de (m) <input type="number" step="50" id="sRadarDist"></label>
   <label>Tolerância acima do limite (km/h) <input type="number" step="1" id="sRadarTol"></label>
   <div class="small" id="radInfo">Nenhum radar guardado.</div>
-  <div class="small">Os radares da área por onde você anda (e da rota) são baixados sozinhos e ficam guardados para usar sem internet. A base é colaborativa: pode faltar radar ou ter radar desativado.</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn g" id="bRadArea">Baixar radares da área do mapa</button><button class="btn g" id="bRadMark">Marcar radar aqui</button><button class="btn r" id="bRadDel">Apagar radares</button></div>
+  <div class="small">Radares e lombadas da área por onde você anda (e da rota) são baixados sozinhos e ficam guardados para usar sem internet; o botão abaixo baixa os de Minas Gerais inteiro de uma vez (uns 10 a 15 minutos). A base é colaborativa (OpenStreetMap): pode faltar radar ou ter radar desativado. Blitz e buracos não existem em base aberta: marque por voz ("Trilha, marcar blitz", "marcar buraco", "marcar obra"); a blitz some depois de 4 horas. "Trilha, apagar aviso" apaga o mais perto.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn" id="bRadMG">Baixar radares e lombadas de MG</button><button class="btn g" id="bRadArea">Baixar radares da área do mapa</button><button class="btn g" id="bRadMark">Marcar radar aqui</button><button class="btn r" id="bRadDel">Apagar radares</button></div>
   <h3>Mapa offline</h3>
   <div class="small" id="offInfo">Nenhum mapa offline instalado.</div>
   <div class="small">O download usa uns 1,4 GB de internet e de espaço. Faça no Wi-Fi; se cair, é só tocar de novo que ele continua.</div>
@@ -212,7 +214,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.2 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.3 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -325,7 +327,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true,voiceBt:true};
+const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',callVoice:true,updAuto:true,voiceAlways:true,voiceBt:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 const saveCfg=()=>LS.set('cfg',cfg);
 /* restos das funções de rali (até a v2.6.3: o GPX guardado podia ocupar MBs da cota do localStorage) e das teclas do controle de guidão (até a v2.7.1) */
@@ -852,42 +854,73 @@ $('#dlgNav').addEventListener('close',()=>{navSeq++;if(!nav&&navPlan){navPlan=nu
 /* ---------- radares (highway=speed_camera do OpenStreetMap) ---------- */
 /* Baixados por quadrados de 0,25° (≈28 km) ao redor de onde você anda e ao longo da rota; guardados no aparelho (OPFS radares.json) por 30 dias, para funcionar sem internet. */
 var radars=new Map(),radMk=new Map(),radSaid=new Map(),radFail={},radTiles={},radQ=[],radBusy=false,radCur=null,radT=0,radW=0,radSw=null;
-var RT=0.25,radKey=(la,lo)=>Math.floor(la/RT)+'_'+Math.floor(lo/RT);
+var RT=0.25,radKey=(la,lo)=>Math.floor(la/RT)+'_'+Math.floor(lo/RT),radBulkOn=false;
+/* tipos de aviso: do OpenStreetMap (radar, lombada, perigo) e marcados por você (também blitz, buraco, obra); a blitz expira em horas */
+const RADK={radar:{ic:'',say:'Radar',m:0},lombada:{ic:'⌒',say:'Lombada',m:250,exp:0},perigo:{ic:'⚠',say:'Perigo na pista',m:400,exp:864e5},
+  blitz:{ic:'🚓',say:'Blitz marcada',m:0,exp:4*3600e3},buraco:{ic:'🕳',say:'Buraco',m:300,exp:60*864e5},obra:{ic:'🚧',say:'Obra',m:400,exp:30*864e5}};
+const MG_BOX=[-22.93,-51.05,-14.23,-39.85];
+const radQL=(s,w,n,e)=>{const b='('+s.toFixed(4)+','+w.toFixed(4)+','+n.toFixed(4)+','+e.toFixed(4)+')';
+  return '[out:json][timeout:120];(node["highway"="speed_camera"]'+b+';node["traffic_calming"~"^(bump|hump|table|cushion|rumble_strip|yes)$"]'+b+';node["hazard"]'+b+';);out;'};
+function radEl(el){if(!el||el.type!=='node'||!Number.isFinite(el.lat)||!Number.isFinite(el.lon)||!Number.isFinite(el.id))return null;const t=el.tags||{};
+  const k=t.highway==='speed_camera'?'radar':t.traffic_calming?'lombada':t.hazard?'perigo':null;if(!k)return null;
+  return {id:'o'+el.id,lat:el.lat,lon:el.lon,max:k==='radar'?parseMax(t.maxspeed):null,dir:null,user:false,k}}
 var radLayer=L.layerGroup().addTo(map);
 const parseMax=v=>{const m=/(\d+)/.exec(String(v==null?'':v));let n=m?+m[1]:NaN;if(/mph/i.test(String(v)))n=Math.round(n*1.609);return n>=5&&n<=200?n:null};
-async function radLoad(){try{const j=JSON.parse(await (await fsRead([],'radares.json')).text());if(j&&j.tiles&&typeof j.tiles==='object')for(const k of Object.keys(j.tiles))if(/^-?\d+_-?\d+$/.test(k)&&Number.isFinite(j.tiles[k]))radTiles[k]=j.tiles[k];
+async function radLoad(){try{const j=JSON.parse(await (await fsRead([],'radares.json')).text());if(j&&j.v>=2&&j.tiles&&typeof j.tiles==='object')for(const k of Object.keys(j.tiles))if(/^-?\d+_-?\d+$/.test(k)&&Number.isFinite(j.tiles[k]))radTiles[k]=j.tiles[k];
   (Array.isArray(j&&j.pts)?j.pts:[]).forEach(a=>{if(!Array.isArray(a)||!/^[ou]\d+$/.test(String(a[0]))||!Number.isFinite(a[1])||!Number.isFinite(a[2]))return;const id=String(a[0]);
-    radars.set(id,{id,lat:a[1],lon:a[2],max:Number.isFinite(a[3])?a[3]:null,dir:Number.isFinite(a[4])?a[4]:null,user:id[0]==='u'})})}catch(e){}radDrawSoon();radInfo()}
-function radSave(){clearTimeout(radSave.t);radSave.t=setTimeout(()=>{try{fsWrite([],'radares.json',JSON.stringify({v:1,tiles:radTiles,pts:[...radars.values()].map(r=>[r.id,+r.lat.toFixed(6),+r.lon.toFixed(6),r.max,r.dir])})).catch(()=>{})}catch(e){}},400)}
-function radInfo(){const el=$('#radInfo');if(el)el.textContent=radars.size?radars.size+' radares guardados ('+Object.keys(radTiles).length+' áreas baixadas).':'Nenhum radar guardado ainda.'}
+    const k=RADK[a[5]]?a[5]:'radar',exp=Number.isFinite(a[6])?a[6]:null;if(exp&&exp<Date.now())return;
+    radars.set(id,{id,lat:a[1],lon:a[2],max:Number.isFinite(a[3])?a[3]:null,dir:Number.isFinite(a[4])?a[4]:null,user:id[0]==='u',k,exp})})}catch(e){}radDrawSoon();radInfo()}
+function radSave(){clearTimeout(radSave.t);radSave.t=setTimeout(()=>{try{fsWrite([],'radares.json',JSON.stringify({v:2,tiles:radTiles,pts:[...radars.values()].map(r=>[r.id,+r.lat.toFixed(6),+r.lon.toFixed(6),r.max,r.dir,r.k||'radar',r.exp||null])})).catch(()=>{})}catch(e){}},400)}
+function radInfo(){const el=$('#radInfo');if(!el||radBulkOn)return;const c={radar:0,lombada:0,outro:0};for(const r of radars.values())c[r.k==='radar'||!r.k?'radar':r.k==='lombada'?'lombada':'outro']++;
+  el.textContent=radars.size?c.radar+' radares guardados'+(c.lombada?', '+c.lombada+' lombadas':'')+(c.outro?', '+c.outro+' avisos':'')+' ('+Object.keys(radTiles).length+' áreas baixadas).':'Nenhum radar guardado ainda.'}
+/* MG inteiro (ou outro retângulo) em blocos de step graus: um pedido por bloco, pulando os já baixados há menos de 30 dias */
+async function radBulk(box,step){if(radBulkOn)return null;radBulkOn=true;const [s0,w0,n0,e0]=box,bl=[];let done=0,fail=0,got=0;
+  for(let a=Math.floor(s0/step)*step;a<n0;a+=step)for(let b=Math.floor(w0/step)*step;b<e0;b+=step)bl.push([a,b]);
+  const info=t=>{const el=$('#radInfo');if(el)el.textContent=t};
+  try{for(const [a,b] of bl){const ks=[];for(let i=Math.round(a/RT);i<Math.round((a+step)/RT);i++)for(let j=Math.round(b/RT);j<Math.round((b+step)/RT);j++)ks.push(i+'_'+j);
+      if(ks.every(k=>radTiles[k]&&Date.now()-radTiles[k]<30*864e5)){done++;continue}
+      info('Baixando radares e lombadas: bloco '+(done+fail+1)+' de '+bl.length+'…');
+      try{let j=null;for(let k=0;k<2&&!j;k++)try{j=await politeFetch(OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(radQL(a,b,a+step,b+step))},150000);
+          if(!Array.isArray(j.elements))throw new Error('resposta inválida')}catch(e){j=null;if(k)throw e;await new Promise(r=>setTimeout(r,dlRetryMs))}
+        const set=new Set(ks);
+        for(const [id,r] of radars)if(!r.user&&set.has(radKey(r.lat,r.lon)))radars.delete(id);
+        for(const el of j.elements){const r=radEl(el);if(r){radars.set(r.id,r);got++}}
+        const t=Date.now();ks.forEach(k=>{radTiles[k]=t;delete radFail[k]});radSave();done++}
+      catch(e){fail++}}}
+  finally{radBulkOn=false;radDrawSoon();radInfo()}
+  return {blocks:bl.length,done,fail,got}}
 function radQueue(keys,force){for(const k of keys){if(force){delete radTiles[k];delete radFail[k]}const t=radTiles[k];
     if((!t||Date.now()-t>30*864e5)&&!radQ.includes(k)&&!(radFail[k]&&Date.now()-radFail[k]<120000))radQ.push(k)}radPump()}
-async function radPump(){if(radBusy||!radQ.length||!cfg.radar||!LS.get('netOk',false))return;radBusy=true;const k=radQ.shift(),[a,b]=k.split('_').map(Number),s=a*RT,w=b*RT;
-  try{const q='[out:json][timeout:25];node["highway"="speed_camera"]('+s.toFixed(4)+','+w.toFixed(4)+','+(s+RT).toFixed(4)+','+(w+RT).toFixed(4)+');out;';
+async function radPump(){while(radQ.length&&radTiles[radQ[0]]&&Date.now()-radTiles[radQ[0]]<30*864e5)radQ.shift();   /* já veio (ex.: MG inteiro) */
+  if(radBusy||!radQ.length||!cfg.radar||!LS.get('netOk',false))return;radBusy=true;const k=radQ.shift(),[a,b]=k.split('_').map(Number),s=a*RT,w=b*RT;
+  try{const q=radQL(s,w,s+RT,w+RT);
     const j=await politeFetch(OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)},45000);
     if(!Array.isArray(j.elements))throw new Error('resposta inválida');
     for(const [id,r] of radars)if(!r.user&&radKey(r.lat,r.lon)===k)radars.delete(id);
-    j.elements.forEach(el=>{if(el.type!=='node'||!Number.isFinite(el.lat)||!Number.isFinite(el.lon)||!Number.isFinite(el.id))return;radars.set('o'+el.id,{id:'o'+el.id,lat:el.lat,lon:el.lon,max:parseMax((el.tags||{}).maxspeed),dir:null,user:false})});
+    j.elements.forEach(el=>{const r=radEl(el);if(r)radars.set(r.id,r)});
     radTiles[k]=Date.now();radSave();radDrawSoon();radInfo()}
   catch(e){radFail[k]=Date.now()}finally{radBusy=false;if(radQ.length)setTimeout(radPump,1200)}}
 function radRoute(rt){if(!cfg.radar)return;const ks=new Set();for(let m=0;m<=rt.len;m+=1500){const p=rtAt(rt,m);for(const a of [-.02,.02])for(const b of [-.02,.02])ks.add(radKey(p.lat+a,p.lon+b))}radQueue([...ks].slice(0,40))}
-function radIcon(m){return L.divIcon({className:'',html:'<div class="radmk">'+(m||'?')+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}
+function radIcon(r){const k=RADK[r.k]?r.k:'radar';return L.divIcon({className:'',html:'<div class="radmk'+(k==='radar'?'':' radk')+'">'+(k==='radar'?(r.max||'?'):RADK[k].ic)+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}
 function radDrawSoon(){clearTimeout(radDrawSoon.t);radDrawSoon.t=setTimeout(radDraw,250)}
-function radDraw(){const show=new Set();if(cfg.radar&&map.getZoom()>=12&&$('#map').clientWidth>0){const b=map.getBounds().pad(.2);for(const r of radars.values()){if(show.size>=400)break;if(b.contains([r.lat,r.lon]))show.add(r.id)}}
+function radDraw(){const show=new Set();if(cfg.radar&&map.getZoom()>=12&&$('#map').clientWidth>0){const b=map.getBounds().pad(.2),zl=map.getZoom()>=14;
+    for(const pass of [0,1])for(const r of radars.values()){if(show.size>=400)break;const lb=r.k==='lombada';if(pass?!lb||!zl:lb)continue;if(b.contains([r.lat,r.lon]))show.add(r.id)}}
   for(const [id,mk] of radMk)if(!show.has(id)){radLayer.removeLayer(mk);radMk.delete(id)}
-  for(const id of show)if(!radMk.has(id)){const r=radars.get(id);const mk=L.marker([r.lat,r.lon],{icon:radIcon(r.max),interactive:false,keyboard:false});radLayer.addLayer(mk);radMk.set(id,mk)}}
+  for(const id of show)if(!radMk.has(id)){const r=radars.get(id);const mk=L.marker([r.lat,r.lon],{icon:radIcon(r),interactive:false,keyboard:false});radLayer.addLayer(mk);radMk.set(id,mk)}}
 map.on('moveend zoomend',radDrawSoon);
 /* aviso: radar à frente na rota (modo cidade) ou, sem rota, num cone estreito à frente do rumo do GPS */
 function radCheck(){const box=$('#radBox');if(!cfg.radar||!fix){if(radCur){radCur=null;box.classList.remove('on','over')}return ''}const now=fix.t;
   if(now-radT>10000||now<radT){radT=now;const ks=new Set();for(const a of [-.04,.04])for(const b of [-.04,.04])ks.add(radKey(fix.lat+a,fix.lon+b));radQueue([...ks])}
   const D=Math.max(150,cfg.radarDist||600),dl=D/111000+.002,dlo=dl/Math.max(.2,Math.cos(rad(fix.lat))),hdg=speedKmh>=8?gpsHdg:null,onRoute=nav&&nav.q&&nav.joined;let best=null;
-  for(const r of radars.values()){if(Math.abs(r.lat-fix.lat)>dl||Math.abs(r.lon-fix.lon)>dlo)continue;const d=hav(fix,r);if(d>D)continue;let ok=false,dd=d;
-    if(onRoute){const p=projPoly(nav.rt,r,Math.max(0,nav.q.i-5),nav.q.i+500);if(p.d<=35&&p.along>=nav.q.along-10&&p.along-nav.q.along<=D){ok=true;dd=p.along-nav.q.along}}
+  for(const r of radars.values()){if(Math.abs(r.lat-fix.lat)>dl||Math.abs(r.lon-fix.lon)>dlo)continue;const K=RADK[r.k]||RADK.radar;
+    if(r.k==='lombada'&&(!cfg.lomb||speedKmh<25))continue;if(r.exp&&r.exp<Date.now())continue;const Dk=K.m?Math.min(D,K.m):D,d=hav(fix,r);if(d>Dk)continue;let ok=false,dd=d;
+    if(onRoute){const p=projPoly(nav.rt,r,Math.max(0,nav.q.i-5),nav.q.i+500);if(p.d<=35&&p.along>=nav.q.along-10&&p.along-nav.q.along<=Dk){ok=true;dd=p.along-nav.q.along}}
     else if(hdg!=null){const a=Math.abs(angDiff(brg(fix,r),hdg));if(a<=30&&(d*Math.sin(rad(a))<=45||d<40)&&(r.dir==null||Math.abs(angDiff(r.dir,hdg))<=60))ok=true}
     if(ok&&(!best||dd<best.d))best={r,d:Math.max(0,dd)}}
   radCur=best;if(!best){box.classList.remove('on','over');return ''}
-  const r=best.r;box.classList.add('on');$('#radLim').textContent=r.max||'?';$('#radDist').textContent=fmtKm(best.d);
-  const ls=radSaid.get(r.id);if(!ls||now-ls>180000||now<ls){radSaid.set(r.id,now);beep(1000,110);setTimeout(()=>beep(1000,110),180);vib([60,60,60]);say('Radar em '+spokenDist(best.d)+(r.max?', limite '+r.max:''))}
+  const r=best.r,K=RADK[r.k]||RADK.radar,isR=!r.k||r.k==='radar';box.classList.add('on');$('#radLim').textContent=isR?(r.max||'?'):K.ic;$('#radDist').textContent=fmtKm(best.d);
+  const ls=radSaid.get(r.id);if(!ls||now-ls>180000||now<ls){radSaid.set(r.id,now);beep(1000,110);setTimeout(()=>beep(1000,110),180);vib([60,60,60]);say(K.say+' em '+spokenDist(best.d)+(isR&&r.max?', limite '+r.max:''))}
+  if(!isR){box.classList.remove('over');return ''}
   if(r.max&&speedKmh>r.max+(cfg.radarTol||0)){box.classList.add('over');if(now-radW>4000||now<radW){radW=now;beep(1400,250);vib(250)}if(radSw!==r.id){radSw=r.id;say('Reduza, radar de '+r.max,true)}return 'RADAR '+r.max+' · VOCÊ '+Math.round(speedKmh)}
   box.classList.remove('over');return ''}
 async function radMark(){if(!fix){toast('Sem GPS');return}const at={lat:fix.lat,lon:fix.lon},dir=speedKmh>8&&gpsHdg!=null?Math.round(gpsHdg):null;
@@ -897,6 +930,9 @@ $('#bRadMark').onclick=radMark;
 $('#bRadArea').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('Ligue o aviso de radares primeiro');return}const b=map.getBounds(),ks=[];
   for(let la=Math.floor(b.getSouth()/RT);la<=Math.floor(b.getNorth()/RT);la++)for(let lo=Math.floor(b.getWest()/RT);lo<=Math.floor(b.getEast()/RT);lo++)ks.push(la+'_'+lo);
   if(ks.length>16){toast('Área grande demais: aproxime o mapa (até uns 100 km)',4000);return}radQueue(ks,true);toast('Baixando radares de '+ks.length+' área(s)…',3000)};
+$('#bRadMG').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('Ligue o aviso de radares primeiro');return}if(radBulkOn){toast('Já está baixando');return}
+  toast('Baixando radares e lombadas de Minas Gerais (uns 10 a 15 minutos; pode usar o app)…',6000);const r=await radBulk(MG_BOX,1);
+  if(r)toast(r.fail?'Faltaram '+r.fail+' de '+r.blocks+' blocos (sem internet?): toque de novo para completar':'Pronto: radares e lombadas de MG guardados no aparelho',7000)};
 $('#bRadDel').onclick=async()=>{if(!await ask({title:'Apagar radares',msg:'Apaga os radares baixados e os marcados por você.',ok:'Apagar',danger:true}))return;radars.clear();radTiles={};radQ=[];radSave();radDraw();radInfo();toast('Radares apagados')};
 radLoad();
 
@@ -904,6 +940,8 @@ radLoad();
 /* Contatos, ligações e mensagens ficam no aparelho: nada disto vai para a rede. As mensagens ficam só na memória (as últimas 20). */
 var callSt={state:'idle',name:'',number:''},callCtx=null,waMsgs=[],nowPlay=null,dialT=null,voiceBusy=false,waT=null;
 const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const POIK=[[/\b(hospital|socorro|upa)\b/,['hospital','clinic'],'Hospital'],[/\b(farmacia|drogaria)\b/,['pharmacy'],'Farmácia'],[/\b(restaurante|lanchonete|comida|comer)\b/,['restaurant','fast_food'],'Restaurante'],
+  [/\b(hotel|pousada|dormir)\b/,['hotel','guest_house'],'Hotel ou pousada'],[/\b(policia|delegacia)\b/,['police'],'Polícia'],[/\b(banco|eletronico)\b/,['bank','atm'],'Banco'],[/\b(mercado|supermercado)\b/,['supermarket'],'Supermercado']];
 const GORE=/^(?:(?:eu )?(?:quero|queria|preciso) )?(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega|rota)(?: (?:me|para|pra|pro|ate|até|ao|a|o))* (.+)$/;
 const GOEMPTY=/^(?:(?:eu )?(?:quero|queria|preciso) )?(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:me|para|pra|pro|ate|até|ao|a|o))*$/;
 const CALLRE=/^(?:por favor )?(?:ligar|ligue|liga|chamar|chama|telefonar|telefona)(?: (?:para|pra|pro|ao|a|o))* (.+)$/;
@@ -914,6 +952,7 @@ function parseCmd(t){const s=normTxt(t);if(!s)return null;
   if(/\bnao (atender|atende|atenda)\b/.test(s))return {a:'end'};
   if(/\b(atender|atende|atenda|atendo|atendi|aceitar|aceita)\b/.test(s))return {a:'answer'};
   if(/\b(rota|navegacao)\b/.test(s)&&/\b(cancelar|cancela|parar|para|pare|encerrar|encerra|sair|terminar|termina|desligar|desliga)\b/.test(s))return {a:'stopnav'};
+  if(/\b(apagar|apaga|remover|remove|tirar|tira)\b/.test(s)&&/\b(aviso|marca|blitz|buraco|radar|lombada|obra|perigo)\b/.test(s))return {a:'unmark'};
   if(/\b(gravar|grava|gravacao|gravando)\b/.test(s))return {a:'rec',on:!/\b(parar|para|pare|pausar|pausa|encerrar|encerra|terminar|termina|desligar|desliga)\b/.test(s)};
   if(/\b(recusar|recusa|recuse|rejeitar|rejeita|desligar|desliga|desligue|encerrar|encerra)\b/.test(s))return {a:'end'};
   if(/\b(ligar|liga|ligue)(?: (?:a|o))? (musica|som|spotify|radio)\b/.test(s))return {a:'play'};
@@ -933,7 +972,9 @@ function parseCmd(t){const s=normTxt(t);if(!s)return null;
   if(/\babasteci\b/.test(s))return {a:'filled'};
   if(/\bautonomia\b/.test(s))return {a:'range'};
   if(/\b(posto|gasolina|combustivel|abastecer)\b/.test(s))return {a:'fuel'};
-  if(/\bmarcar\b/.test(s)&&/\bradar\b/.test(s))return {a:'radar'};
+  if(/\b(marcar|marca|marque)\b/.test(s)){const k=/\bradar\b/.test(s)?'radar':/\b(blitz|policia)\b/.test(s)?'blitz':/\b(buraco|buracos)\b/.test(s)?'buraco':/\b(lombada|lombadas|quebra molas)\b/.test(s)?'lombada':/\b(obra|obras)\b/.test(s)?'obra':/\b(perigo|acidente)\b/.test(s)?'perigo':null;
+    if(k)return k==='radar'?{a:'radar'}:{a:'mark',k}}
+  for(const [re,k,l] of POIK)if(re.test(s))return {a:'poi',k,l};
   if(/\b(pausar|pausa|pause|parar|pare)\b|\bpara a musica\b/.test(s))return {a:'pause'};
   if(/\b(proxima|proximo|pular|pula|avancar|avanca|passar|passa|outra|trocar|troca|troque|mudar|muda|mude)\b/.test(s))return {a:'next'};
   if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
@@ -985,13 +1026,20 @@ async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&(c.a==='none'
     case 'volup':return nat('volume',{dir:'up'}).catch(()=>{});case 'voldown':return nat('volume',{dir:'down'}).catch(()=>{});
     case 'play':if(nowPlay&&nowPlay.active)return media('play');return nat('spotifyPlay').catch(()=>toast('Spotify não respondeu'));
     case 'read':return readMsgs();
-    case 'go':return /^(|para|pra|pro|a|o|ao|ate|até)$/.test(normTxt(c.where))?askPlace():goPlace(c.where);
+    case 'go':{const w=normTxt(c.where);if(/^(|para|pra|pro|a|o|ao|ate)$/.test(w))return askPlace();
+      const g=w.replace(/^(?:o|a|um|uma|ao|na|no|num|numa) /,'').replace(/ mais (?:perto|proximo|proxima)$/,'');
+      if(/^(?:posto|posto de gasolina|gasolina|combustivel)$/.test(g))return fuelGo();
+      for(const [re,k,l] of POIK)if(new RegExp('^(?:'+re.source+')$').test(g))return poiGo(k,l);
+      return goPlace(PALIAS.get(w.replace(/ /g,''))||c.where)}
     case 'stopnav':if(nav){navStop('Rota encerrada');say('Rota encerrada')}else say('Nenhuma rota');return;
     case 'wx':return wxSay();
     case 'fuel':return fuelGo();
     case 'filled':return fillUp();
     case 'range':{const r=rangeKm();say(r==null?'Autonomia não configurada':'Autonomia de '+Math.max(0,Math.round(r))+' quilômetros');return}
-    case 'radar':return radMarkVoice();
+    case 'radar':return radMarkVoice('radar');
+    case 'mark':return radMarkVoice(c.k);
+    case 'unmark':return radUnmark();
+    case 'poi':return poiGo(c.k,c.l);
     case 'where':return whereSay();
     case 'eta':return etaSay();
     case 'repeat':return repeatSay();
@@ -1004,7 +1052,8 @@ async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&(c.a==='none'
     case 'help':say(HELP,true);return;
     default:return}}
 const HELP='Diga Trilha e o comando. Por exemplo: ir para Ouro Preto, quanto falta, repetir, onde estou, velocidade, que horas são, '+
-  'próxima música, pausar, aumentar volume, ligar para Maria, atender, recusar, ler mensagens, clima, posto, autonomia, marcar radar, aproximar, afastar, travar tela, gravar trilha.';
+  'próxima música, pausar, aumentar volume, ligar para Maria, atender, recusar, ler mensagens, clima, posto, hospital, farmácia, autonomia, '+
+  'marcar radar, marcar blitz, marcar buraco, apagar aviso, aproximar, afastar, travar tela, gravar trilha.';
 /* ETA e distância que faltam, como no cartão da rota */
 function etaSay(){if(!nav){say('Nenhuma rota');return}const rt=nav.rt,q=nav.q;if(!nav.joined||!q){say('Vá até o início da rota. A rota tem '+spokenDist(rt.len));return}
   const remain=Math.max(0,rt.len-q.along),secs=rt.time*remain/Math.max(1,rt.len),eta=new Date(Date.now()+secs*1000);
@@ -1076,14 +1125,31 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='trilha a o ao de que para pra pro por favor eu me não quero queria preciso estou bem tudo tô atender atende atenda atendo atendi aceitar aceita recusar recusa recuse rejeitar rejeita desligar desliga desligue encerrar encerra terminar termina sair parar pare pausar pausa pause ligar liga ligue chamar chama telefonar telefona ir vamos leva leve levar navegar navega rota navegação até onde estamos localização falta faltam chegada chego chegar chegamos distância quanto tempo repetir repete repita outra vez novo velocidade limite hora horas ajuda comandos posso aproximar aproxima aproxime ampliar amplia afastar afasta afaste zoom mais menos travar trava destravar destrava bloquear bloqueia desbloquear desbloqueia gravar grava gravação gravando clima temperatura previsão chuva chover chove abasteci autonomia posto gasolina combustível abastecer marcar radar tocar toca toque play continuar continua spotify música som rádio próxima próximo pular pula avançar avança passar passa trocar troca troque mudar muda mude anterior voltar volta aumentar aumenta aumente subir sobe alto abaixar abaixa abaixe baixar baixa baixe diminuir diminui diminua descer desce baixo volume ler leia lê mensagem mensagens whatsapp zap silêncio cancelar cancela nada esquece'.split(' ');
+const VBASE='trilha a o ao de que para pra pro por favor eu me não quero queria preciso estou bem tudo tô atender atende atenda atendo atendi aceitar aceita recusar recusa recuse rejeitar rejeita desligar desliga desligue encerrar encerra terminar termina sair parar pare pausar pausa pause ligar liga ligue chamar chama telefonar telefona ir vamos leva leve levar navegar navega rota navegação até onde estamos localização falta faltam chegada chego chegar chegamos distância quanto tempo repetir repete repita outra vez novo velocidade limite hora horas ajuda comandos posso aproximar aproxima aproxime ampliar amplia afastar afasta afaste zoom mais menos travar trava destravar destrava bloquear bloqueia desbloquear desbloqueia gravar grava gravação gravando clima temperatura previsão chuva chover chove abasteci autonomia posto gasolina combustível abastecer marcar radar tocar toca toque play continuar continua spotify música som rádio próxima próximo pular pula avançar avança passar passa trocar troca troque mudar muda mude anterior voltar volta aumentar aumenta aumente subir sobe alto abaixar abaixa abaixe baixar baixa baixe diminuir diminui diminua descer desce baixo volume ler leia lê mensagem mensagens whatsapp zap silêncio cancelar cancela nada esquece marca marque blitz polícia buraco buracos lombada lombadas quebra molas obra obras perigo acidente apagar apaga remover remove tirar tira aviso perto num numa um uma na no hospital socorro upa farmácia drogaria restaurante lanchonete comida comer hotel pousada dormir delegacia banco eletrônico mercado supermercado'.split(' ');
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
-function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<800)w.add(x)});
-  getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));return [...w]}
+function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<1400)w.add(x)});
+  getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));placeW.forEach(x=>{if(w.size<3000)w.add(x)});return [...w]}
+/* Cidades perto de você na gramática do assistente. O modelo de voz só escreve palavras do vocabulário dele (lib/vosk-words.txt, tirado do
+   modelo na compilação do APK): nome que não está lá é escrito com pedaços que estão ("Guidoval" → "guido val") e PALIAS volta ao nome certo. */
+var PALIAS=new Map(),placeW=[],placeAt=null,vocabP=null;
+function vocabLoad(){if(!vocabP)vocabP=(async()=>{try{const r=await fetch('lib/vosk-words.txt');if(r.ok){const t=await r.text();if(t.length>1000)return new Set(t.split('\n'))}}catch(e){}vocabP=null;return null})();return vocabP}
+function segWord(w,V){const n=w.length,best=new Array(n+1).fill(null);best[0]=[];
+  for(let i=0;i<n;i++){if(!best[i])continue;for(let j=i+1;j<=Math.min(n,i+12);j++){const q=w.slice(i,j);
+    if(!V.has(q)||(q.length===1&&!(/^[aeéiou]$/.test(q)&&!(i===0&&/^[ao]$/.test(q)))))continue;const c=best[i].concat(q);if(!best[j]||c.length<best[j].length)best[j]=c}}
+  return best[n]&&best[n].length<=5?best[n]:null}
+function placeVocab(items,V,c,R,max){const ws=new Set(),al=new Map();
+  const near=(items||[]).filter(it=>Array.isArray(it)&&it[0]).map(it=>({n:String(it[0]).slice(0,60),d:hav(c,{lat:it[1],lon:it[2]})})).filter(x=>x.d<=R).sort((a,b)=>a.d-b.d).slice(0,max);
+  for(const {n} of near){let out=[];for(const w of n.toLowerCase().split(/[^\p{L}]+/u).filter(Boolean)){if(!V||V.has(w)){out.push(w);continue}const g=segWord(w,V);if(!g){out=null;break}out.push(...g)}
+    if(!out||!out.length)continue;out.forEach(x=>ws.add(x));const k=normTxt(out.join(''));if(k&&!al.has(k))al.set(k,n)}
+  PALIAS=al;placeW=[...ws];return {words:placeW.length,alias:al.size}}
+async function placeGrammar(force){if(!offPM||!offH)return null;const c=fix||LS.get('lastPos',null);if(!c||!Number.isFinite(+c.lat))return null;
+  if(!force&&placeAt&&hav(placeAt,c)<40000)return null;const at={lat:+c.lat,lon:+c.lon};let idx;try{idx=await placeIndex()}catch(e){return null}
+  if(!idx||!idx.items||!idx.items.length)return null;placeAt=at;const r=placeVocab(idx.items,await vocabLoad(),at,200000,500);voiceWords();return r}
+setInterval(()=>{if(voiceLive())placeGrammar(false)},60000);
 function voiceWords(){if(NATIVE&&voiceLive())nat('voiceWords',{words:voiceVocab()}).catch(()=>{})}
 async function voiceAlwaysStart(manual){if(!NATIVE||!cfg.voiceAlways)return;let st={};try{st=await nat('phoneStatus')||{}}catch(e){}
   if(!st.mic){if(manual)toast('Permita o microfone em Telefone para o assistente de voz',5000);return}
-  nat('voiceStart',{words:voiceVocab(),bt:!!cfg.voiceBt}).catch(e=>{if(manual)toast(errTxt(e),5000)})}
+  nat('voiceStart',{words:voiceVocab(),bt:!!cfg.voiceBt}).then(()=>placeGrammar(true)).catch(e=>{if(manual)toast(errTxt(e),5000)})}
 function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off'].includes(o.state)?o.state:'off';
   $('#bVoice').classList.toggle('live',voiceSt==='on');$('#bVoice span').textContent=voiceSt==='on'?(o.msg==='fone'?'Ouvindo (fone)':'Ouvindo'):voiceSt==='paused'?'Voz (pausa)':'Voz';
   if(voiceSt==='error')toast('Assistente de voz: '+String(o.msg||'erro').slice(0,80),5000)}
@@ -1172,26 +1238,44 @@ setInterval(()=>wxUpdate(false),60e3);setTimeout(()=>{wxShow();wxUpdate(false)},
 /* ---------- postos de combustível (OpenStreetMap, raio de 8 km) ---------- */
 var fuelLayer=L.layerGroup().addTo(map),fuelList=[];
 const fuelIcon=L.divIcon({className:'',html:'<div class="fuelmk">⛽</div>',iconSize:[24,24],iconAnchor:[12,12]});
+/* lugares do mapa offline (camada pois) de certos tipos a até R metros, do mais perto para o mais longe */
+async function poiNear(p,kinds,R,maxT){if(!offPM||!offH)return [];const z=Math.min(14,offH.maxZoom),tiles=tilesAround(p,R,z);if(tiles.length>(maxT||100))return [];
+  const ks=new Set(kinds),seen=new Set();return (await readPts(z,tiles,'pois')).filter(q=>ks.has(q.pr.kind)||ks.has(q.pr.kind_detail))
+    .map(q=>({name:q.name,sub:String(q.pr.brand||q.pr['addr:street']||'').slice(0,80),lat:q.lat,lon:q.lon,d:hav(p,q)})).filter(q=>q.d<=R&&!seen.has(q.name+'|'+Math.round(q.lat*1e4))&&seen.add(q.name+'|'+Math.round(q.lat*1e4)))
+    .sort((a,b)=>a.d-b.d).slice(0,40)}
 async function fuelFind(){const p=fix||LS.get('lastPos',null);if(!p||!Number.isFinite(+p.lat))throw new Error('sem GPS');
+  let l=offPM&&offH?(await poiNear({lat:+p.lat,lon:+p.lon},['fuel'],8000)).map(f=>Object.assign(f,{off:true})):null;
+  if((!l||!l.length)&&LS.get('netOk',false))try{l=await fuelOver(p)}catch(e){if(!offPM)throw e}
+  fuelList=l||[];fuelLayer.clearLayers();fuelList.forEach(f=>fuelLayer.addLayer(L.marker([f.lat,f.lon],{icon:fuelIcon,interactive:false,keyboard:false})));return fuelList}
+async function fuelOver(p){
   const q='[out:json][timeout:25];(node["amenity"="fuel"](around:8000,'+(+p.lat).toFixed(4)+','+(+p.lon).toFixed(4)+');way["amenity"="fuel"](around:8000,'+(+p.lat).toFixed(4)+','+(+p.lon).toFixed(4)+'););out center 80;';
   const j=await politeFetch(OVERPASS,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)},45000);
   fuelList=(j.elements||[]).map(e=>{const c=e.center||e,t=e.tags||{};return {name:String(t.name||t.brand||'Posto').slice(0,60),sub:[t.brand&&t.brand!==t.name?t.brand:'',t['addr:street']].filter(Boolean).join(' · ').slice(0,80),lat:+c.lat,lon:+c.lon}})
     .filter(f=>Number.isFinite(f.lat)&&Number.isFinite(f.lon)).map(f=>Object.assign(f,{d:hav(p,f)})).sort((a,b)=>a.d-b.d).slice(0,40);
-  fuelLayer.clearLayers();fuelList.forEach(f=>fuelLayer.addLayer(L.marker([f.lat,f.lon],{icon:fuelIcon,interactive:false,keyboard:false})));return fuelList}
-async function fuelOpen(){if(!$('#dlgFuel').open)$('#dlgFuel').showModal();renderRange();if(!LS.get('netOk',false)&&!await netOk()){$('#fuelInfo').textContent='A lista de postos precisa de internet (aceite o aviso).';return}$('#fuelInfo').textContent='Procurando postos…';$('#fuelList').innerHTML='';
-  try{const l=await fuelFind();$('#fuelInfo').textContent=l.length?l.length+' postos a até 8 km':'Nenhum posto a até 8 km no OpenStreetMap.';
+  return fuelList}
+async function fuelOpen(){if(!$('#dlgFuel').open)$('#dlgFuel').showModal();renderRange();if(!LS.get('netOk',false)&&!offPM&&!await netOk()){$('#fuelInfo').textContent='A lista de postos precisa de internet (aceite o aviso).';return}$('#fuelInfo').textContent='Procurando postos…';$('#fuelList').innerHTML='';
+  try{const l=await fuelFind();$('#fuelInfo').textContent=l.length?l.length+' postos a até 8 km'+(l[0].off?' (mapa offline)':''):'Nenhum posto a até 8 km no OpenStreetMap.';
     $('#fuelList').innerHTML=l.map((f,i)=>'<div class="lr"><span><b>'+esc(f.name)+'</b><br><span class="small">'+fmtKm(f.d)+(f.sub?' · '+esc(f.sub):'')+'</span></span><button class="btn" data-fgo="'+i+'">Ir</button></div>').join('');
     $('#fuelList').querySelectorAll('[data-fgo]').forEach(b=>b.onclick=()=>{$('#dlgFuel').close();fuelRoute(fuelList[+b.dataset.fgo])})}
   catch(e){$('#fuelInfo').textContent='Não consegui procurar ('+errTxt(e)+').'}}
 async function fuelRoute(f){if(!fix){say('Sem GPS para calcular a rota');return}
   try{const rs=await anyRoute({lat:fix.lat,lon:fix.lon,hdg:speedKmh>8?gpsHdg:null},f,false);navStart(rs[0],{name:f.name,sub:f.sub,lat:f.lat,lon:f.lon},null)}catch(e){say('Não consegui calcular a rota');toast('Rota: '+errTxt(e),5000)}}
-async function fuelGo(){if(!LS.get('netOk',false)){say('Abra o Ir para uma vez e aceite o aviso de internet');return}
+async function fuelGo(){if(!LS.get('netOk',false)&&!offPM){say('Baixe o mapa offline ou abra o Ir para e aceite o aviso de internet');return}
   try{const l=await fuelFind();if(!l.length){say('Nenhum posto a até 8 quilômetros');return}say('Posto mais perto: '+l[0].name+', a '+spokenDist(l[0].d));fuelRoute(l[0])}catch(e){say('Não consegui procurar postos')}}
+/* "hospital", "farmácia"… pelo mapa offline: o mais perto (até 8 km; se não houver, até 14 km) e já calcula a rota */
+async function poiGo(kinds,lbl){const p=fix||LS.get('lastPos',null);if(!p||!Number.isFinite(+p.lat)){say('Sem GPS');return}
+  if(!offPM){say('Baixe o mapa offline para procurar '+lbl.toLowerCase());return}
+  let l=await poiNear({lat:+p.lat,lon:+p.lon},kinds,8000);if(!l.length)l=await poiNear({lat:+p.lat,lon:+p.lon},kinds,14000,170);
+  if(!l.length){say('Nenhum lugar desse tipo perto no mapa');return}say(lbl+' mais perto: '+l[0].name+', a '+spokenDist(l[0].d));fuelRoute(l[0])}
 $('#bFuel').onclick=fuelOpen;
 $('#bMore').onclick=()=>$('#dlgMore').showModal();
 /* tocar num botão de "Mais" faz a ação e fecha a grade (depois, para não atrapalhar diálogos que o botão abre) */
 $('#dlgMore').addEventListener('click',e=>{if(e.target.closest('#moreGrid .b'))setTimeout(()=>{if($('#dlgMore').open)$('#dlgMore').close()},0)});
-function radMarkVoice(){if(!fix){say('Sem GPS');return}const id='u'+Date.now();radars.set(id,{id,lat:fix.lat,lon:fix.lon,max:null,dir:speedKmh>8&&gpsHdg!=null?Math.round(gpsHdg):null,user:true});radSave();radDrawSoon();radInfo();say('Radar marcado')}
+function radMarkVoice(k){k=RADK[k]?k:'radar';if(!fix){say('Sem GPS');return}const id='u'+Date.now(),K=RADK[k],exp=K.exp?Date.now()+K.exp:null;
+  radars.set(id,{id,lat:fix.lat,lon:fix.lon,max:null,dir:speedKmh>8&&gpsHdg!=null?Math.round(gpsHdg):null,user:true,k,exp});radSave();radDrawSoon();radInfo();
+  say({radar:'Radar marcado',lombada:'Lombada marcada',perigo:'Perigo marcado por um dia',blitz:'Blitz marcada por 4 horas',buraco:'Buraco marcado',obra:'Obra marcada'}[k])}
+function radUnmark(){if(!fix){say('Sem GPS');return}let best=null;for(const r of radars.values()){const d=hav(fix,r);if(d<=300&&(!best||d<best.d))best={r,d}}
+  if(!best){say('Nenhum aviso a até 300 metros');return}radars.delete(best.r.id);radSave();radDraw();radInfo();say('Aviso apagado: '+({radar:'radar',lombada:'lombada',perigo:'perigo',blitz:'blitz',buraco:'buraco',obra:'obra'}[best.r.k]||'radar'))}
 
 /* ---------- limite de velocidade da via (maxspeed do OpenStreetMap), por quadrados de 0,05° baixados conforme você anda ---------- */
 var limCells={},limQ=[],limBusy=false,limCur=null,limCurId=null,limT=0,limFail={};
@@ -1381,7 +1465,7 @@ function download(name,txt,type){const blob=new Blob([txt],{type});
 
 /* ---------- ajustes ---------- */
 const bind=[['sVoiceVol','voiceVol',parseFloat],['sCompSpd','compSpd',parseFloat],['sCompOff','compOff',parseFloat],['sSpd','spd',parseFloat],['sRadarDist','radarDist',parseFloat],['sTankL','tankL',parseFloat],['sKmL','kmL',parseFloat],['sReserveKm','reserveKm',parseFloat],['sLimTol','limTol',parseFloat],['sRadarTol','radarTol',parseFloat]];
-const binc=[['sVoice','voice'],['sComp','comp'],['sSnd','snd'],['sRadar','radar'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sVoiceAlways','voiceAlways'],['sVoiceBt','voiceBt'],['sCrashOn','crashOn'],['sLimOn','limOn']];
+const binc=[['sVoice','voice'],['sComp','comp'],['sSnd','snd'],['sRadar','radar'],['sLomb','lomb'],['sNavToll','navNoToll'],['sNavHwy','navNoHwy'],['sWx','wx'],['sWxVoice','wxVoice'],['sCallVoice','callVoice'],['sVoiceAlways','voiceAlways'],['sVoiceBt','voiceBt'],['sCrashOn','crashOn'],['sLimOn','limOn']];
 function fillSet(){bind.forEach(([id,k])=>$('#'+id).value=cfg[k]);binc.forEach(([id,k])=>$('#'+id).checked=cfg[k]);$('#sRotMode').value=rotMode();
   radInfo();updInfo();$('#compInfo').textContent=(!('ondeviceorientationabsolute' in window)&&!('ondeviceorientation' in window)?'Este aparelho não tem bússola acessível. ':'')+(cfg.compLearned?'Ajuste aprendido pelo GPS (rodando reto acima de 15 km/h).':'Ainda sem calibração: rode reto acima de 15 km/h por alguns segundos que o app aprende o ajuste sozinho (declinação magnética).')}
 bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!isNaN(v)){cfg[k]=v;saveCfg()}});
@@ -1518,7 +1602,7 @@ loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* atalhos internos só para os testes automatizados (navegador controlado: navigator.webdriver); no uso normal não ficam expostos */
-if(navigator.webdriver)window.TN={offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
+if(navigator.webdriver)window.TN={placeVocab,segWord,placeGrammar,get PALIAS(){return PALIAS},get placeW(){return placeW},radBulk,radMarkVoice,radUnmark,poiNear,poiGo,offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,fuelGo,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,goPlace,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
 </script>
 </body>
 </html>
