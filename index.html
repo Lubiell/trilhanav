@@ -257,7 +257,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
   <label>Ouvir pelo microfone do fone/intercom Bluetooth (enquanto ligado, a música fica com qualidade de ligação) <input type="checkbox" id="sVoiceBt"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, atender", "Trilha, ligar para Maria", "Trilha, próxima música". Com a ligação tocando, basta "atender" ou "recusar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
-  <div class="small">Toque em <b>Voz</b> e fale: "atender", "recusar", "desligar", "ligar para Maria", "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume", "ler mensagens". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
+  <div class="small">Diga "Trilha" e o comando (ou toque em <b>Voz</b> e fale): "ir para Ouro Preto", "quanto falta", "repetir", "onde estou", "velocidade", "que horas são", "atender", "recusar", "ligar para Maria", "tocar", "pausar", "próxima música", "aumentar volume", "abaixar volume", "ler mensagens", "clima", "posto", "aproximar", "afastar", "travar tela", "gravar trilha", "ajuda". Quando chega uma ligação, o app escuta sozinho por alguns segundos (com o app na tela).</div>
   <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
 </div></dialog>
 <dialog id="dlgWx"><div class="hd"><b>Clima</b></div><div class="bd">
@@ -904,27 +904,43 @@ radLoad();
 /* Contatos, ligações e mensagens ficam no aparelho: nada disto vai para a rede. As mensagens ficam só na memória (as últimas 20). */
 var callSt={state:'idle',name:'',number:''},callCtx=null,waMsgs=[],nowPlay=null,dialT=null,voiceBusy=false,waT=null;
 const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
-const GORE=/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:me|para|pra|pro|ate|até|ao|a|o))* (.+)$/;
+const GORE=/^(?:(?:eu )?(?:quero|queria|preciso) )?(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega|rota)(?: (?:me|para|pra|pro|ate|até|ao|a|o))* (.+)$/;
+const GOEMPTY=/^(?:(?:eu )?(?:quero|queria|preciso) )?(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:me|para|pra|pro|ate|até|ao|a|o))*$/;
 const CALLRE=/^(?:por favor )?(?:ligar|ligue|liga|chamar|chama|telefonar|telefona)(?: (?:para|pra|pro|ao|a|o))* (.+)$/;
+/* a ordem importa: "parar gravação" não é "parar a música", "não atender" não é "atender", "liga a música" não é ligação, "quanto tempo falta" não é clima.
+   Toda palavra daqui tem de estar no VBASE (vocabulário do assistente sempre ligado), senão o Vosk nunca a escreve: t26 confere. */
 function parseCmd(t){const s=normTxt(t);if(!s)return null;
   if(/\b(estou bem|to bem|tudo bem)\b/.test(s))return {a:'none'};
-  if(/\b(atender|atende|atenda|atendo|atendi)\b/.test(s))return {a:'answer'};
-  if(/\b(rota|navegacao)\b/.test(s)&&/\b(cancelar|cancela|parar|para|encerrar|encerra|sair|terminar|termina)\b/.test(s))return {a:'stopnav'};
+  if(/\bnao (atender|atende|atenda)\b/.test(s))return {a:'end'};
+  if(/\b(atender|atende|atenda|atendo|atendi|aceitar|aceita)\b/.test(s))return {a:'answer'};
+  if(/\b(rota|navegacao)\b/.test(s)&&/\b(cancelar|cancela|parar|para|pare|encerrar|encerra|sair|terminar|termina|desligar|desliga)\b/.test(s))return {a:'stopnav'};
+  if(/\b(gravar|grava|gravacao|gravando)\b/.test(s))return {a:'rec',on:!/\b(parar|para|pare|pausar|pausa|encerrar|encerra|terminar|termina|desligar|desliga)\b/.test(s)};
   if(/\b(recusar|recusa|recuse|rejeitar|rejeita|desligar|desliga|desligue|encerrar|encerra)\b/.test(s))return {a:'end'};
+  if(/\b(ligar|liga|ligue)(?: (?:a|o))? (musica|som|spotify|radio)\b/.test(s))return {a:'play'};
   const raw=String(t).toLowerCase().replace(/[.!?,]+/g,' ').replace(/\s+/g,' ').trim(),m=CALLRE.exec(raw)||CALLRE.exec(s);if(m)return {a:'call',who:m[1].trim().slice(0,60)};
-  const g=GORE.exec(raw)||GORE.exec(s);if(g)return {a:'go',where:g[1].trim().slice(0,80)};if(/^(?:me )?(?:ir|vamos|leva|leve|levar|navegar|navega)(?: (?:para|pra|pro|ate|até|ao|a|o))*$/.test(s))return {a:'go',where:''};
-  if(/\b(clima|tempo|temperatura|previsao|chuva)\b/.test(s))return {a:'wx'};
+  const g=GORE.exec(raw)||GORE.exec(s);if(g&&!/^(?:para|pra|pro|ate|ao|a|o)$/.test(g[1].trim()))return {a:'go',where:g[1].trim().slice(0,80)};if(GOEMPTY.test(s))return {a:'go',where:''};
+  if(/\bonde (?:eu )?(estou|estamos|to)\b|\blocalizacao\b/.test(s))return {a:'where'};
+  if((/\b(falta|faltam|chegada|chego|chegar|chegamos|distancia)\b|\bquanto tempo\b/.test(s))&&!/\b(chuva|chover|chove)\b/.test(s))return {a:'eta'};
+  if(/\b(repetir|repete|repita)\b|\boutra vez\b|\bde novo\b/.test(s))return {a:'repeat'};
+  if(/\b(velocidade|limite)\b/.test(s))return {a:'speed'};
+  if(/\b(hora|horas)\b/.test(s))return {a:'time'};
+  if(/\b(ajuda|comandos)\b|\bo que (?:eu )?posso\b/.test(s))return {a:'help'};
+  if(/\b(aproximar|aproxima|aproxime|ampliar|amplia)\b|\bmais zoom\b|\bzoom mais\b|\b(aumentar|aumenta)(?: o)? zoom\b/.test(s))return {a:'zin'};
+  if(/\b(afastar|afasta|afaste)\b|\bmenos zoom\b|\bzoom menos\b|\b(diminuir|diminui)(?: o)? zoom\b/.test(s))return {a:'zout'};
+  if(/\b(destravar|destrava|desbloquear|desbloqueia)\b/.test(s))return {a:'lock',on:false};
+  if(/\b(travar|trava|bloquear|bloqueia)\b/.test(s))return {a:'lock',on:true};
+  if(/\b(clima|tempo|temperatura|previsao|chuva|chover|chove)\b/.test(s))return {a:'wx'};
   if(/\babasteci\b/.test(s))return {a:'filled'};
   if(/\bautonomia\b/.test(s))return {a:'range'};
   if(/\b(posto|gasolina|combustivel|abastecer)\b/.test(s))return {a:'fuel'};
   if(/\bmarcar\b/.test(s)&&/\bradar\b/.test(s))return {a:'radar'};
-  if(/\b(pausar|pausa|pause|parar|para a musica)\b/.test(s))return {a:'pause'};
-  if(/\b(proxima|proximo|pular|pula|avancar|avanca|trocar|troca|troque|mudar|muda|mude)\b/.test(s))return {a:'next'};
+  if(/\b(pausar|pausa|pause|parar|pare)\b|\bpara a musica\b/.test(s))return {a:'pause'};
+  if(/\b(proxima|proximo|pular|pula|avancar|avanca|passar|passa|outra|trocar|troca|troque|mudar|muda|mude)\b/.test(s))return {a:'next'};
   if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
-  if(/\b(aumentar|aumenta|aumente|mais alto|sobe)\b/.test(s))return {a:'volup'};
-  if(/\b(abaixar|abaixa|abaixe|diminuir|diminui|diminua|mais baixo|baixar)\b/.test(s))return {a:'voldown'};
+  if(/\b(aumentar|aumenta|aumente|subir|sobe)\b|\bmais (alto|volume|som)\b|\bvolume mais\b/.test(s))return {a:'volup'};
+  if(/\b(abaixar|abaixa|abaixe|baixar|baixa|baixe|diminuir|diminui|diminua|descer|desce)\b|\bmais baixo\b|\bmenos (volume|som)\b|\bvolume menos\b/.test(s))return {a:'voldown'};
   if(/\b(ler|leia|le|mensagem|mensagens|whatsapp|zap)\b/.test(s))return {a:'read'};
-  if(/\b(tocar|toca|toque|play|continuar|continua|spotify|musica)\b/.test(s))return {a:'play'};
+  if(/\b(tocar|toca|toque|play|continuar|continua|spotify|musica|radio)\b/.test(s))return {a:'play'};
   if(/\b(silencio|cancelar|cancela|nada|esquece)\b/.test(s))return {a:'none'};
   return null}
 const nat=(fn,o)=>{if(!NATIVE)return Promise.reject(new Error('só no app (APK)'));try{return NP.nat[fn](o||{})}catch(e){return Promise.reject(e)}};
@@ -976,7 +992,35 @@ async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&(c.a==='none'
     case 'filled':return fillUp();
     case 'range':{const r=rangeKm();say(r==null?'Autonomia não configurada':'Autonomia de '+Math.max(0,Math.round(r))+' quilômetros');return}
     case 'radar':return radMarkVoice();
+    case 'where':return whereSay();
+    case 'eta':return etaSay();
+    case 'repeat':return repeatSay();
+    case 'speed':{if(!fix){say('Sem sinal do GPS');return}const v=Math.round(speedKmh),l=cfg.limOn&&limCur?limCur:0;say(v+' quilômetros por hora'+(l?'. Limite da via: '+l:''));return}
+    case 'time':{const d=new Date(),h=d.getHours(),mi=d.getMinutes();say((h===0?'É meia-noite':h===1?'É uma hora':'São '+h+' horas')+(mi?' e '+mi+(mi===1?' minuto':' minutos'):''));return}
+    case 'zin':map.zoomIn();return;
+    case 'zout':map.zoomOut();return;
+    case 'lock':if(locked!==c.on)toggleLock();say(c.on?'Tela travada':'Tela destravada');return;
+    case 'rec':if(recording!==c.on)$('#bRec').click();say(c.on?'Gravando a trilha':'Gravação pausada');return;
+    case 'help':say(HELP,true);return;
     default:return}}
+const HELP='Diga Trilha e o comando. Por exemplo: ir para Ouro Preto, quanto falta, repetir, onde estou, velocidade, que horas são, '+
+  'próxima música, pausar, aumentar volume, ligar para Maria, atender, recusar, ler mensagens, clima, posto, autonomia, marcar radar, aproximar, afastar, travar tela, gravar trilha.';
+/* ETA e distância que faltam, como no cartão da rota */
+function etaSay(){if(!nav){say('Nenhuma rota');return}const rt=nav.rt,q=nav.q;if(!nav.joined||!q){say('Vá até o início da rota. A rota tem '+spokenDist(rt.len));return}
+  const remain=Math.max(0,rt.len-q.along),secs=rt.time*remain/Math.max(1,rt.len),eta=new Date(Date.now()+secs*1000);
+  say('Faltam '+spokenDist(remain)+', cerca de '+sayMin(secs)+'. Chegada às '+eta.getHours()+' e '+String(eta.getMinutes()).padStart(2,'0'))}
+/* repete a próxima manobra (com a distância de agora) ou, fora da rota, a última coisa falada */
+function repeatSay(){if(nav&&nav.joined&&nav.q&&nav.mi>0){const m=nav.rt.man[nav.mi];say('Em '+spokenDist(Math.max(0,m.along-nav.q.along))+', '+lc1(m.alert),true);return}
+  const t=spoken.slice().reverse().find(x=>x&&!/^(Não entendi|Diga Trilha)/.test(x));say(t||'Nada para repetir',true)}
+/* "onde estou": rua e cidade pelo mapa offline (sem internet) */
+async function whereSay(){if(!fix){say('Sem sinal do GPS');return}
+  if(!offPM||!offH){say('Sem o mapa offline não sei o nome do lugar. Baixe o mapa em Ajustes');return}
+  let L=[];try{L=await nearNames(fix)}catch(e){}
+  let st=null,pl=null;const places=new Set(Object.values(PLK));
+  for(const [name,lat,lon,lbl] of L){const d=hav(fix,{lat,lon});if((lbl==='Rua'||lbl==='Estrada/trilha')&&d<=120&&(!st||d<st.d))st={name,d};
+    if(places.has(lbl)&&lbl!=='Bairro'&&(!pl||d<pl.d))pl={name,d}}
+  if(!st&&!pl){say('Não achei o nome deste lugar no mapa');return}
+  say((st?'Você está na '+st.name:'Você está')+(pl?(pl.d<=2500?', em ':', a '+spokenDist(pl.d)+' de ')+pl.name:''))}
 function readMsgs(){const m=waMsgs.slice(0,3);if(!m.length){say('Nenhuma mensagem nova');return}say(m.map(x=>'Mensagem de '+x.title+': '+x.text.slice(0,200)).join('. '),true)}
 async function voiceCmd(fromCall){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}
   if(voiceLive()){if(fromCall)return;vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
@@ -1032,7 +1076,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='abasteci autonomia estou bem tudo posto gasolina combustível abastecer marcar radar ir vamos leva navegar rota até parar encerrar sair navegação clima tempo temperatura previsão chuva trilha atender atende atenda recusar recusa rejeitar desligar desliga desligue encerrar ligar liga ligue chamar telefonar para pra pro tocar toca toque continuar pausar pausa parar próxima próximo pular anterior voltar volta aumentar aumenta abaixar abaixa diminuir mais alto baixo volume música som ler leia mensagens mensagem whatsapp zap cancelar cancela silêncio a o ao'.split(' ');
+const VBASE='trilha a o ao de que para pra pro por favor eu me não quero queria preciso estou bem tudo tô atender atende atenda atendo atendi aceitar aceita recusar recusa recuse rejeitar rejeita desligar desliga desligue encerrar encerra terminar termina sair parar pare pausar pausa pause ligar liga ligue chamar chama telefonar telefona ir vamos leva leve levar navegar navega rota navegação até onde estamos localização falta faltam chegada chego chegar chegamos distância quanto tempo repetir repete repita outra vez novo velocidade limite hora horas ajuda comandos posso aproximar aproxima aproxime ampliar amplia afastar afasta afaste zoom mais menos travar trava destravar destrava bloquear bloqueia desbloquear desbloqueia gravar grava gravação gravando clima temperatura previsão chuva chover chove abasteci autonomia posto gasolina combustível abastecer marcar radar tocar toca toque play continuar continua spotify música som rádio próxima próximo pular pula avançar avança passar passa trocar troca troque mudar muda mude anterior voltar volta aumentar aumenta aumente subir sobe alto abaixar abaixa abaixe baixar baixa baixe diminuir diminui diminua descer desce baixo volume ler leia lê mensagem mensagens whatsapp zap silêncio cancelar cancela nada esquece'.split(' ');
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
 function voiceVocab(){const w=new Set(VBASE);const add=n=>String(n||'').toLowerCase().split(/[^\p{L}]+/u).forEach(x=>{if(x.length>=2&&x.length<=20&&w.size<800)w.add(x)});
   getFavs().forEach(f=>add(f.name));(contactsAll||[]).forEach(c=>add(c.name));return [...w]}
@@ -1044,14 +1088,17 @@ function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off']
   $('#bVoice').classList.toggle('live',voiceSt==='on');$('#bVoice span').textContent=voiceSt==='on'?(o.msg==='fone'?'Ouvindo (fone)':'Ouvindo'):voiceSt==='paused'?'Voz (pausa)':'Voz';
   if(voiceSt==='error')toast('Assistente de voz: '+String(o.msg||'erro').slice(0,80),5000)}
 /* o que o assistente ouviu: só age com "trilha" na frase, ou logo depois de armado (botão Voz / "trilha" sozinho), ou atender/recusar com a ligação tocando */
-function onHeard(o){const raw=String((o&&o.text)||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();if(!raw)return;
+function onHeard(o){const cl=t=>String(t||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+  const raw=cl(o&&o.text);if(!raw)return;
   const i=raw.search(/\btrilha\b/),ringing=callSt.state==='ringing',armed=Date.now()<vArmedT;let rest;
   if(i>=0)rest=raw.slice(i+6).trim();else if(armed||ringing||(sos&&sos.phase==='count'))rest=raw;else return;
   if(!rest){vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
-  const c=parseCmd(rest);
-  if(!c){if(i>=0||armed)say('Não entendi');return}
+  /* a hipótese mais provável primeiro; as outras (o Vosk manda até 3) só valem se ela não for um comando */
+  let c=parseCmd(rest),heard=rest;
+  if(!c)for(const a of (Array.isArray(o&&o.alts)?o.alts:[]).slice(0,3)){const t=cl(a),k=t.search(/\btrilha\b/),r=k>=0?t.slice(k+6).trim():t;if(!r||r===rest)continue;c=parseCmd(r);if(c){heard=r;break}}
+  if(!c){if(i>=0||armed)say(/^(?:(?:de|a|o|ao|e|que|para|pra|pro|por|eu|me)(?: |$))+$/.test(rest)?'Não entendi':'Não entendi: '+rest.slice(0,40));return}
   if(i<0&&!armed&&ringing&&c.a!=='answer'&&c.a!=='end')return;
-  vArmedT=0;toast('🎤 '+rest.slice(0,60),2500);runCmd(c)}
+  vArmedT=0;toast('🎤 '+heard.slice(0,60),2500);runCmd(c)}
 async function askName(){say('Para quem?',true);await new Promise(r=>setTimeout(r,1300));
   try{const r=await nat('listen',{ms:6000}),t=((r&&r.texts)||[])[0];if(t)return callByName(String(t).slice(0,60));say('Não entendi o nome')}catch(e){say('Não entendi o nome')}}
 async function loadContacts(manual){if(!NATIVE)return;if(manual)toast('Lendo a agenda…',3000);

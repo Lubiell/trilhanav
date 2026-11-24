@@ -8,6 +8,8 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 **v2.7.2:** a pedido do dono ("remover o controle de guidão, ele não é usado") saiu o controle de guidão: teclas configuráveis nos Ajustes (`ACTIONS`/`DEFKEYS`/`renderKeys`), atalhos de teclado (=, −, Tab, L), "trocar tela" (`nextPane`) e a tecla que cancelava o SOS (cancela com "Estou bem" ou "Trilha, cancelar"). O `tn_keys` é apagado ao abrir; o backup de ajustes não leva mais `keys` (um backup antigo continua aceito, as teclas são ignoradas). A trava de toque (cadeado) e os botões de música ficam.
 
+**v2.7.2 (voz):** a pedido do dono ("melhore a recepção do comando de voz, colocando comandos de voz"). O assistente sempre ligado só reconhece as palavras do `VBASE` (gramática do Vosk) e **30 palavras que o `parseCmd` entendia não estavam lá** (ex.: "trocar": "trocar música" virava "tocar"). Agora o `VBASE` cobre todo o `parseCmd` (o `t26` confere). Mais jeitos de falar ("mais volume", "baixa o som", "outra música", "liga a música", "não atender", "quero ir para…") e comandos novos: onde estou (`whereSay`, rua e cidade pelo mapa offline), quanto falta (`etaSay`), repetir (`repeatSay`), velocidade/limite, que horas são, aproximar/afastar (zoom), travar/destravar tela, gravar/parar gravação, ajuda (`HELP`). No Vosk (`TrilhaVoiceService`): até 3 hipóteses (`setMaxAlternatives`; o app só tenta as outras se a principal passou pela regra do "trilha" e não virou comando) e no máximo 8 s por frase (`MAX_SEC`, `getFinalResult`: com vento o Vosk não acha o silêncio do fim da frase). "Não entendi: <o que ouviu>".
+
 **v2.7.1:** primeiro retorno do celular do dono na 2.6.3: o download do mapa de MG parava com "Download interrompido: An operation that depends on state cached in an interface object was made but the state had changed since it was read from disk" (`NotReadableError`): reler a parte logo depois de gravar falha no Android dele. Agora o SHA-256 é conferido nos bytes que chegaram pela rede (sem reler o arquivo) e o `PartsSource` refaz a leitura com um `File` novo (`handles`, `staleFile`). `t25` reproduz o erro. E a 2.7.0 não instalou por cima da 2.6.3 ("conflito com um pacote já existente": chave diferente). **A 2.7.1 é a primeira com a chave fixa** (certificado SHA-256 `c7654768…5da8dd1`): o dono ainda precisa desinstalar a 2.6.3 uma vez; daí em diante as atualizações instalam por cima.
 
 **v2.7.0 (PR #3):** a pedido do dono ("faça as 7 melhorias e retire A–F"):
@@ -76,6 +78,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Open-Meteo** limita por IP por dia (daqui responde 429); por isso o MET Norway de reserva.
 - **Plugin de GPS em segundo plano** (`@capacitor-community/background-geolocation` 1.3.1): "Service not running." antes de ligar, `NOT_AUTHORIZED` com localização desligada, erros silenciosos; o app tenta de novo e usa o GPS do WebView de reserva (`t17`). O `startGPS()` fica no início do app (antes ficava no fim da restauração do GPX; ao tirar o rali ele sumiu e o GPS não ligava).
 - **Vosk sem palavra de ativação** transforma conversa em comando: por isso "trilha"; o assistente pausa enquanto o app fala.
+- **Gramática do Vosk**: palavra fora do `VBASE` nunca sai do reconhecimento (vira a palavra parecida que está lá, ou `[unk]`). Toda palavra nova no `parseCmd` vai também para o `VBASE`, com acento (o `t26` falha se faltar). Nome de lugar não está na gramática: "trilha, ir para…" pergunta "Para onde?" e usa a escuta do Google.
 - **Diálogo modal + tela de ligação**: `showModal()` deixa o resto inerte; a `#callBox` fecha os diálogos abertos.
 - **Android manda o estado do telefone duas vezes** (com e sem número).
 - **Microfone em segundo plano** só com serviço em primeiro plano do tipo microfone (o Vosk tem; a escuta do Google não).
@@ -102,13 +105,13 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25; do python3 $t.py; done
+cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26; do python3 $t.py; done
 python3 fixtures.py --clean
 ```
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler.
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz (vocabulário do Vosk × `parseCmd`, frases, comandos novos, hipóteses alternativas).
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 

@@ -20,9 +20,12 @@ import android.os.Looper;
 
 import androidx.core.app.NotificationCompat;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.vosk.Model;
 import org.vosk.Recognizer;
@@ -40,13 +43,17 @@ import org.vosk.android.StorageService;
  */
 public class TrilhaVoiceService extends Service {
     public interface Sink {
-        void onHeard(String text);
+        /** text = o mais provável; alts = até 3 hipóteses, a mais provável primeiro */
+        void onHeard(String text, List<String> alts);
         void onVoiceState(String state, String msg);
     }
 
     static volatile Sink sink;
     static volatile String grammar = "[\"trilha\", \"[unk]\"]";
     static volatile boolean useBt = false;
+    /** com vento ou motor o Vosk quase não acha o silêncio do fim da frase: a frase fecha quando o que foi ouvido para de mudar
+     *  por STILL_MS, e no máximo MAX_SEC depois de começar a ouvir alguma coisa (silêncio e ruído sem palavra não contam) */
+    static final int MAX_SEC = 8, STILL_MS = 1200;
     private static TrilhaVoiceService self;
     private static final Set<String> holds = new HashSet<>();
     private static final Handler main = new Handler(Looper.getMainLooper());
@@ -212,6 +219,8 @@ public class TrilhaVoiceService extends Service {
             synchronized (recLock) {
                 if (rec != null) rec.close();
                 rec = new Recognizer(model, 16000.0f, grammar);
+                // até 3 hipóteses: se a mais provável não for um comando, o app tenta as outras
+                rec.setMaxAlternatives(3);
             }
             paused = !holds.isEmpty();
             if (!holds.contains("call") && !holds.contains("listen")) startLoop();
@@ -244,12 +253,28 @@ public class TrilhaVoiceService extends Service {
                 if (ar.getState() != AudioRecord.STATE_INITIALIZED) { state("error", "microfone não abriu"); return; }
                 ar.startRecording();
                 short[] buf = new short[2048];
+                long fed = 0, still = 0;
+                String lastP = "";
+                int tick = 0;
                 while (running) {
                     int n = ar.read(buf, 0, buf.length);
-                    if (n <= 0 || paused) continue;
+                    if (n <= 0 || paused) { fed = 0; still = 0; lastP = ""; continue; }
                     String res = null;
                     synchronized (recLock) {
-                        if (rec != null && rec.acceptWaveForm(buf, n)) res = rec.getResult();
+                        if (rec != null) {
+                            if (rec.acceptWaveForm(buf, n)) { res = rec.getResult(); fed = 0; still = 0; lastP = ""; }
+                            else {
+                                if (!lastP.isEmpty()) { fed += n; still += n; }
+                                if (++tick % 4 == 0) {   // ~0,5 s
+                                    String p = partialText(rec.getPartialResult());
+                                    if (p.isEmpty()) { fed = 0; still = 0; lastP = ""; }
+                                    else if (!p.equals(lastP)) { lastP = p; still = 0; }
+                                }
+                                if (!lastP.isEmpty() && (still >= 16L * STILL_MS || fed >= 16000L * MAX_SEC)) {
+                                    res = rec.getFinalResult(); fed = 0; still = 0; lastP = "";
+                                }
+                            }
+                        }
                     }
                     if (res != null) deliver(res);
                 }
@@ -272,12 +297,35 @@ public class TrilhaVoiceService extends Service {
         if (t != null) { try { t.join(1500); } catch (InterruptedException ignored) { } }
     }
 
+    /** texto da hipótese parcial do Vosk, sem os [unk] */
+    private static String partialText(String json) {
+        try {
+            return new JSONObject(json).optString("partial", "").replace("[unk]", " ").trim();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     private void deliver(String json) {
         try {
-            String t = new JSONObject(json).optString("text", "").trim();
-            if (t.isEmpty() || t.equals("[unk]")) return;
+            JSONObject o = new JSONObject(json);
+            List<String> alts = new ArrayList<>();
+            JSONArray a = o.optJSONArray("alternatives");
+            if (a != null) {
+                for (int k = 0; k < a.length() && alts.size() < 3; k++) {
+                    JSONObject h = a.optJSONObject(k);
+                    String t = h == null ? "" : h.optString("text", "").trim();
+                    if (!t.isEmpty() && !t.equals("[unk]") && !alts.contains(t)) alts.add(t);
+                }
+            } else {
+                String t = o.optString("text", "").trim();
+                if (!t.isEmpty() && !t.equals("[unk]")) alts.add(t);
+            }
+            if (alts.isEmpty()) return;
+            final String best = alts.get(0);
+            final List<String> all = alts;
             Sink k = sink;
-            if (k != null) main.post(() -> k.onHeard(t));
+            if (k != null) main.post(() -> k.onHeard(best, all));
         } catch (Exception ignored) {
         }
     }
