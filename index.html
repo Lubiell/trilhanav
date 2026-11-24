@@ -1349,11 +1349,13 @@ async function appExit(){if(!NATIVE){toast('No navegador, feche a aba',3000);ret
   const ok=await ask({title:'Sair do TrilhaNav?',msg:(nav?'A rota em andamento será encerrada. ':'')+(has?'A trilha gravada ('+rec.length+' pontos) fica guardada em Arquivos → Gravações. ':'')+
     'O GPS, o assistente de voz e os avisos param até você abrir o app de novo.',ok:'Sair',danger:true});
   if(!ok)return;
-  if(has)try{const {gpx,base}=recGpx();await fsWrite(['gpx','Gravações'],base+'.gpx',gpx)}catch(e){}
+  /* a trilha só está na memória: se não der para guardar (cota, erro do armazenamento do Android), não fecha */
+  if(has)for(let k=0;k<2;k++)try{const {gpx,base}=recGpx();await fsWrite(['gpx','Gravações'],base+'.gpx',gpx);break}
+    catch(e){if(k){toast('Não consegui guardar a trilha gravada ('+errTxt(e)+'). O app continua aberto: exporte a gravação antes de sair.',8000);return}await new Promise(r=>setTimeout(r,400))}
   recording=false;if(nav)navStop();
   try{await nat('voiceStop')}catch(e){}
   stopGPS();
-  nat('exitApp').catch(e=>toast('Não consegui fechar o app: '+errTxt(e),5000))}
+  nat('exitApp').catch(e=>toast('Não consegui fechar o app ('+errTxt(e)+'). O GPS e o assistente de voz já pararam; feche pelo Android.',6000))}
 $('#bExit').onclick=appExit;
 /* no navegador o arquivo é baixado; no APK o WebView não baixa nada, então abre a tela de compartilhar do Android (salvar em Arquivos, Drive, WhatsApp…) */
 function download(name,txt,type){const blob=new Blob([txt],{type});

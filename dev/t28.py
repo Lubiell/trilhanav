@@ -64,6 +64,14 @@ async def main():
         await pg.click('#askNo'); await pg.wait_for_timeout(300)
         check('Cancelar: nada para e o app continua', (await names())[n0:] == [] and await pg.evaluate('!!TN.nav'), str((await names())[n0:]))
 
+        # ---------- não deu para guardar a trilha: avisa e não fecha ----------
+        await pg.evaluate("window.__gd=navigator.storage.getDirectory.bind(navigator.storage);navigator.storage.getDirectory=()=>Promise.reject(new Error('cota cheia'));0")
+        await pg.evaluate("document.querySelector('#bExit').click()"); await pg.wait_for_timeout(300)
+        await pg.click('#askOk'); await pg.wait_for_timeout(1200)
+        tt = await pg.text_content('#toast')
+        check('falha ao guardar a trilha: avisa e o app não fecha (nada parado, rota continua)', 'Não consegui guardar a trilha' in tt and 'cota cheia' in tt and (await names())[n0:] == [] and await pg.evaluate('!!TN.nav'), tt + ' ' + str((await names())[n0:]))
+        await pg.evaluate("navigator.storage.getDirectory=window.__gd;0")
+
         # ---------- Sair ----------
         await pg.evaluate("document.querySelector('#bExit').click()"); await pg.wait_for_timeout(300)
         await pg.click('#askOk'); await pg.wait_for_timeout(800)
