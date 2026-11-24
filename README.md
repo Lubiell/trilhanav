@@ -4,18 +4,20 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.7.1.apk`** (atual) | 2.7.1 (versionCode 20701) | `main` `d95bd16` (merge do PR #5), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
+| **`trilhanav-2.7.2.apk`** (atual) | 2.7.2 (versionCode 20702) | commit `c0653f6` da branch `claude/loving-lovelace-yzb96l` (PR #8, mesmo código do merge `aa47436`), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
+| `trilhanav-2.7.1.apk` | 2.7.1 (versionCode 20701) | `main` `d95bd16` (merge do PR #5), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
 | `trilhanav-2.6.3.apk` | 2.6.3 (versionCode 20603) | commit `acec126` da branch `claude/loving-lovelace-yzb96l` (PR #3), workflow APK | 56 MB (modelo de voz) |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.7.1):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.1.apk
+**Baixar no celular (2.7.2):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.2.apk
 
 (A 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.7.2: `89b65dfbd9b2e50f27a2f478409be3c44e3a75e5813f5f34a8db1ae53bc0604c`
 - 2.7.1: `aea6835fa668f52e6c75378a0815fa53edca8f8f215a251ac8ad32ef8447ee54`
 - 2.7.0: `e75a581f2fc79dba55a8e6df43f91eb2775bd7215a0626b0c8cde3fe05f0167c`
 - 2.6.3: `8a7d786728f1d2dc5ac54dcea0686ac6ce17e56dbf2bf85b4e2cc72849fb8482`
@@ -29,6 +31,14 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.7.2
+
+- **Mesma chave da 2.7.1**: quem já tem a 2.7.1 atualiza por cima (o app avisa sozinho). Quem ainda está na 2.6.3 precisa desinstalar uma vez.
+- **Comandos de voz** (diga "Trilha" e o comando): o assistente sempre ligado não conhecia 30 palavras que o app entende, como "trocar" ("trocar música" virava "tocar"). Agora entende todas, e mais jeitos de falar ("mais volume", "baixa o som", "outra música", "liga a música", "não atender", "quero ir para…").
+- **Comandos novos**: "onde estou" (rua e cidade pelo mapa offline), "quanto falta" (distância, tempo e hora de chegada), "repetir", "velocidade", "que horas são", "aproximar"/"afastar", "travar tela"/"destravar", "gravar trilha"/"parar gravação", "ajuda".
+- **Com vento ou motor**: a frase fecha quando o que foi ouvido para de mudar (1,2 s) ou em até 8 s, e o app tenta a 2ª e a 3ª hipótese do reconhecimento quando a 1ª não é um comando.
+- **Saiu o controle de guidão** (teclas configuráveis nos Ajustes), a pedido do dono.
 
 ## O que mudou na 2.7.1
 

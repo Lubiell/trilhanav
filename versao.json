@@ -1,7 +1,7 @@
 {
- "version": "2.7.1",
- "code": 20701,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.1.apk",
- "sha256": "aea6835fa668f52e6c75378a0815fa53edca8f8f215a251ac8ad32ef8447ee54",
- "notes": "Corrige o download do mapa de MG que parava com \"Download interrompido… state had changed since it was read from disk\". Chave de assinatura fixa: desta vez desinstale a versão anterior antes; da 2.7.1 em diante as atualizações instalam por cima."
+ "version": "2.7.2",
+ "code": 20702,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.2.apk",
+ "sha256": "89b65dfbd9b2e50f27a2f478409be3c44e3a75e5813f5f34a8db1ae53bc0604c",
+ "notes": "Comandos de voz: \"Trilha\" + trocar música, quanto falta, repetir, onde estou, velocidade, que horas são, aproximar, afastar, travar tela, gravar trilha, ajuda; o assistente entende melhor com vento. Saiu o controle de guidão."
 }
