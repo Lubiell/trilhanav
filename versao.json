@@ -1,7 +1,7 @@
 {
- "version": "2.7.4",
- "code": 20704,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.4.apk",
- "sha256": "dce47849ba71d9fb0302b59874f317d3ee67a72856e4fc8543d0d59a4ca0edca",
- "notes": "Comandos de voz só para a música (tocar, pausar, próxima, anterior, volume); o \"cancelar\" do aviso de queda continua. O \"ir para\" por voz saiu: use o botão Ir para."
+ "version": "2.7.5",
+ "code": 20705,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.5.apk",
+ "sha256": "9ebb50c17482c4359a290545e3aa4f54186bab2506c589e27fcf43658d0166f9",
+ "notes": "Voz da música mais certeira: uma palavra por comando (tocar, pausar, próxima, anterior, aumentar, abaixar). Dois bipes quando entende, um grave quando não entende. Diagnóstico da voz em Telefone."
 }

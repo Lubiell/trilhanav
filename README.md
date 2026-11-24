@@ -4,20 +4,21 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.7.4.apk`** (atual) | 2.7.4 (versionCode 20704) | `main` `3f3fa3a` (merge do PR #10), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
+| **`trilhanav-2.7.5.apk`** (atual) | 2.7.5 (versionCode 20705) | `main` `f0ce7f9` (merge do PR #12), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
+| `trilhanav-2.7.4.apk` | 2.7.4 (versionCode 20704) | `main` `3f3fa3a` (merge do PR #10), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
 | `trilhanav-2.7.3.apk` | 2.7.3 (versionCode 20703) | commit `8e039ca` da branch `claude/loving-lovelace-yzb96l` (PR #9), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
-| `trilhanav-2.7.2.apk` | 2.7.2 (versionCode 20702) | commit `c0653f6` da branch `claude/loving-lovelace-yzb96l` (PR #8, mesmo código do merge `aa47436`), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
 | `trilhanav-2.6.3.apk` | 2.6.3 (versionCode 20603) | commit `acec126` da branch `claude/loving-lovelace-yzb96l` (PR #3), workflow APK | 56 MB (modelo de voz) |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.7.4):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.4.apk
+**Baixar no celular (2.7.5):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.5.apk
 
-(A 2.7.1, a 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
+(A 2.7.2, a 2.7.1, a 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.7.5: `9ebb50c17482c4359a290545e3aa4f54186bab2506c589e27fcf43658d0166f9`
 - 2.7.4: `dce47849ba71d9fb0302b59874f317d3ee67a72856e4fc8543d0d59a4ca0edca`
 - 2.7.3: `75a430f68484cdb3949ea7d2a004f851c2bb39cd4dafb4eb9e0f2261e5bbc40d`
 - 2.7.2: `89b65dfbd9b2e50f27a2f478409be3c44e3a75e5813f5f34a8db1ae53bc0604c`
@@ -34,6 +35,14 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.7.5
+
+- **Mesma chave da 2.7.1 em diante**: atualiza por cima (o app avisa sozinho).
+- **Uma palavra por comando de música**: "Trilha, tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume". Saíram as palavras que o vento confunde com outra ação ("troca"/"toca", "passa"/"pausa", "volta"/"toca"). "Voltar a tocar" agora toca.
+- **Bipes**: dois agudos quando o app entendeu o comando, um grave quando não entendeu.
+- **Diagnóstico da voz** (Telefone → Comandos de voz): as últimas 10 frases que o app ouviu e o que fez com cada uma. Se a voz falhar no capacete, mande um print dessa lista.
+- **Dica**: os botões de música do intercomunicador do capacete funcionam direto no Android; quem usa só os botões pode desligar o assistente sempre ligado.
 
 ## O que mudou na 2.7.4
 
