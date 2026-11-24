@@ -2,9 +2,11 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.5, 24/11/2026)
+## Estado (v2.7.6, 24/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
+
+**v2.7.6:** a pedido do dono ("colocar o botão sair, para fechar totalmente o aplicativo"): **"Sair do app"** na grade Mais (`#bExit`, ícone `i-power`; o "Sair" do cartão da rota continua sendo "encerrar a rota"). `appExit()` pergunta antes (cita a rota e a trilha gravada), guarda a gravação em `gpx/Gravações/` (`recGpx()`, o mesmo GPX do exportar), encerra a rota, `voiceStop`, `stopGPS()` e chama o nativo `exitApp` (`TrilhaNativePlugin`): para o `TrilhaVoiceService` e os outros serviços do app que estiverem rodando (`getRunningServices`, menos o `TrilhaNotifService`, que é do sistema), `finishAndRemoveTask()` e `killProcess`. Serviço parado com `stopService` não volta (o `START_STICKY` só reinicia serviço iniciado). O Voltar do Android continua mandando para segundo plano. No navegador o botão só avisa "feche a aba". `t28`. **O Java não roda nos testes** (só no celular).
 
 **v2.7.5:** o dono escolheu, das sugestões, "1,2,3,6,7":
 - **Diagnóstico da voz** (Telefone → Comandos de voz): as últimas 10 frases que o app ouviu (assistente ou botão Voz), com as hipóteses e o que fez ("comando: …", "não entendi", "ignorado: sem Trilha", "ignorado: nada que o app conheça"; `[unk]` aparece como "…"). Só na memória (`vLog`, `vLogAdd`, `renderVLog`); texto sempre por `esc()`. Serve para o dono mandar um print quando a voz falhar no capacete.
@@ -48,8 +50,8 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v22`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
-- `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin`, `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v23`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin` (`exitApp`: Sair do app), `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
 
@@ -76,6 +78,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 ## Pendências
 
 - **Testar em celular real** (prioridade): voz pelo capacete com música, foco de áudio, rota e busca offline numa estrada real (o mapa de MG tem `places`/`pois`/nomes de rua? conferido só no mapa de teste), GPS com a tela apagada, telefone/WhatsApp, SOS, atualização automática.
+- **Gravação de trilha só é guardada ao exportar ou ao "Sair do app"**: se o Android matar o app no meio da viagem, os pontos (só na memória, `rec`) se perdem. Guardar de tempos em tempos seria a correção (não pedida).
 - **Combinado para depois**: mandar a localização (por voz estava combinado, mas desde a 2.7.4 a voz é só música: perguntar ao dono), paradas no caminho no Ir para, histórico de viagens.
 - **Licença**: `leaflet-rotate` é GPL-3.0 (código aberto obrigatório); o repositório ainda não tem `LICENSE` próprio (decisão do dono).
 - **Origem compartilhada** (`lubiell.github.io`): só importa se o site voltar.
@@ -120,13 +123,13 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27; do python3 $t.py; done
+cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28; do python3 $t.py; done
 python3 fixtures.py --clean
 ```
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz só de música (vocabulário do Vosk × `parseCmd`, uma palavra por ação, frases de música, comandos e sinônimos que saíram não fazem nada, hipóteses alternativas, "cancelar" do aviso de queda, bipes, diagnóstico da voz), `t27` radares/lombadas de uma região inteira, avisos guardados da 2.7.3, postos pelo mapa offline.
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz só de música (vocabulário do Vosk × `parseCmd`, uma palavra por ação, frases de música, comandos e sinônimos que saíram não fazem nada, hipóteses alternativas, "cancelar" do aviso de queda, bipes, diagnóstico da voz), `t27` radares/lombadas de uma região inteira, avisos guardados da 2.7.3, postos pelo mapa offline, `t28` botão "Sair do app" (pergunta, guarda a gravação, para voz e GPS, `exitApp`).
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 
