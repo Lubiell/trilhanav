@@ -15,10 +15,10 @@ html = open('../index.html', encoding='utf-8').read()
 na = lambda t: unicodedata.normalize('NFD', t).encode('ascii', 'ignore').decode()
 vb = re.search(r"const VBASE='([^']*)'", html).group(1).split()
 vbn = {na(w) for w in vb}
-i = html.index('const GORE=/'); j = html.index('  return null}\n', html.index('function parseCmd(t)'))
+i = html.index('const POIK=') if 'const POIK=' in html else html.index('const GORE=/'); j = html.index('  return null}\n', html.index('function parseCmd(t)'))
 words = set()
-for lit in re.findall(r'/(\^?(?:\\.|[^/\n])+)/\.(?:test|exec)|=/(\^?(?:\\.|[^/\n])+)/;', html[i:j]):
-    body = re.sub(r'\\[a-zA-Z]', ' ', lit[0] or lit[1])
+for lit in re.findall(r'/(\^?(?:\\.|[^/\n])+)/\.(?:test|exec)|=/(\^?(?:\\.|[^/\n])+)/;|\[/((?:\\.|[^/\n])+)/,', html[i:j]):
+    body = re.sub(r'\\[a-zA-Z]', ' ', lit[0] or lit[1] or lit[2])
     words |= {w for w in re.findall(r'[a-zà-ú]+', body) if len(w) > 1}
 words -= {'test', 'exec'}
 falta = sorted(w for w in words if na(w) not in vbn)

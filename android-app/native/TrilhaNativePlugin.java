@@ -539,7 +539,7 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     private static String grammarOf(PluginCall call) {
         java.util.LinkedHashSet<String> w = new java.util.LinkedHashSet<>();
         JSArray a = call.getArray("words", new JSArray());
-        for (int i = 0; i < a.length() && w.size() < 800; i++) {
+        for (int i = 0; i < a.length() && w.size() < 3000; i++) {
             String s = a.optString(i, "").toLowerCase(Locale.ROOT).trim();
             if (s.matches("[\\p{L}]{1,20}")) w.add(s);
         }

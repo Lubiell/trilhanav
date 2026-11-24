@@ -2,9 +2,14 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.2, 23/11/2026)
+## Estado (v2.7.3, 24/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
+
+**v2.7.3:** a pedido do dono ("ir para Guidoval… com o GPS"; "abaixar todos os radares da área sem precisar passar por eles, avisos de desvios, buracos, blitz, postos…"):
+- **Cidades na gramática da voz:** o modelo Vosk pequeno só escreve palavras do vocabulário dele (99 mil; **metade dos 853 municípios de MG não está lá**, ex. Guidoval, Ubá, Muriaé). Na compilação do APK, `android-app/vocab.py` tira o vocabulário do `Gr.fst` (tabela de símbolos da OpenFst) para `assets/public/lib/vosk-words.txt`. O app (`vocabLoad`, `segWord`, `placeVocab`, `placeGrammar`) põe na gramática as cidades do índice offline a até 200 km (até 500), escrevendo as que faltam com pedaços que existem ("guido val", "u bá", "mu ria é"; pedaço solto "a"/"o" no começo não vale, porque some depois do "para") e `PALIAS` volta ao nome certo; cobre ~77% dos municípios de MG (o resto continua no "Para onde?" com a escuta do Google). Gramática até 3000 palavras (JS `voiceVocab` e Java `grammarOf`). **Não testado com o microfone**: a qualidade com os pedaços é [Provável].
+- **Radares e avisos:** tipos `RADK` (radar, lombada, perigo do OpenStreetMap; blitz, buraco, obra marcados por voz; a blitz vence em 4 h, buraco em 60 dias, obra em 30). Uma consulta Overpass só (`radQL`: `speed_camera` + `traffic_calming` + `hazard`) para o automático e para **"Baixar radares e lombadas de MG"** (`radBulk(MG_BOX,1)`: blocos de 1° com uma nova tentativa, pula o que tem <30 dias; uns 10–15 min). Medido em 24/11: o bloco de 2° em volta de BH dá **504** no `maps.mail.ru`; o de 1° (−20,−44,−19,−43) veio em 17 s com 266 radares e 1282 lombadas (218 KB). Mapa: radares antes das lombadas, e lombadas só no zoom 14+. Lombada só avisa acima de 25 km/h e com `cfg.lomb`. `radares.json` (`v:2`) guarda `[id,lat,lon,max,dir,k,exp]`; o da v2.7.2 (`v:1`, sem `k`) tem os pontos aceitos como radar, mas as áreas marcadas como baixadas são ignoradas (elas não tinham lombadas). Blitz e buraco em tempo real **não existem em base aberta** (o Waze não libera): por isso a marcação por voz ("Trilha, marcar blitz/buraco/obra/lombada/perigo", "apagar aviso").
+- **Postos e lugares sem internet:** `poiNear` lê os `pois` do mapa offline; "posto" e a tela de postos usam **primeiro o mapa offline** (sem esperar a internet em área sem sinal) e o Overpass só se o mapa não tiver nada. "Ir para o hospital"/"me leva no posto" (destino genérico) vão ao mais perto. Comandos novos: hospital, farmácia, restaurante, hotel/pousada, polícia, banco, mercado (`POIK` → `poiGo`: o mais perto a 8 km, senão 14 km, e já calcula a rota).
 
 **v2.7.2:** a pedido do dono ("remover o controle de guidão, ele não é usado") saiu o controle de guidão: teclas configuráveis nos Ajustes (`ACTIONS`/`DEFKEYS`/`renderKeys`), atalhos de teclado (=, −, Tab, L), "trocar tela" (`nextPane`) e a tecla que cancelava o SOS (cancela com "Estou bem" ou "Trilha, cancelar"). O `tn_keys` é apagado ao abrir; o backup de ajustes não leva mais `keys` (um backup antigo continua aceito, as teclas são ignoradas). A trava de toque (cadeado) e os botões de música ficam.
 
@@ -27,7 +32,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 | `main` | o código: v2.7.0 (merge do PR #3, `902a52e`, 23/11/2026; o PR #2 entrou junto) |
 | `gh-pages` | https://lubiell.github.io/trilhanav/: desde a v2.7.0 só uma página de download (lê o `versao.json` e mostra o link do APK mais novo) e um `sw.js` que apaga o app antigo (PWA) do navegador de quem já tinha aberto. O código dessa página não está no `main` (só no `gh-pages`) |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.7.1.apk` (atual, 55 MB, **chave fixa** `c7654768…`), 2.6.3, 2.0.1, 2.0.0; `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.1.apk, SHA-256 `aea6835fa668f52e6c75378a0815fa53edca8f8f215a251ac8ad32ef8447ee54` |
+| `apk` (órfão) | `trilhanav-2.7.3.apk` (atual, 56 MB, **chave fixa** `c7654768…`; traz `lib/vosk-words.txt`), 2.7.2 e 2.7.1 (mesma chave), 2.6.3, 2.0.1, 2.0.0; `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.3.apk, SHA-256 `75a430f68484cdb3949ea7d2a004f851c2bb39cd4dafb4eb9e0f2261e5bbc40d` |
 | `claude/loving-lovelace-yzb96l` | branch de trabalho das sessões do Claude (recomeçado do `main` depois de cada merge) |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (código via `git archive`) e a pasta **"TrilhaNav - chave do APK (NAO APAGAR)"**: `trilhanav_chave_apk.p12` (PKCS12, alias `trilhanav`, 30 anos) + `trilhanav_chave_apk_senha.txt`. Só ali; nunca no git nem no chat em claro |
 
@@ -35,8 +40,8 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v19`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
-- `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin`, `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v20`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin`, `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `vocab.py` (vocabulário do modelo de voz para o app); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
 
@@ -45,13 +50,13 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Mapa**: online (OSM/OpenTopoMap/Esri) e offline `.pmtiles` no OPFS (download do mapa de MG do branch `mapas`, retomável e com SHA-256, ou por arquivo em partes); gira com o rumo (`cfg.rot`/`cfg.navRot`, `map.setBearing(360 − rumo)`); bússola do aparelho parado/devagar, GPS acima de `compSpd`, ajuste aprendido pelo GPS.
 - **Ir para**: Photon + Valhalla (moto, pt-BR, até 3 alternativas) com rede; sem rede, busca e rota pelo mapa offline (acima). Cartão de manobra, voz curva a curva, recálculo, chegada, recentes/favoritos, "De" opcional, toque longo no mapa, "Seguir em linha reta". Aviso de privacidade antes do 1º pedido (`tn_netOk`).
 - **Voz e telefone (APK)**: TTS nativo que abaixa a música; assistente Vosk sempre ligado com a palavra "Trilha" (`TrilhaVoiceService`, microfone do capacete por SCO com `cfg.voiceBt`); atender/recusar/ligar, WhatsApp (mensagens e chamadas pela notificação), música atual e Spotify, "Trilha, ir para…", clima, postos, autonomia.
-- **Radares** (Overpass `maps.mail.ru`), **limite da via** (`maxspeed`), **clima** (Open-Meteo, reserva MET Norway), **postos**, **inclinação** (giroscópio × velocidade), **autonomia**, **SOS** (queda → SMS + ligação; padrão desligado).
+- **Radares, lombadas e avisos** (Overpass `maps.mail.ru`; MG inteiro de uma vez; blitz/buraco/obra marcados por voz), **limite da via** (`maxspeed`), **clima** (Open-Meteo, reserva MET Norway), **postos**, **inclinação** (giroscópio × velocidade), **autonomia**, **SOS** (queda → SMS + ligação; padrão desligado).
 - **Gravação** de trilha (GPX, com **notas e fotos**, exporta GPX ou ZIP), **Arquivos** (pastas no OPFS; ver GPX no mapa), **Painel** personalizável (`DASH`), tema dia/noite pelo sol, trava de toque (cadeado).
 
 ### Onde o app guarda coisas
 
 - `localStorage` (prefixo `tn_`): `cfg`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) e do controle de guidão (`keys`, até a v2.7.1) são apagadas ao abrir.
-- OPFS: `gpx/` (pastas; `gpx/Gravações/`), `notas/<sessão>/`, `mapa-dl/` (partes do mapa + `manifest.json`), `mapa.pmtiles`, `radares.json`, `busca.json` (índice de cidades da busca offline).
+- OPFS: `gpx/` (pastas; `gpx/Gravações/`), `notas/<sessão>/`, `mapa-dl/` (partes do mapa + `manifest.json`), `mapa.pmtiles`, `radares.json` (radares, lombadas e avisos), `busca.json` (índice de cidades da busca offline).
 
 ## Fluxo de trabalho e de release
 
@@ -78,6 +83,8 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Open-Meteo** limita por IP por dia (daqui responde 429); por isso o MET Norway de reserva.
 - **Plugin de GPS em segundo plano** (`@capacitor-community/background-geolocation` 1.3.1): "Service not running." antes de ligar, `NOT_AUTHORIZED` com localização desligada, erros silenciosos; o app tenta de novo e usa o GPS do WebView de reserva (`t17`). O `startGPS()` fica no início do app (antes ficava no fim da restauração do GPX; ao tirar o rali ele sumiu e o GPS não ligava).
 - **Vosk sem palavra de ativação** transforma conversa em comando: por isso "trilha"; o assistente pausa enquanto o app fala.
+- **Link do artefato do GitHub** (`download_workflow_run_artifact`) vale ~10 min: pedir e baixar na hora (com a sessão reiniciando entre as chamadas, ele venceu e veio um XML "AuthenticationFailed" de 544 bytes). Conferir o SHA-256 com o `digest` do artefato.
+- **Vocabulário do modelo de voz**: está só dentro do `Gr.fst` (sem `words.txt`); `vocab.py` lê a tabela de símbolos. Palavra da gramática fora dele o Vosk ignora calado.
 - **Gramática do Vosk**: palavra fora do `VBASE` nunca sai do reconhecimento (vira a palavra parecida que está lá, ou `[unk]`). Toda palavra nova no `parseCmd` vai também para o `VBASE`, com acento (o `t26` falha se faltar). Nome de lugar não está na gramática: "trilha, ir para…" pergunta "Para onde?" e usa a escuta do Google.
 - **Diálogo modal + tela de ligação**: `showModal()` deixa o resto inerte; a `#callBox` fecha os diálogos abertos.
 - **Android manda o estado do telefone duas vezes** (com e sem número).
@@ -105,13 +112,13 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26; do python3 $t.py; done
+cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27; do python3 $t.py; done
 python3 fixtures.py --clean
 ```
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz (vocabulário do Vosk × `parseCmd`, frases, comandos novos, hipóteses alternativas).
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz (vocabulário do Vosk × `parseCmd`, frases, comandos novos, hipóteses alternativas), `t27` cidades na gramática ("pe dra azul" → Pedra Azul), radares/lombadas de uma região inteira, avisos marcados por voz, postos e lugares pelo mapa offline.
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 
