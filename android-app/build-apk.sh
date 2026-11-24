@@ -45,8 +45,6 @@ if [ ! -f "$MA/uuid" ] || [ "$(cat "$MA/uuid")" != "$VSHA" ]; then
   mkdir -p "$MA"; TMPX="$(mktemp -d)"; unzip -q "$VZ" -d "$TMPX"; cp -r "$TMPX"/vosk-model-small-pt-0.3/. "$MA"/; rm -r -- "$TMPX"
   echo "$VSHA" > "$MA/uuid"   # o StorageService do Vosk só recopia o modelo quando o uuid muda
 fi
-# vocabulário do modelo para o app (cidades na gramática da voz: ver vocab.py)
-python3 vocab.py "$VZ" android/app/src/main/assets/public/lib/vosk-words.txt
 
 ( cd android && ./gradlew --no-daemon assembleDebug )
 VER="$(node -p "require('./package.json').version")"

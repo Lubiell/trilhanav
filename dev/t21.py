@@ -138,9 +138,9 @@ async def main():
         r = await pg.evaluate("Math.round(TN.rangeKm())")
         sp = (await spoken())[n0:]
         check('rodou ~161 km: autonomia ~39 km e aviso de reserva por voz', 36 <= r <= 42 and any(x.startswith('Reserva de combustível: faltam cerca de') for x in sp), f'{r} {sp[-2:]}')
-        check('"Trilha, autonomia" fala o que resta', await pg.evaluate("(()=>{TN.runCmd(TN.parseCmd('autonomia'));return TN.spoken.slice(-1)[0]})()") == f'Autonomia de {r} quilômetros')
-        await pg.evaluate("TN.runCmd(TN.parseCmd('abasteci'))")
-        check('"Trilha, abasteci" zera a contagem', await pg.evaluate("Math.round(TN.rangeKm())") == 200)
+        check('"autonomia" e "abasteci" por voz saíram (voz só para música)', await pg.evaluate("[TN.parseCmd('autonomia'),TN.parseCmd('abasteci')]") == [None, None])
+        await pg.evaluate("document.querySelector('#bFilled').click()")
+        check('botão "Abasteci" zera a contagem e fala a autonomia', await pg.evaluate("Math.round(TN.rangeKm())") == 200 and (await spoken())[-1] == 'Tanque cheio. Autonomia de 200 quilômetros')
 
         # ---------- painel personalizável ----------
         await pg.evaluate("document.querySelector('[data-pane=paneDash]').click()"); await pg.wait_for_timeout(200)

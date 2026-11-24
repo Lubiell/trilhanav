@@ -1,4 +1,4 @@
-"""v2.3: assistente de voz sempre ligado (Vosk no aparelho), agenda completa e diagnóstico do WhatsApp. Nativo simulado:
+"""v2.3: assistente de voz sempre ligado (Vosk no aparelho; só música desde a v2.7.4), agenda completa e diagnóstico do WhatsApp. Nativo simulado:
 o que se testa é o app (palavra de ativação "trilha", vocabulário, botão Voz, agenda, diagnóstico). O reconhecimento em si foi
 testado à parte com o mesmo modelo Vosk e voz sintética pt-BR (ver CLAUDE.md)."""
 import asyncio, sys
@@ -44,11 +44,11 @@ async def main():
         spoken = lambda: pg.evaluate('TN.spoken.slice()')
         heard = lambda t: pg.evaluate("(t)=>__emit('heard',{text:t})", t)
 
-        # ---------- liga sozinho, com a agenda no vocabulário ----------
+        # ---------- liga sozinho, só com os comandos de música no vocabulário (v2.7.4) ----------
         vs = await calls('voiceStart')
         words = vs[0]['words'] if vs else []
         check('assistente liga sozinho ao abrir (permissão de microfone dada)', len(vs) == 1 and await pg.evaluate('TN.voiceSt') == 'on')
-        check('vocabulário: comandos + nomes da agenda (com acento)', all(w in words for w in ['trilha', 'atender', 'próxima', 'maria', 'joão', 'antônio', 'mãe', 'oficina']) and len(words) < 800, str(len(words)))
+        check('vocabulário: comandos de música, sem a agenda nem "atender"', all(w in words for w in ['trilha', 'próxima', 'música', 'volume', 'cancelar']) and not ({'maria', 'joão', 'mãe', 'atender', 'ir'} & set(words)) and len(words) < 120, str(len(words)))
         check('assistente pede o microfone do fone Bluetooth (padrão ligado)', vs and vs[0].get('bt') is True, str(vs[0].get('bt') if vs else None))
         await pg.evaluate("__emit('voice',{state:'on',msg:'fone'})")
         check('ouvindo pelo fone: botão mostra "Ouvindo (fone)"', await pg.text_content('#bVoice span') == 'Ouvindo (fone)')
@@ -69,32 +69,19 @@ async def main():
         await heard('pausar'); await pg.wait_for_timeout(200)
         check('… só uma vez (depois volta a exigir "trilha")', len(await calls('mediaKey')) == 2)
         await heard('trilha ligar para mãe'); await pg.wait_for_timeout(300)
-        check('"trilha ligar para mãe": acha "Mãe" na agenda carregada (sem perguntar ao Android)', await pg.text_content('#callWho') == 'Mãe' and not await calls('findContacts'), await pg.text_content('#callWho'))
-        await heard('trilha cancelar'); await pg.wait_for_timeout(200)
-        check('"trilha cancelar" nos 3 s cancela', not await pg.evaluate("document.querySelector('#callBox').classList.contains('on')") and (await spoken())[-1] == 'Ligação cancelada')
-        await heard('trilha ligar para joão'); await pg.wait_for_timeout(300)
-        check('nome com acento na agenda ("João Antônio") é achado por "joão"', await pg.text_content('#callWho') == 'João Antônio')
-        await pg.wait_for_timeout(3700)
-        check('… e liga depois de 3,5 s', (await calls('placeCall'))[-1] == {'number': '3133331111'})
-        await pg.evaluate("__emit('call',{state:'idle'})")
-        await pg.evaluate("__listenQ.push(['Oficina do Zé'])")
-        await heard('trilha ligar para'); await pg.wait_for_timeout(1900)
-        check('"ligar para" sem nome (fora do vocabulário): pergunta "Para quem?" e ouve pelo Google', 'Para quem?' in await spoken() and len(await calls('listen')) == 1 and await pg.text_content('#callWho') == 'Oficina do Zé')
-        await heard('trilha cancelar'); await pg.wait_for_timeout(200)
+        check('"trilha ligar para mãe" não liga mais (só música)', not await pg.evaluate("document.querySelector('#callBox').classList.contains('on')") and not await calls('findContacts') and (await spoken())[-1] == 'Não entendi: ligar para mãe')
 
         # ---------- ligação tocando ----------
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})"); await pg.wait_for_timeout(4500)
-        check('com o assistente ligado, ao tocar não abre a escuta do Google (o microfone é do assistente)', len(await calls('listen')) == 1)
-        await heard('música'); await pg.wait_for_timeout(150)
-        check('tocando: palavra solta que não é atender/recusar é ignorada', not await calls('spotifyPlay'))
-        await heard('atender'); await pg.wait_for_timeout(150)
-        check('tocando: "atender" sozinho atende', len(await calls('answerCall')) == 1)
+        check('ao tocar não abre a escuta do Google', not await calls('listen'))
+        await heard('música'); await heard('atender'); await pg.wait_for_timeout(150)
+        check('tocando: "atender" ou outra palavra solta não faz nada (atende pela tela)', not await calls('spotifyPlay') and not await calls('answerCall'))
         await pg.evaluate("__emit('call',{state:'idle'})")
 
         # ---------- botão Voz com o assistente ligado ----------
         await pg.click('#bVoice'); await pg.wait_for_timeout(100)
         await heard('aumentar volume'); await pg.wait_for_timeout(200)
-        check('botão Voz arma o assistente (não abre o Google) e o comando vale sem "trilha"', (await calls('volume')) == [{'dir': 'up'}] and len(await calls('listen')) == 1)
+        check('botão Voz arma o assistente (não abre o Google) e o comando vale sem "trilha"', (await calls('volume')) == [{'dir': 'up'}] and not await calls('listen'))
 
         # ---------- estados ----------
         await pg.evaluate("__emit('voice',{state:'paused'})")
@@ -112,7 +99,7 @@ async def main():
         check('filtro sem acento: "joao" acha "João Antônio"', await pg.evaluate("document.querySelectorAll('#phRes [data-rcall]').length") == 1 and 'João Antônio' in await pg.text_content('#phRes'))
         await pg.evaluate("__agenda.push({name:'Pedro Novo',number:'31988887777'})")
         await pg.fill('#phQ', ''); await pg.click('#phRefresh'); await pg.wait_for_timeout(400)
-        check('"Atualizar contatos" relê a agenda e atualiza o vocabulário', await pg.evaluate("document.querySelectorAll('#phRes [data-rcall]').length") == 5 and 'pedro' in (await calls('voiceWords'))[-1]['words'])
+        check('"Atualizar contatos" relê a agenda (o vocabulário da voz não muda)', await pg.evaluate("document.querySelectorAll('#phRes [data-rcall]').length") == 5 and not await calls('voiceWords'))
         await pg.click('#sVoiceBt'); await pg.wait_for_timeout(150)
         check('desmarcar "microfone do fone" avisa o nativo (volta ao microfone do celular)', (await calls('voiceBt'))[-1] == {'on': False} and not await pg.evaluate('TN.cfg.voiceBt'))
         await pg.click('#sVoiceBt'); await pg.wait_for_timeout(150)

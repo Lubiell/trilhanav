@@ -33,14 +33,16 @@ async def main():
         calls = lambda m: pg.evaluate('(m)=>__calls.filter(c=>c[0]===m).map(c=>c[1])', m)
         on = lambda: pg.evaluate("document.querySelector('#callBox').classList.contains('on')")
 
-        # ---------- chamada de voz do WhatsApp: atender por voz ----------
+        # ---------- chamada de voz do WhatsApp: atender pela tela (atender por voz saiu na v2.7.4) ----------
         await pg.evaluate("__emit('wacall',{state:'ringing',name:'Maria Souza',video:false,app:'WhatsApp'})"); await pg.wait_for_timeout(200)
         r = await pg.evaluate("({who:document.querySelector('#callWho').textContent,st:document.querySelector('#callSt').textContent})")
         check('WhatsApp tocando: tela com o nome e "WhatsApp · Ligação chegando"', await on() and r['who'] == 'Maria Souza' and r['st'].startswith('WhatsApp · Ligação chegando'), str(r))
         sp = await pg.evaluate("TN.spoken.slice(-1)[0]")
-        check('voz: "Ligação de WhatsApp de Maria Souza. Diga atender ou recusar"', sp == 'Ligação de WhatsApp de Maria Souza. Diga atender ou recusar', sp)
-        await pg.evaluate("__emit('heard',{text:'atender'})"); await pg.wait_for_timeout(200)
-        check('"atender" (sem "Trilha", com o WhatsApp tocando) aciona o Atender do WhatsApp, não o do telefone', (await calls('waCallAction')) == [{'act': 'answer'}] and not await calls('answerCall'))
+        check('voz: "Ligação de WhatsApp de Maria Souza"', sp == 'Ligação de WhatsApp de Maria Souza', sp)
+        await pg.evaluate("__emit('heard',{text:'atender'})"); await pg.evaluate("__emit('heard',{text:'trilha atender'})"); await pg.wait_for_timeout(200)
+        check('"atender" por voz não faz nada', not await calls('waCallAction') and not await calls('answerCall'))
+        await pg.click('#callAns'); await pg.wait_for_timeout(100)
+        check('Atender da tela aciona o Atender do WhatsApp, não o do telefone', (await calls('waCallAction')) == [{'act': 'answer'}] and not await calls('answerCall'))
         await pg.evaluate("__emit('wacall',{state:'offhook',name:'Maria Souza',video:false,app:'WhatsApp'})"); await pg.wait_for_timeout(100)
         r = await pg.evaluate("({b:document.querySelector('#callEnd').textContent,st:document.querySelector('#callSt').textContent})")
         check('em ligação pelo WhatsApp: botão Desligar', r['b'] == 'Desligar' and 'Em ligação' in r['st'], str(r))
@@ -53,8 +55,8 @@ async def main():
         await pg.evaluate("__emit('wacall',{state:'ringing',name:'João',video:true,app:'WhatsApp Business'})"); await pg.wait_for_timeout(200)
         r = await pg.evaluate("({st:document.querySelector('#callSt').textContent,sp:TN.spoken.slice(-1)[0]})")
         check('vídeo do WhatsApp Business: aparece e é anunciada como chamada de vídeo', r['st'].startswith('WhatsApp Business (vídeo) · ') and r['sp'].startswith('Chamada de vídeo do WhatsApp de João'), str(r))
-        await pg.evaluate("__emit('heard',{text:'recusar'})"); await pg.wait_for_timeout(200)
-        check('"recusar" aciona o Recusar do WhatsApp', (await calls('waCallAction'))[-1] == {'act': 'decline'} and not await calls('endCall'))
+        await pg.click('#callEnd'); await pg.wait_for_timeout(100)
+        check('Recusar da tela aciona o Recusar do WhatsApp', (await calls('waCallAction'))[-1] == {'act': 'decline'} and not await calls('endCall'))
         await pg.evaluate("__emit('wacall',{state:'idle'})")
 
         # ---------- ligação comum continua com o telefone ----------

@@ -1,6 +1,7 @@
-"""v2.7.2: comandos de voz. O vocabulário do assistente sempre ligado (VBASE, gramática do Vosk) cobre toda palavra que o
-intérprete (parseCmd) entende; jeitos novos de falar; comandos novos (onde estou, quanto falta, repetir, velocidade, hora,
-aproximar/afastar, travar tela, gravar, ajuda); hipóteses alternativas do Vosk. Usa dev/testmap.pmtiles (fixtures.py)."""
+"""v2.7.4: comandos de voz só para música (o dono mandou tirar o resto: "ir para <cidade>", ligações, onde estou, radares por voz…).
+O vocabulário do assistente sempre ligado (VBASE, gramática do Vosk) cobre toda palavra que o intérprete (parseCmd) entende e nada
+além disso; as frases de música viram o comando certo; as dos comandos que saíram não fazem nada; hipóteses alternativas do Vosk;
+o "cancelar/estou bem" do aviso de queda continua. Nativo simulado."""
 import asyncio, re, sys, unicodedata
 from playwright.async_api import async_playwright
 
@@ -15,129 +16,129 @@ html = open('../index.html', encoding='utf-8').read()
 na = lambda t: unicodedata.normalize('NFD', t).encode('ascii', 'ignore').decode()
 vb = re.search(r"const VBASE='([^']*)'", html).group(1).split()
 vbn = {na(w) for w in vb}
-i = html.index('const POIK=') if 'const POIK=' in html else html.index('const GORE=/'); j = html.index('  return null}\n', html.index('function parseCmd(t)'))
+i = html.index('function parseCmd(t)'); j = html.index('  return null}\n', i)
 words = set()
-for lit in re.findall(r'/(\^?(?:\\.|[^/\n])+)/\.(?:test|exec)|=/(\^?(?:\\.|[^/\n])+)/;|\[/((?:\\.|[^/\n])+)/,', html[i:j]):
-    body = re.sub(r'\\[a-zA-Z]', ' ', lit[0] or lit[1] or lit[2])
+for lit in re.findall(r'/(\^?(?:\\.|[^/\n])+)/\.(?:test|exec)', html[i:j]):
+    body = re.sub(r'\\[a-zA-Z]', ' ', lit)
     words |= {w for w in re.findall(r'[a-zà-ú]+', body) if len(w) > 1}
 words -= {'test', 'exec'}
 falta = sorted(w for w in words if na(w) not in vbn)
 check('toda palavra que o intérprete entende está no vocabulário do assistente (senão o Vosk nunca a escreve)', not falta, str(falta))
-check('vocabulário sem repetição e com "trocar" (antes faltava: "trocar música" virava "tocar")', len(vb) == len(set(vb)) and 'trocar' in vb, str(len(vb)))
+check('vocabulário sem repetição e com "trocar" ("trocar música" não vira "tocar")', len(vb) == len(set(vb)) and 'trocar' in vb, str(len(vb)))
+sobra = sorted(w for w in vb if len(na(w)) > 2 and na(w) not in words and w not in {'trilha', 'que', 'para', 'pra', 'por', 'favor', 'não', 'quero'})
+check('vocabulário só com os comandos de música e do aviso de queda (sem ir/atender/hospital/blitz…)', not sobra and not ({'ir', 'atender', 'ligação', 'hospital', 'blitz', 'onde', 'clima', 'posto', 'zoom'} & set(vb)), str(sobra))
+gone = [x for x in ('placeGrammar', 'vosk-words', 'PALIAS', 'goPlace', 'askPlace', 'callByName', 'radMarkVoice', 'poiGo', 'callVoice', 'Para onde?') if x in html]
+check('saiu o "ir para" por voz, as cidades na gramática, ligar por voz e marcar aviso por voz', not gone, str(gone))
 
-PHRASES = [
-    ('trocar música', 'next'), ('troca a música', 'next'), ('outra música', 'next'), ('pula essa', 'next'), ('próxima', 'next'),
-    ('música anterior', 'prev'), ('pausar', 'pause'), ('para a música', 'pause'),
+MUSICA = [
+    ('trocar música', 'next'), ('troca a música', 'next'), ('outra música', 'next'), ('pula essa', 'next'), ('próxima', 'next'), ('toca a próxima', 'next'),
+    ('música anterior', 'prev'), ('volta a música', 'prev'), ('pausar', 'pause'), ('para a música', 'pause'), ('desligar a música', 'pause'),
     ('mais volume', 'volup'), ('aumenta o som', 'volup'), ('sobe o volume', 'volup'),
-    ('menos volume', 'voldown'), ('baixa o som', 'voldown'), ('diminui o volume', 'voldown'),
-    ('liga a música', 'play'), ('tocar spotify', 'play'), ('toca rádio', 'play'),
-    ('atende', 'answer'), ('não atender', 'end'), ('recusar', 'end'), ('desliga', 'end'),
-    ('ligar para maria', 'call'), ('quero ir para ouro preto', 'go'), ('me leva pra casa', 'go'), ('ir para', 'go'),
-    ('cancelar rota', 'stopnav'), ('desligar navegação', 'stopnav'),
-    ('onde estou', 'where'), ('onde eu tô', 'where'), ('minha localização', 'where'),
-    ('quanto falta', 'eta'), ('quanto tempo falta', 'eta'), ('hora de chegada', 'eta'), ('qual a distância', 'eta'),
-    ('repetir', 'repeat'), ('repete', 'repeat'), ('fala de novo', 'repeat'),
-    ('velocidade', 'speed'), ('qual o limite', 'speed'), ('que horas são', 'time'),
-    ('ajuda', 'help'), ('o que eu posso falar', 'help'),
-    ('aproximar', 'zin'), ('mais zoom', 'zin'), ('aumenta o zoom', 'zin'), ('afastar', 'zout'), ('menos zoom', 'zout'),
-    ('travar tela', 'lock'), ('destravar', 'lock'), ('gravar trilha', 'rec'), ('parar gravação', 'rec'),
-    ('clima', 'wx'), ('vai chover', 'wx'), ('quanto tempo vai chover', 'wx'), ('onde está o posto', 'fuel'), ('não quero', None), ('posto', 'fuel'), ('autonomia', 'range'), ('abasteci', 'filled'), ('marcar radar', 'radar'),
-    ('ler mensagens', 'read'), ('estou bem', 'none'), ('esquece', 'none'),
+    ('menos volume', 'voldown'), ('baixa o som', 'voldown'), ('diminui o volume', 'voldown'), ('abaixa o volume', 'voldown'),
+    ('liga a música', 'play'), ('tocar spotify', 'play'), ('toca rádio', 'play'), ('continuar', 'play'),
+    ('estou bem', 'none'), ('cancelar', 'none'), ('esquece', 'none'),
 ]
-STUB = "window.__spk=[];Object.defineProperty(window,'speechSynthesis',{value:{speak:u=>window.__spk.push(u.text),cancel(){},getVoices(){return []}},configurable:true});localStorage.setItem('tn_updT',String(Date.now()));"
-ONPOS = '''([lat,lon,t,v])=>TN.onPos({timestamp:t,coords:{latitude:lat,longitude:lon,altitude:0,accuracy:5,speed:v||0,heading:null}})'''
-VA, PA = (-20.0, -44.303), (-20.003, -43.703)
+SAIU = ['ir para guidoval', 'quero ir para ouro preto', 'me leva no posto', 'ir para o hospital', 'ligar para maria', 'atender', 'recusar',
+        'onde estou', 'quanto falta', 'repetir', 'que horas são', 'velocidade', 'clima', 'vai chover', 'posto', 'hospital', 'farmácia',
+        'marcar blitz', 'marcar radar', 'apagar aviso', 'travar tela', 'gravar trilha', 'ler mensagens', 'ajuda', 'aproximar', 'autonomia', 'abasteci']
+
+FAKE = """
+window.__calls=[];window.__ls={};window.__listenQ=[];localStorage.setItem('tn_updT',String(Date.now()));
+localStorage.setItem('tn_sosC',JSON.stringify([{name:'Ana',number:'31999990000'}]));
+window.__status={phone:true,contacts:true,mic:true,notifAccess:true,speech:true,installAllowed:true,sdk:34,voiceOn:true,notif:{connected:true}};
+window.__emit=(ev,d)=>(window.__ls[ev]||[]).forEach(f=>f(d));
+const rec=m=>async o=>{__calls.push([m,o||{}])};
+window.Capacitor={isNativePlatform:()=>true,getPlatform:()=>'android',registerPlugin:(n)=>({
+  addWatcher:async()=>'w1',removeWatcher:async()=>{},requestNotifications:async()=>{},speak:rec('speak'),mediaKey:rec('mediaKey'),
+  addListener:(ev,cb)=>{(__ls[ev]=__ls[ev]||[]).push(cb);return Promise.resolve({remove(){}})},
+  answerCall:rec('answerCall'),endCall:rec('endCall'),placeCall:rec('placeCall'),volume:rec('volume'),spotifyPlay:rec('spotifyPlay'),sendSms:rec('sendSms'),
+  phoneStatus:async()=>__status,requestPhone:async()=>__status,
+  listContacts:async()=>({list:[{name:'Maria Souza',number:'31999990000'}]}),findContacts:async o=>{__calls.push(['findContacts',o]);return {list:[]}},
+  voiceStart:async o=>{__calls.push(['voiceStart',o]);setTimeout(()=>__emit('voice',{state:'on'}),50)},voiceStop:rec('voiceStop'),
+  voiceWords:rec('voiceWords'),voiceBt:rec('voiceBt'),
+  listen:async o=>{__calls.push(['listen',o]);const t=__listenQ.shift();if(!t)throw new Error('não entendi');return {texts:t}},
+  appInfo:async()=>({version:'2.7.4',code:20704})})};
+"""
 
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome')
         ctx = await b.new_context(viewport={'width': 1280, 'height': 720})
-        await ctx.add_init_script(STUB)
+        await ctx.add_init_script(FAKE)
+        reqs = []
         async def route(r):
-            u = r.request.url
+            u = r.request.url; reqs.append(u)
+            if u.endswith('/lib/capacitor.js'): await r.fulfill(status=200, content_type='application/javascript', body=''); return
             if u.startswith('http://localhost') or 'cdnjs.cloudflare.com' in u or 'fonts.g' in u: await r.continue_(); return
             await r.abort()   # sem internet
         await ctx.route('**/*', route)
         pg = await ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
-        await pg.goto(URL); await pg.wait_for_timeout(1300)
-        spk = lambda: pg.evaluate('window.__spk.slice()')
-        async def last_said(n0):
-            s = await spk(); return s[n0:]
+        await pg.goto(URL); await pg.wait_for_timeout(2200)
+        calls = lambda m: pg.evaluate('(m)=>__calls.filter(c=>c[0]===m).map(c=>c[1])', m)
+        spoken = lambda: pg.evaluate('TN.spoken.slice()')
+        heard = lambda t, alts=None: pg.evaluate("([t,a])=>TN.onHeard(a?{text:t,alts:a}:{text:t})", [t, alts])
+        async def said_after(n0): return (await spoken())[n0:]
 
-        # ---------- 2) jeitos de falar ----------
-        got = await pg.evaluate("ps=>ps.map(t=>{const c=TN.parseCmd(t);return c&&c.a})", [p_ for p_, _ in PHRASES])
-        bad = [(f, e, g) for (f, e), g in zip(PHRASES, got) if g != e]
-        check('frases entendidas como o comando certo (%d)' % len(PHRASES), not bad, str(bad))
-        r = await pg.evaluate("[TN.parseCmd('travar tela').on,TN.parseCmd('destravar a tela').on,TN.parseCmd('gravar trilha').on,TN.parseCmd('parar gravação').on,TN.parseCmd('quero ir para ouro preto').where,TN.parseCmd('ir para').where]")
-        check('travar/destravar, gravar/parar e o destino saem certos', r == [True, False, True, False, 'ouro preto', ''], str(r))
+        # ---------- 2) frases ----------
+        got = await pg.evaluate("ps=>ps.map(t=>{const c=TN.parseCmd(t);return c&&c.a})", [f for f, _ in MUSICA])
+        bad = [(f, e, g) for (f, e), g in zip(MUSICA, got) if g != e]
+        check('frases de música entendidas como o comando certo (%d)' % len(MUSICA), not bad, str(bad))
+        got = await pg.evaluate("ps=>ps.map(t=>{const c=TN.parseCmd(t);return c&&c.a})", SAIU)
+        bad = [(f, g) for f, g in zip(SAIU, got) if g is not None]
+        check('comandos que saíram não viram nada (%d frases)' % len(SAIU), not bad, str(bad))
 
-        # ---------- 3) comandos novos ----------
-        await pg.set_input_files('#offIn', 'testmap.pmtiles'); await pg.wait_for_timeout(2500)
-        t = 1_000_000_000_000
-        await pg.evaluate(ONPOS, [VA[0], VA[1], t, 0]); await pg.evaluate(ONPOS, [VA[0], VA[1], t + 1000, 10])
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'speed'})")
-        check('"velocidade" fala a velocidade', any('36 quilômetros por hora' in x for x in await last_said(n0)), str(await last_said(n0)))
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'time'})")
-        s = await last_said(n0)
-        check('"que horas são" fala a hora', s and re.match(r'^(São \d+ horas|É uma hora|É meia-noite)', s[-1]), str(s))
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'where'})"); await pg.wait_for_timeout(800)
-        s = await last_said(n0)
-        check('"onde estou" diz a rua e a cidade pelo mapa offline', s and s[-1].startswith('Você está na Rua') and s[-1].endswith('em Vila Alegre'), str(s))
-        z0 = await pg.evaluate('TN.map.getZoom()')
-        await pg.evaluate("TN.runCmd({a:'zin'})"); await pg.wait_for_timeout(400); z1 = await pg.evaluate('TN.map.getZoom()')
-        await pg.evaluate("TN.runCmd({a:'zout'})"); await pg.wait_for_timeout(400); z2 = await pg.evaluate('TN.map.getZoom()')
-        check('"aproximar"/"afastar" mudam o zoom do mapa', z1 == z0 + 1 and z2 == z0, str((z0, z1, z2)))
-        await pg.evaluate("TN.runCmd({a:'lock',on:true})"); l1 = await pg.text_content('#lockIco')
-        await pg.evaluate("TN.runCmd({a:'lock',on:true})"); l2 = await pg.text_content('#lockIco')
-        await pg.evaluate("TN.runCmd({a:'lock',on:false})"); l3 = await pg.text_content('#lockIco')
-        check('"travar tela" trava (repetir não destrava) e "destravar" libera', (l1, l2, l3) == ('🔒', '🔒', '🔓'), str((l1, l2, l3)))
-        await pg.evaluate("TN.runCmd({a:'rec',on:true})"); r1 = await pg.evaluate("document.querySelector('#bRec').classList.contains('rec')")
-        await pg.evaluate("TN.runCmd({a:'rec',on:false})"); r2 = await pg.evaluate("document.querySelector('#bRec').classList.contains('rec')")
-        check('"gravar trilha" grava e "parar gravação" pausa', r1 and not r2, str((r1, r2)))
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'help'})")
-        s = await last_said(n0)
-        check('"ajuda" lista os comandos', s and 'quanto falta' in s[-1] and 'próxima música' in s[-1], str(s)[:120])
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'eta'})")
-        check('"quanto falta" sem rota avisa', (await last_said(n0)) == ['Nenhuma rota'], str(await last_said(n0)))
+        # ---------- 3) assistente sempre ligado ----------
+        vs = await calls('voiceStart')
+        w = set(vs[0]['words']) if vs else set()
+        check('assistente liga com o vocabulário fixo (sem agenda nem cidades)', vs and w == set(vb) and 'maria' not in w, str(len(w)))
+        check('o app não procura mais o vocabulário do modelo (lib/vosk-words.txt)', not [u for u in reqs if 'vosk-words' in u])
+        await heard('trilha próxima música')
+        check('"trilha próxima música" → próxima', (await calls('mediaKey')) == [{'key': 'next'}])
+        await heard('próxima música')
+        check('conversa sem "trilha" não faz nada', len(await calls('mediaKey')) == 1)
+        await heard('trilha'); await heard('aumentar o volume')
+        check('"trilha" sozinho arma e o comando seguinte vale', (await calls('volume')) == [{'dir': 'up'}])
+        await heard('trilha de a o', ['trilha de a o', 'trilha pausar'])
+        check('a 2ª hipótese vale quando a 1ª não é comando', (await calls('mediaKey'))[-1] == {'key': 'pause'})
+        n0 = len(await spoken()); await heard('trilha ir para guidoval'); await pg.wait_for_timeout(1600)
+        s = await said_after(n0)
+        check('"trilha, ir para Guidoval": não procura nem pergunta "Para onde?"', s == ['Não entendi: ir para guidoval'] and not await calls('listen') and not await pg.evaluate('!!TN.nav'), str(s))
+        n0 = len(await spoken()); await heard('trilha ligar para maria'); await pg.wait_for_timeout(300)
+        check('"trilha, ligar para Maria": não liga', (await said_after(n0)) == ['Não entendi: ligar para maria'] and not await calls('findContacts') and not await calls('placeCall'))
+        n0 = len(await spoken()); await heard('trilha mapa')
+        check('não entendeu: diz o que ouviu', (await said_after(n0)) == ['Não entendi: mapa'])
+        n0 = len(await spoken()); await heard('trilha de a o')
+        check('só palavras soltas ("de a o"): diz apenas "Não entendi"', (await said_after(n0)) == ['Não entendi'])
 
-        # com rota (62 km sem internet até Pedra Azul)
-        await pg.evaluate("(async()=>{const rt=await TN.offNavReq({lat:%f,lon:%f},{lat:%f,lon:%f});TN.navStart(rt,{lat:%f,lon:%f,name:'Pedra Azul'})})()" % (VA + PA + PA))
-        await pg.wait_for_timeout(500)
-        await pg.evaluate(ONPOS, [VA[0], VA[1], t + 3000, 10]); await pg.evaluate(ONPOS, [VA[0], VA[1] + 0.0003, t + 6000, 10])
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'eta'})")
-        s = await last_said(n0)
-        check('"quanto falta" com rota: distância, tempo e hora de chegada', s and re.match(r'^Faltam (6\d|5\d)(,\d)? quilômetros, cerca de .+\. Chegada às \d+ e \d\d$', s[-1]), str(s))
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'repeat'})")
-        s = await last_said(n0)
-        check('"repetir" repete a próxima manobra com a distância de agora', s and s[-1].startswith('Em '), str(s))
-        await pg.evaluate("TN.navStop()")
-        n0 = len(await spk()); await pg.evaluate("TN.runCmd({a:'repeat'})")
-        s = await last_said(n0)
-        check('"repetir" fora da rota repete a última fala', s and s[-1] and not s[-1].startswith('Nada'), str(s))
+        # ---------- 4) ligação: só os botões da tela ----------
+        n0 = len(await spoken())
+        await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})"); await pg.wait_for_timeout(4500)
+        r = await pg.evaluate("({st:document.querySelector('#callSt').textContent,ans:getComputedStyle(document.querySelector('#callAns')).display})")
+        check('ligação chegando: anuncia quem liga, sem pedir "atender ou recusar" e sem escutar', (await said_after(n0)) == ['Ligação de Maria Souza'] and r['st'] == 'Ligação chegando' and r['ans'] != 'none' and not await calls('listen'), str(r))
+        await heard('atender'); await heard('trilha atender')
+        check('"atender" por voz não atende mais', not await calls('answerCall'))
+        await pg.click('#callAns'); await pg.wait_for_timeout(100)
+        check('botão Atender da tela atende', len(await calls('answerCall')) == 1)
+        await pg.evaluate("__emit('call',{state:'idle'})")
+        set_html = await pg.evaluate("document.querySelector('#dlgPhone').innerHTML")
+        check('Telefone sem a opção "Ligação: escutar atender ou recusar"; ajuda da voz só com música', 'sCallVoice' not in set_html and 'próxima música' in set_html and 'ir para' not in set_html.lower(), '')
 
-        # ---------- 4) o que o assistente sempre ligado ouviu (Vosk), com hipóteses ----------
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'trilha ir para [unk] [unk]'})"); await pg.wait_for_timeout(300)
-        s = await last_said(n0)
-        check('"trilha, ir para <lugar fora do vocabulário>" pergunta "Para onde?"', s and s[0] == 'Para onde?', str(s))
-        await pg.wait_for_timeout(1500)
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'trilha que horas são',alts:['trilha que horas são']})")
-        s = await last_said(n0)
-        check('"trilha que horas são" responde', s and re.match(r'^(São|É uma|É meia-noite)', s[-1]), str(s))
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'trilha de a o',alts:['trilha de a o','trilha que horas são']})")
-        s = await last_said(n0)
-        check('a 2ª hipótese vale quando a 1ª não é comando', s and re.match(r'^(São|É uma|É meia-noite)', s[-1]), str(s))
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'de a o',alts:['de a o','trilha que horas são']})")
-        check('sem "trilha" na hipótese principal (conversa) nada acontece', not await last_said(n0), str(await last_said(n0)))
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'trilha mapa'})")
-        s = await last_said(n0)
-        check('não entendeu: diz o que ouviu', s and s[-1] == 'Não entendi: mapa', str(s))
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'trilha de a o'})")
-        s = await last_said(n0)
-        check('só palavras soltas ("de a o"): diz apenas "Não entendi"', s and s[-1] == 'Não entendi', str(s))
-        n0 = len(await spk()); await pg.evaluate("TN.onHeard({text:'trilha'})"); await pg.evaluate("TN.onHeard({text:'velocidade'})")
-        s = await last_said(n0)
-        check('"trilha" sozinho arma e o comando seguinte vale (frase cortada em duas)', s and 'quilômetros por hora' in s[-1], str(s))
+        # ---------- 5) aviso de queda: "cancelar" vale sem "trilha"; música sem "trilha" não ----------
+        await pg.evaluate("document.querySelector('#sosTestB').click()"); await pg.wait_for_timeout(300)
+        check('teste do aviso de queda contando', await pg.evaluate("TN.sos&&TN.sos.phase") == 'count')
+        k0 = len(await calls('mediaKey')); await heard('próxima música')
+        check('no aviso, frase de música sem "trilha" não faz nada', len(await calls('mediaKey')) == k0 and await pg.evaluate("TN.sos&&TN.sos.phase") == 'count')
+        await heard('cancelar'); await pg.wait_for_timeout(200)
+        check('no aviso, "cancelar" sem "trilha" cancela (nada enviado)', await pg.evaluate("TN.sos") is None and not await calls('sendSms') and (await spoken())[-1] == 'Aviso cancelado')
+
+        # ---------- 6) botão Voz (escuta do Google) com o assistente desligado ----------
+        await pg.evaluate("TN.cfg.voiceAlways=false;TN.onVoiceState({state:'off'})")
+        await pg.evaluate("__listenQ.push(['ir para Ouro Preto'],['trocar música'])")
+        n0 = len(await spoken()); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
+        check('botão Voz: "ir para Ouro Preto" não faz nada', (await said_after(n0)) == ['Não entendi: ir para Ouro Preto'] and not await pg.evaluate('!!TN.nav'), str(await said_after(n0)))
+        k0 = len(await calls('mediaKey')); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
+        check('botão Voz: "trocar música" troca', (await calls('mediaKey'))[k0:] == [{'key': 'next'}])
         check('sem erros', not errs, str(errs))
         await b.close()
     print('\nRESULTADO:', 'tudo certo' if not FAILS else 'FALHOU ' + str(FAILS))
