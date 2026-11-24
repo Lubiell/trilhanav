@@ -4,19 +4,21 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.7.2.apk`** (atual) | 2.7.2 (versionCode 20702) | commit `c0653f6` da branch `claude/loving-lovelace-yzb96l` (PR #8, mesmo código do merge `aa47436`), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
+| **`trilhanav-2.7.3.apk`** (atual) | 2.7.3 (versionCode 20703) | commit `8e039ca` da branch `claude/loving-lovelace-yzb96l` (PR #9), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
+| `trilhanav-2.7.2.apk` | 2.7.2 (versionCode 20702) | commit `c0653f6` da branch `claude/loving-lovelace-yzb96l` (PR #8, mesmo código do merge `aa47436`), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
 | `trilhanav-2.7.1.apk` | 2.7.1 (versionCode 20701) | `main` `d95bd16` (merge do PR #5), workflow APK + assinatura com a chave fixa | 55 MB (modelo de voz) |
 | `trilhanav-2.6.3.apk` | 2.6.3 (versionCode 20603) | commit `acec126` da branch `claude/loving-lovelace-yzb96l` (PR #3), workflow APK | 56 MB (modelo de voz) |
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.7.2):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.2.apk
+**Baixar no celular (2.7.3):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.3.apk
 
 (A 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.7.3: `75a430f68484cdb3949ea7d2a004f851c2bb39cd4dafb4eb9e0f2261e5bbc40d`
 - 2.7.2: `89b65dfbd9b2e50f27a2f478409be3c44e3a75e5813f5f34a8db1ae53bc0604c`
 - 2.7.1: `aea6835fa668f52e6c75378a0815fa53edca8f8f215a251ac8ad32ef8447ee54`
 - 2.7.0: `e75a581f2fc79dba55a8e6df43f91eb2775bd7215a0626b0c8cde3fe05f0167c`
@@ -31,6 +33,14 @@ SHA-256 em `SHA256SUMS`:
 - 2.1.0: `3a94d96504728376a3f66fc7c517dd666de6abda5cd8d9840f83a3043548ca16`
 - 2.0.1: `3f64a0b853de886f3ff42e69206c320d53154f25146d24dd8c5414801c5157fb`
 - 2.0.0: `cff10d0ac662927d5b4bd99b53aed322a6fbdb0b06e5e11a8265449394d73437`
+
+## O que mudou na 2.7.3
+
+- **Mesma chave da 2.7.1/2.7.2**: atualiza por cima (o app avisa sozinho).
+- **"Trilha, ir para Guidoval"**: as cidades a até 200 km de você entram no vocabulário do assistente de voz. As que o modelo de voz não conhece são escritas com sílabas que ele conhece ("guido val"): cobre uns 77% dos municípios de MG; nas outras o app pergunta "Para onde?". A rota sai da sua posição no GPS.
+- **Radares e lombadas de MG de uma vez**: Ajustes → "Baixar radares e lombadas de MG" (uns 10 a 15 minutos). Lombada só avisa acima de 25 km/h (dá para desligar).
+- **Blitz, buraco, obra**: não há base aberta com isso em tempo real; marque por voz ("Trilha, marcar blitz", "marcar buraco", "marcar obra") e o app avisa quando você passar de novo. A blitz some depois de 4 horas. "Trilha, apagar aviso" apaga o mais perto.
+- **Postos e lugares sem internet**: pelo mapa de MG baixado: "posto", "hospital", "farmácia", "restaurante", "hotel", "polícia", "banco", "mercado"; "ir para o hospital" vai ao mais perto.
 
 ## O que mudou na 2.7.2
 

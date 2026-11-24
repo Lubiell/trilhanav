@@ -1,7 +1,7 @@
 {
- "version": "2.7.2",
- "code": 20702,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.2.apk",
- "sha256": "89b65dfbd9b2e50f27a2f478409be3c44e3a75e5813f5f34a8db1ae53bc0604c",
- "notes": "Comandos de voz: \"Trilha\" + trocar música, quanto falta, repetir, onde estou, velocidade, que horas são, aproximar, afastar, travar tela, gravar trilha, ajuda; o assistente entende melhor com vento. Saiu o controle de guidão."
+ "version": "2.7.3",
+ "code": 20703,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.3.apk",
+ "sha256": "75a430f68484cdb3949ea7d2a004f851c2bb39cd4dafb4eb9e0f2261e5bbc40d",
+ "notes": "\"Trilha, ir para Guidoval\" (cidades perto de você na voz). Baixar radares e lombadas de MG de uma vez (Ajustes). Marcar blitz, buraco e obra por voz. Postos, hospital, farmácia e outros pelo mapa offline."
 }
