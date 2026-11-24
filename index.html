@@ -214,7 +214,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.4 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.5 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -258,7 +258,10 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
   <label>Ouvir pelo microfone do fone/intercom Bluetooth (enquanto ligado, a música fica com qualidade de ligação) <input type="checkbox" id="sVoiceBt"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, próxima música", "Trilha, pausar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
-  <div class="small">Só para a música: diga "Trilha" e o comando (ou toque em <b>Voz</b> e fale): "tocar", "pausar", "próxima música", "música anterior", "trocar música", "aumentar volume", "abaixar volume". No aviso de queda, "cancelar" ou "estou bem" cancela.</div>
+  <div class="small">Só para a música: diga "Trilha" e o comando (ou toque em <b>Voz</b> e fale): "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume". Dois bipes agudos: entendeu; um bipe grave: não entendeu. No aviso de queda, "cancelar" ou "estou bem" cancela.</div>
+  <div class="small" style="padding-top:8px">Os botões de música do intercomunicador do capacete (tocar, pausar, próxima) funcionam direto no Android, sem o app: é o jeito mais seguro. Se usar só os botões, desligue o "Assistente de voz sempre ligado" para gastar menos bateria.</div>
+  <div class="small" style="padding-top:8px"><b>Diagnóstico da voz</b>: as últimas 10 frases que o app ouviu e o que fez com cada uma (só na memória: some ao fechar o app). Se a voz falhar no capacete, mande um print desta lista.</div>
+  <div id="vLog"></div>
   <div class="small" style="padding-top:8px">Nada disto sai do celular: contatos, ligações e mensagens não vão para a internet, e as mensagens somem ao fechar o app.</div>
 </div></dialog>
 <dialog id="dlgWx"><div class="hd"><b>Clima</b></div><div class="bd">
@@ -940,19 +943,29 @@ radLoad();
 var callSt={state:'idle',name:'',number:''},callCtx=null,waMsgs=[],nowPlay=null,dialT=null,voiceBusy=false,waT=null;
 const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
 /* comandos de voz: só música (v2.7.4: o dono mandou tirar o resto) e o "estou bem/cancelar" do aviso de queda.
-   A ordem importa: "desligar a música" pausa (não toca), "próxima música" não é "tocar".
+   Uma palavra por ação (v2.7.5), sem pares que soam parecido com vento ("toca"/"troca", "pausa"/"passa", "volta"/"toca").
+   A ordem importa: "toca a próxima" é próxima; "voltar a tocar" é tocar.
    Toda palavra daqui tem de estar no VBASE (vocabulário do assistente sempre ligado), senão o Vosk nunca a escreve: t26 confere. */
 function parseCmd(t){const s=normTxt(t);if(!s)return null;
-  if(/\b(estou bem|to bem|tudo bem)\b/.test(s))return {a:'none'};
-  if(/\b(ligar|liga|ligue)(?: (?:a|o))? (musica|som|spotify|radio)\b/.test(s))return {a:'play'};
-  if(/\b(pausar|pausa|pause|parar|pare|desligar|desliga|desligue)\b|\bpara a musica\b/.test(s))return {a:'pause'};
-  if(/\b(proxima|proximo|pular|pula|avancar|avanca|passar|passa|outra|trocar|troca|troque|mudar|muda|mude)\b/.test(s))return {a:'next'};
-  if(/\b(anterior|voltar|volta)\b/.test(s))return {a:'prev'};
-  if(/\b(aumentar|aumenta|aumente|subir|sobe)\b|\bmais (alto|volume|som)\b|\bvolume mais\b/.test(s))return {a:'volup'};
-  if(/\b(abaixar|abaixa|abaixe|baixar|baixa|baixe|diminuir|diminui|diminua|descer|desce)\b|\bmais baixo\b|\bmenos (volume|som)\b|\bvolume menos\b/.test(s))return {a:'voldown'};
-  if(/\b(tocar|toca|toque|play|continuar|continua|spotify|musica|radio)\b/.test(s))return {a:'play'};
-  if(/\b(silencio|cancelar|cancela|nada|esquece)\b/.test(s))return {a:'none'};
+  if(/\b(estou bem|to bem)\b/.test(s))return {a:'none'};
+  if(/\b(pausar|pausa|pause)\b/.test(s))return {a:'pause'};
+  if(/\b(proxima|proximo)\b/.test(s))return {a:'next'};
+  if(/\banterior\b/.test(s))return {a:'prev'};
+  if(/\b(aumentar|aumenta|aumente)\b/.test(s))return {a:'volup'};
+  if(/\b(abaixar|abaixa|abaixe)\b/.test(s))return {a:'voldown'};
+  if(/\b(tocar|toca|toque)\b/.test(s))return {a:'play'};
+  if(/\b(cancelar|cancela)\b/.test(s))return {a:'none'};
   return null}
+/* (v2.7.5) o que cada comando faz, para o diagnóstico; bipe de "entendi" (dois agudos) e de "não entendi" (um grave) */
+const CMDL={play:'tocar',pause:'pausar',next:'próxima música',prev:'música anterior',volup:'aumentar volume',voldown:'abaixar volume',none:'cancelar'};
+const beepOk=()=>{beep(1500,70);setTimeout(()=>beep(1500,70),130)},beepNo=()=>beep(330,320);
+/* diagnóstico da voz: as últimas 10 frases ouvidas e o que o app fez com cada uma. Só na memória (some ao fechar o app) */
+var vLog=[];
+function vLogAdd(src,text,alts,res){vLog.unshift({t:Date.now(),src,text:String(text||'').slice(0,80),alts:(alts||[]).map(a=>String(a).slice(0,80)).filter(a=>a&&a!==text).slice(0,2),res});
+  vLog.length=Math.min(vLog.length,10);if($('#dlgPhone').open)renderVLog()}
+function renderVLog(){const el=$('#vLog');if(!el)return;
+  el.innerHTML=vLog.length?vLog.map(x=>'<div class="lr"><span><span class="small">'+new Date(x.t).toTimeString().slice(0,8)+' · '+(x.src==='g'?'botão Voz':'assistente')+'</span><br>"'+esc(x.text)+'"'+
+    (x.alts.length?' <span class="small">(ou: '+x.alts.map(a=>'"'+esc(a)+'"').join(', ')+')</span>':'')+'<br><b>'+esc(x.res)+'</b></span></div>').join(''):'<div class="small" style="padding:6px 0">Nada ouvido desde que o app abriu.</div>'}
 const nat=(fn,o)=>{if(!NATIVE)return Promise.reject(new Error('só no app (APK)'));try{return NP.nat[fn](o||{})}catch(e){return Promise.reject(e)}};
 const errTxt=e=>String((e&&e.message)||e||'erro').slice(0,160);
 const fmtNum=n=>String(n||'').replace(/[^+0-9*#]/g,'');
@@ -988,8 +1001,8 @@ async function voiceCmd(){if(!NATIVE){toast('Comandos de voz só funcionam no ap
   if(voiceBusy)return;voiceBusy=true;$('#bVoice').classList.add('on');
   toast('Fale agora…',4000);beep(1000,90);
   try{const r=await nat('listen',{ms:7000}),texts=(r&&r.texts||[]).map(String);let c=null;for(const t of texts){c=parseCmd(t);if(c)break}
-    if(!c){say('Não entendi'+(texts[0]?': '+texts[0].slice(0,60):''));return}
-    toast('🎤 '+(texts[0]||'').slice(0,60),2500);await runCmd(c)}
+    if(!c){vLogAdd('g',texts[0]||'(nada)',texts.slice(1),'não entendi');beepNo();say('Não entendi'+(texts[0]?': '+texts[0].slice(0,60):''));return}
+    vLogAdd('g',texts[0]||'',texts.slice(1),'comando: '+CMDL[c.a]);beepOk();toast('🎤 '+(texts[0]||'').slice(0,60),2500);await runCmd(c)}
   catch(e){const m=errTxt(e);say(/permiss/.test(m)?'Permita o microfone em Telefone':'Não entendi');if(/permiss|indispon/.test(m))toast(m,5000)}
   finally{voiceBusy=false;$('#bVoice').classList.remove('on')}}
 function onWa(o){o=o||{};const m={app:String(o.app||'WhatsApp').slice(0,30),title:String(o.title||'').slice(0,80),text:String(o.text||'').slice(0,500),t:+o.t||Date.now()};if(!m.title||!m.text)return;
@@ -1005,7 +1018,7 @@ function onMedia(o){o=o||{};const prev=nowPlay;nowPlay={active:!!o.active,pkg:St
   if(p.active&&p.playing&&p.title&&(!prev||prev.title!==p.title))toast('♪ '+[p.title,p.artist].filter(Boolean).join(' — ').slice(0,80),3000)}
 /* tela do telefone */
 async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCrashOn').checked=cfg.crashOn;$('#sCrashSens').value=cfg.crashSens;$('#sCrashName').value=cfg.crashName;renderSos();$('#sVoiceAlways').checked=cfg.voiceAlways;$('#sVoiceBt').checked=cfg.voiceBt;
-  renderFavs();renderWa();if(results)renderRes(results);else renderAgenda();const st=await renderPerm();if(st&&st.contacts&&!contactsAll)loadContacts(false)}
+  renderFavs();renderWa();renderVLog();if(results)renderRes(results);else renderAgenda();const st=await renderPerm();if(st&&st.contacts&&!contactsAll)loadContacts(false)}
 async function renderPerm(){let s={};try{s=await nat('phoneStatus')||{}}catch(e){}
   const it=[['Telefone (atender, recusar, ligar)',s.phone],['Agenda (nome de quem liga)',s.contacts],['Microfone (comandos de voz)',s.mic],['Acesso a notificações (WhatsApp e música)',s.notifAccess]];
   $('#phPerm').innerHTML=it.map(([l,ok])=>'<div class="lr"><span>'+l+'</span><b class="'+(ok?'wpok':'wpmiss')+'">'+(ok?'liberado':'falta')+'</b></div>').join('')+(s.speech===false?'<div class="small" style="padding-top:6px">Este aparelho não tem reconhecimento de voz (instale ou ative o app Google).</div>':'');
@@ -1036,7 +1049,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='trilha a o ao de que para pra por favor eu me não quero estou bem tudo tô ligar liga ligue desligar desliga desligue parar pare pausar pausa pause tocar toca toque play continuar continua spotify música som rádio próxima próximo pular pula avançar avança passar passa outra trocar troca troque mudar muda mude anterior voltar volta aumentar aumenta aumente subir sobe mais alto abaixar abaixa abaixe baixar baixa baixe diminuir diminui diminua descer desce baixo menos volume silêncio cancelar cancela nada esquece'.split(' ');
+const VBASE='trilha a o ao de da do que por favor eu me não quero estou bem tô tocar toca toque pausar pausa pause próxima próximo anterior aumentar aumenta aumente abaixar abaixa abaixe música volume som cancelar cancela'.split(' ');
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
 const voiceVocab=()=>[...new Set(VBASE)];
 async function voiceAlwaysStart(manual){if(!NATIVE||!cfg.voiceAlways)return;let st={};try{st=await nat('phoneStatus')||{}}catch(e){}
@@ -1047,15 +1060,18 @@ function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off']
   if(voiceSt==='error')toast('Assistente de voz: '+String(o.msg||'erro').slice(0,80),5000)}
 /* o que o assistente ouviu: só age com "trilha" na frase ou logo depois de armado (botão Voz / "trilha" sozinho); no aviso de queda, "cancelar" e "estou bem" valem sem "trilha" */
 function onHeard(o){const cl=t=>String(t||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
-  const raw=cl(o&&o.text);if(!raw)return;
+  const show=t=>String(t||'').replace(/\[unk\]/g,'…').replace(/\s+/g,' ').trim().toLowerCase(),alts=(Array.isArray(o&&o.alts)?o.alts:[]).slice(0,3),orig=show(o&&o.text),altsS=alts.map(show);
+  const raw=cl(o&&o.text);if(!raw){if(orig)vLogAdd('v',orig,altsS,'ignorado: nada que o app conheça');return}
   const i=raw.search(/\btrilha\b/),armed=Date.now()<vArmedT,sosOn=!!(sos&&sos.phase==='count');let rest;
-  if(i>=0)rest=raw.slice(i+6).trim();else if(armed||sosOn)rest=raw;else return;
-  if(!rest){vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
+  if(i>=0)rest=raw.slice(i+6).trim();else if(armed||sosOn)rest=raw;else{vLogAdd('v',orig,altsS,'ignorado: sem "Trilha"');return}
+  if(!rest){vLogAdd('v',orig,altsS,'"Trilha": esperando o comando');vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
   /* a hipótese mais provável primeiro; as outras (o Vosk manda até 3) só valem se ela não for um comando */
   let c=parseCmd(rest),heard=rest;
-  if(!c)for(const a of (Array.isArray(o&&o.alts)?o.alts:[]).slice(0,3)){const t=cl(a),k=t.search(/\btrilha\b/),r=k>=0?t.slice(k+6).trim():t;if(!r||r===rest)continue;c=parseCmd(r);if(c){heard=r;break}}
-  if(!c){if(i>=0||armed)say(/^(?:(?:de|a|o|ao|e|que|para|pra|por|eu|me)(?: |$))+$/.test(rest)?'Não entendi':'Não entendi: '+rest.slice(0,40));return}
-  if(i<0&&!armed&&c.a!=='none')return;
+  if(!c)for(const a of alts){const t=cl(a),k=t.search(/\btrilha\b/),r=k>=0?t.slice(k+6).trim():t;if(!r||r===rest)continue;c=parseCmd(r);if(c){heard=r;break}}
+  if(!c){if(i>=0||armed){vLogAdd('v',orig,altsS,'não entendi');beepNo();say(/^(?:(?:de|da|do|a|o|ao|e|que|por|eu|me)(?: |$))+$/.test(rest)?'Não entendi':'Não entendi: '+rest.slice(0,40))}
+    else vLogAdd('v',orig,altsS,'ignorado: não é comando');return}
+  if(i<0&&!armed&&c.a!=='none'){vLogAdd('v',orig,altsS,'ignorado: sem "Trilha"');return}
+  vLogAdd('v',orig,altsS,'comando: '+CMDL[c.a]+(heard!==rest?' (pela 2ª hipótese)':''));beepOk();
   vArmedT=0;toast('🎤 '+heard.slice(0,60),2500);runCmd(c)}
 async function loadContacts(manual){if(!NATIVE)return;if(manual)toast('Lendo a agenda…',3000);
   try{const r=await nat('listContacts');contactsAll=((r&&r.list)||[]).map(c=>({name:String(c.name||'').slice(0,80),number:String(c.number||'').slice(0,30)})).filter(c=>c.name&&c.number);
@@ -1468,7 +1484,7 @@ loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* atalhos internos só para os testes automatizados (navegador controlado: navigator.webdriver); no uso normal não ficam expostos */
-if(navigator.webdriver)window.TN={radBulk,poiNear,offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
+if(navigator.webdriver)window.TN={radBulk,poiNear,offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get vLog(){return vLog},get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
 </script>
 </body>
 </html>

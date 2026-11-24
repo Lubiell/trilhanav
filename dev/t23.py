@@ -103,7 +103,7 @@ async def main():
 
         # ===== APK simulado: música e voz =====
         pg, errs = await newpage(b, NATIVE, offline=False)
-        check('"Trilha, trocar música" vira próxima', await pg.evaluate("TN.parseCmd('trocar música')&&TN.parseCmd('trocar música').a") == 'next')
+        check('"Trilha, próxima música" vira próxima ("trocar" saiu na 2.7.5: soa como "tocar")', await pg.evaluate("TN.parseCmd('próxima música')&&TN.parseCmd('próxima música').a") == 'next' and await pg.evaluate("TN.parseCmd('trocar música')") is None)
         check('"pausar música" pausa', await pg.evaluate("TN.parseCmd('pausar música').a") == 'pause')
         acts = await pg.evaluate("(()=>{const s=document.body.innerHTML;return s})()")
         await pg.evaluate("document.querySelector('#bVoiceTest').click()"); await pg.wait_for_timeout(300)

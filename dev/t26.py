@@ -1,4 +1,5 @@
-"""v2.7.4: comandos de voz só para música (o dono mandou tirar o resto: "ir para <cidade>", ligações, onde estou, radares por voz…).
+"""v2.7.4–2.7.5: comandos de voz só para música, uma palavra forte por ação (2.7.5), bipes de entendi/não entendi e diagnóstico
+(últimas frases ouvidas). Antes: comandos de voz só para música (o dono mandou tirar o resto: "ir para <cidade>", ligações, onde estou, radares por voz…).
 O vocabulário do assistente sempre ligado (VBASE, gramática do Vosk) cobre toda palavra que o intérprete (parseCmd) entende e nada
 além disso; as frases de música viram o comando certo; as dos comandos que saíram não fazem nada; hipóteses alternativas do Vosk;
 o "cancelar/estou bem" do aviso de queda continua. Nativo simulado."""
@@ -24,26 +25,28 @@ for lit in re.findall(r'/(\^?(?:\\.|[^/\n])+)/\.(?:test|exec)', html[i:j]):
 words -= {'test', 'exec'}
 falta = sorted(w for w in words if na(w) not in vbn)
 check('toda palavra que o intérprete entende está no vocabulário do assistente (senão o Vosk nunca a escreve)', not falta, str(falta))
-check('vocabulário sem repetição e com "trocar" ("trocar música" não vira "tocar")', len(vb) == len(set(vb)) and 'trocar' in vb, str(len(vb)))
-sobra = sorted(w for w in vb if len(na(w)) > 2 and na(w) not in words and w not in {'trilha', 'que', 'para', 'pra', 'por', 'favor', 'não', 'quero'})
+check('vocabulário sem repetição e sem palavras que soam como outra ação (troca/toca, passa/pausa, volta/toca, para/pausa)', len(vb) == len(set(vb)) and not ({'troca', 'trocar', 'passa', 'passar', 'volta', 'voltar', 'para', 'pra', 'pare', 'parar'} & set(vb)), str(len(vb)))
+sobra = sorted(w for w in vb if len(na(w)) > 2 and na(w) not in words and w not in {'trilha', 'que', 'por', 'favor', 'não', 'quero', 'música', 'volume', 'som'})
 check('vocabulário só com os comandos de música e do aviso de queda (sem ir/atender/hospital/blitz…)', not sobra and not ({'ir', 'atender', 'ligação', 'hospital', 'blitz', 'onde', 'clima', 'posto', 'zoom'} & set(vb)), str(sobra))
 gone = [x for x in ('placeGrammar', 'vosk-words', 'PALIAS', 'goPlace', 'askPlace', 'callByName', 'radMarkVoice', 'poiGo', 'callVoice', 'Para onde?') if x in html]
 check('saiu o "ir para" por voz, as cidades na gramática, ligar por voz e marcar aviso por voz', not gone, str(gone))
 
 MUSICA = [
-    ('trocar música', 'next'), ('troca a música', 'next'), ('outra música', 'next'), ('pula essa', 'next'), ('próxima', 'next'), ('toca a próxima', 'next'),
-    ('música anterior', 'prev'), ('volta a música', 'prev'), ('pausar', 'pause'), ('para a música', 'pause'), ('desligar a música', 'pause'),
-    ('mais volume', 'volup'), ('aumenta o som', 'volup'), ('sobe o volume', 'volup'),
-    ('menos volume', 'voldown'), ('baixa o som', 'voldown'), ('diminui o volume', 'voldown'), ('abaixa o volume', 'voldown'),
-    ('liga a música', 'play'), ('tocar spotify', 'play'), ('toca rádio', 'play'), ('continuar', 'play'),
-    ('estou bem', 'none'), ('cancelar', 'none'), ('esquece', 'none'),
+    ('próxima', 'next'), ('próxima música', 'next'), ('toca a próxima', 'next'), ('anterior', 'prev'), ('música anterior', 'prev'),
+    ('pausar', 'pause'), ('pausa a música', 'pause'), ('aumentar volume', 'volup'), ('aumenta o som', 'volup'), ('abaixar volume', 'voldown'), ('abaixa o volume', 'voldown'),
+    ('tocar', 'play'), ('toca música', 'play'), ('voltar a tocar', 'play'), ('estou bem', 'none'), ('tô bem', 'none'), ('cancelar', 'none'),
 ]
 SAIU = ['ir para guidoval', 'quero ir para ouro preto', 'me leva no posto', 'ir para o hospital', 'ligar para maria', 'atender', 'recusar',
         'onde estou', 'quanto falta', 'repetir', 'que horas são', 'velocidade', 'clima', 'vai chover', 'posto', 'hospital', 'farmácia',
-        'marcar blitz', 'marcar radar', 'apagar aviso', 'travar tela', 'gravar trilha', 'ler mensagens', 'ajuda', 'aproximar', 'autonomia', 'abasteci']
+        'marcar blitz', 'marcar radar', 'apagar aviso', 'travar tela', 'gravar trilha', 'ler mensagens', 'ajuda', 'aproximar', 'autonomia', 'abasteci',
+        # sinônimos que saíram na 2.7.5 (uma palavra por ação)
+        'trocar música', 'pula essa', 'outra música', 'volta a música', 'desligar a música', 'para a música', 'mais volume', 'baixa o som', 'diminui o volume',
+        'liga a música', 'continuar', 'esquece', 'tudo bem']
 
 FAKE = """
 window.__calls=[];window.__ls={};window.__listenQ=[];localStorage.setItem('tn_updT',String(Date.now()));
+window.__beeps=[];window.AudioContext=function(){this.currentTime=0;this.destination={};
+  this.createOscillator=()=>{const o={frequency:{value:0},connect(){},start(){__beeps.push(o.frequency.value)},stop(){}};return o};this.createGain=()=>({gain:{value:0},connect(){}})};
 localStorage.setItem('tn_sosC',JSON.stringify([{name:'Ana',number:'31999990000'}]));
 window.__status={phone:true,contacts:true,mic:true,notifAccess:true,speech:true,installAllowed:true,sdk:34,voiceOn:true,notif:{connected:true}};
 window.__emit=(ev,d)=>(window.__ls[ev]||[]).forEach(f=>f(d));
@@ -77,6 +80,8 @@ async def main():
         await pg.goto(URL); await pg.wait_for_timeout(2200)
         calls = lambda m: pg.evaluate('(m)=>__calls.filter(c=>c[0]===m).map(c=>c[1])', m)
         spoken = lambda: pg.evaluate('TN.spoken.slice()')
+        beeps = lambda: pg.evaluate('window.__beeps.slice()')
+        vlog = lambda: pg.evaluate('TN.vLog.map(x=>[x.src,x.text,x.res])')
         heard = lambda t, alts=None: pg.evaluate("([t,a])=>TN.onHeard(a?{text:t,alts:a}:{text:t})", [t, alts])
         async def said_after(n0): return (await spoken())[n0:]
 
@@ -93,21 +98,27 @@ async def main():
         w = set(vs[0]['words']) if vs else set()
         check('assistente liga com o vocabulário fixo (sem agenda nem cidades)', vs and w == set(vb) and 'maria' not in w, str(len(w)))
         check('o app não procura mais o vocabulário do modelo (lib/vosk-words.txt)', not [u for u in reqs if 'vosk-words' in u])
-        await heard('trilha próxima música')
+        b0 = len(await beeps()); await heard('trilha próxima música'); await pg.wait_for_timeout(250)
         check('"trilha próxima música" → próxima', (await calls('mediaKey')) == [{'key': 'next'}])
-        await heard('próxima música')
-        check('conversa sem "trilha" não faz nada', len(await calls('mediaKey')) == 1)
+        check('entendeu: dois bipes agudos', (await beeps())[b0:] == [1500, 1500], str((await beeps())[b0:]))
+        check('diagnóstico: frase ouvida e o comando', (await vlog())[0] == ['v', 'trilha próxima música', 'comando: próxima música'], str((await vlog())[:1]))
+        b0 = len(await beeps()); await heard('próxima música'); await pg.wait_for_timeout(250)
+        check('conversa sem "trilha" não faz nada (nem bipe)', len(await calls('mediaKey')) == 1 and (await beeps())[b0:] == [])
+        check('diagnóstico: conversa sem "trilha" aparece como ignorada', (await vlog())[0] == ['v', 'próxima música', 'ignorado: sem "Trilha"'], str((await vlog())[:1]))
+        await heard('[unk] trilha [unk] pausar'); await pg.wait_for_timeout(100)
+        check('diagnóstico mostra o que o modelo não conhece como "…"', (await vlog())[0] == ['v', '… trilha … pausar', 'comando: pausar'], str((await vlog())[:1]))
         await heard('trilha'); await heard('aumentar o volume')
         check('"trilha" sozinho arma e o comando seguinte vale', (await calls('volume')) == [{'dir': 'up'}])
         await heard('trilha de a o', ['trilha de a o', 'trilha pausar'])
-        check('a 2ª hipótese vale quando a 1ª não é comando', (await calls('mediaKey'))[-1] == {'key': 'pause'})
+        check('a 2ª hipótese vale quando a 1ª não é comando', (await calls('mediaKey'))[-1] == {'key': 'pause'} and (await vlog())[0][2] == 'comando: pausar (pela 2ª hipótese)', str((await vlog())[:1]))
         n0 = len(await spoken()); await heard('trilha ir para guidoval'); await pg.wait_for_timeout(1600)
         s = await said_after(n0)
         check('"trilha, ir para Guidoval": não procura nem pergunta "Para onde?"', s == ['Não entendi: ir para guidoval'] and not await calls('listen') and not await pg.evaluate('!!TN.nav'), str(s))
         n0 = len(await spoken()); await heard('trilha ligar para maria'); await pg.wait_for_timeout(300)
         check('"trilha, ligar para Maria": não liga', (await said_after(n0)) == ['Não entendi: ligar para maria'] and not await calls('findContacts') and not await calls('placeCall'))
-        n0 = len(await spoken()); await heard('trilha mapa')
-        check('não entendeu: diz o que ouviu', (await said_after(n0)) == ['Não entendi: mapa'])
+        n0 = len(await spoken()); b0 = len(await beeps()); await heard('trilha mapa')
+        check('não entendeu: um bipe grave e diz o que ouviu', (await said_after(n0)) == ['Não entendi: mapa'] and (await beeps())[b0:] == [330], str((await beeps())[b0:]))
+        check('diagnóstico: "não entendi"', (await vlog())[0] == ['v', 'trilha mapa', 'não entendi'], str((await vlog())[:1]))
         n0 = len(await spoken()); await heard('trilha de a o')
         check('só palavras soltas ("de a o"): diz apenas "Não entendi"', (await said_after(n0)) == ['Não entendi'])
 
@@ -134,11 +145,25 @@ async def main():
 
         # ---------- 6) botão Voz (escuta do Google) com o assistente desligado ----------
         await pg.evaluate("TN.cfg.voiceAlways=false;TN.onVoiceState({state:'off'})")
-        await pg.evaluate("__listenQ.push(['ir para Ouro Preto'],['trocar música'])")
+        await pg.evaluate("__listenQ.push(['ir para Ouro Preto'],['próxima'])")
         n0 = len(await spoken()); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
         check('botão Voz: "ir para Ouro Preto" não faz nada', (await said_after(n0)) == ['Não entendi: ir para Ouro Preto'] and not await pg.evaluate('!!TN.nav'), str(await said_after(n0)))
-        k0 = len(await calls('mediaKey')); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
-        check('botão Voz: "trocar música" troca', (await calls('mediaKey'))[k0:] == [{'key': 'next'}])
+        k0 = len(await calls('mediaKey')); b0 = len(await beeps()); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
+        check('botão Voz: "próxima" passa, com os dois bipes (depois do bipe de "fale agora")', (await calls('mediaKey'))[k0:] == [{'key': 'next'}] and (await beeps())[b0:] == [1000, 1500, 1500], str((await beeps())[b0:]))
+        check('diagnóstico: frase do botão Voz', (await vlog())[0] == ['g', 'próxima', 'comando: próxima música'] and (await vlog())[1] == ['g', 'ir para Ouro Preto', 'não entendi'], str((await vlog())[:2]))
+
+        # ---------- 7) tela: diagnóstico, dica do intercomunicador; nada guardado ----------
+        for k in range(12): await heard('conversa %d' % k)
+        await pg.click('#bPhone'); await pg.wait_for_timeout(400)
+        r = await pg.evaluate("({n:document.querySelectorAll('#vLog .lr').length,first:document.querySelector('#vLog .lr')&&document.querySelector('#vLog .lr').textContent,html:document.querySelector('#dlgPhone').innerHTML})")
+        check('Telefone mostra as últimas 10 frases ouvidas (a mais nova em cima)', r['n'] == 10 and r['first'] and '"conversa 11"' in r['first'] and 'ignorado' in r['first'], str(r['n']) + ' ' + str(r['first'])[:80])
+        check('Telefone tem a dica dos botões do intercomunicador e a explicação dos bipes', 'intercomunicador' in r['html'] and 'bipe grave' in r['html'] and 'Diagnóstico da voz' in r['html'])
+        await heard('trilha pausar'); await pg.wait_for_timeout(150)
+        check('com a tela aberta, a lista atualiza sozinha', 'comando: pausar' in await pg.evaluate("document.querySelector('#vLog .lr').textContent"))
+        await heard('<img src=x onerror="window.__xss=1"> trilha'); await pg.wait_for_timeout(150)
+        check('texto ouvido entra sem HTML', not await pg.evaluate('!!window.__xss') and not await pg.evaluate("!!document.querySelector('#vLog img')"))
+        ls = await pg.evaluate("Object.keys(localStorage).map(k=>localStorage.getItem(k)).join(' ')")
+        check('frases ouvidas não ficam guardadas no aparelho', 'conversa' not in ls and 'mapa' not in ls)
         check('sem erros', not errs, str(errs))
         await b.close()
     print('\nRESULTADO:', 'tudo certo' if not FAILS else 'FALHOU ' + str(FAILS))
