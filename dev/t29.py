@@ -1,4 +1,5 @@
 """v2.7.7: mapa offline e radares guardados no aparelho (o dono: "download dos mapas, radares e lombada não estão sendo salvos").
+v2.7.8: com o índice do mapa ilegível o app usa a cópia do localStorage; sem ela (dados da 2.7.7), "Baixar" confere as partes pelo SHA-256.
 Simula um Android em que a leitura do OPFS falha (NotReadableError, como no celular do dono na 2.7.1) ou a gravação falha.
 Antes: radares.json ilegível ao abrir → lista vazia → a 1ª gravação apagava MG inteiro; manifest.json ilegível → "nenhum mapa".
 Agora: nova tentativa, nunca grava por cima do que não leu, erro na tela e Ajustes → Armazenamento. Usa dev/dl (fixtures.py)."""
@@ -31,10 +32,11 @@ async def main():
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome')
         ctx = await b.new_context(viewport={'width': 1280, 'height': 720})
         await ctx.add_init_script(STUB)
-        state = {'over': 0}
+        state = {'over': 0, 'parts': 0}
         async def route(r):
             u = r.request.url
             if u.startswith(MAPS):
+                if not u.endswith('manifest.json'): state['parts'] += 1
                 await r.fulfill(status=200, body=open('dl/' + u.split('/')[-1], 'rb').read(), headers={'access-control-allow-origin': '*', 'content-type': 'application/octet-stream'}); return
             if 'maps.mail.ru' in u:
                 state['over'] += 1
@@ -99,15 +101,23 @@ async def main():
         await reload({'manifest.json': 2})
         check('manifest do mapa falhou 2 vezes ao abrir: tenta de novo e o mapa abre', (await pg.text_content('#offInfo')).startswith('Instalado') and await pg.evaluate('!!TN.offPM'), await pg.text_content('#offInfo'))
         await reload({'manifest.json': 999})
+        check('manifest sempre ilegível, com a cópia do índice (2.7.8): o mapa abre mesmo assim', (await pg.text_content('#offInfo')).startswith('Instalado') and await pg.evaluate('!!TN.offPM'), await pg.text_content('#offInfo'))
+        await pg.evaluate("localStorage.removeItem('tn_mapMan')")   # como ficou no celular com a 2.7.7: sem a cópia
+        await reload({'manifest.json': 999})
         for _ in range(20):
             oi = await pg.text_content('#offInfo')
             if 'estão no aparelho' in oi: break
             await pg.wait_for_timeout(300)
-        check('manifest sempre ilegível: diz que os arquivos estão no aparelho e pede para não apagar (antes: "nenhum mapa")', 'estão no aparelho' in oi and 'antes de baixar de novo ou apagar' in oi, oi)
-        await pg.evaluate('downloadMap()'); await pg.wait_for_timeout(2500)
+        check('manifest sempre ilegível e sem a cópia: diz que os arquivos estão no aparelho e pede para não apagar (antes: "nenhum mapa")', 'estão no aparelho' in oi and 'antes de baixar de novo ou apagar' in oi, oi)
+        p0 = state['parts']
+        await pg.evaluate('downloadMap()')
+        for _ in range(20):
+            if await pg.evaluate('!!TN.offPM'): break
+            await pg.wait_for_timeout(300)
         oi = await pg.text_content('#offInfo')
         nf = await pg.evaluate('''(async()=>{let n=0;for await (const k of (await (await navigator.storage.getDirectory()).getDirectoryHandle('mapa-dl')).keys())n++;return n})()''')
-        check('"Baixar" com o índice do mapa ilegível: não mistura partes, para e explica (arquivos intactos)', 'não consegui ler o mapa que já está no aparelho' in oi and nf == 4, oi + ' arquivos=%s' % nf)
+        check('"Baixar" com o índice ilegível e sem cópia: confere as partes pelo SHA-256, não baixa de novo e o mapa abre (2.7.7: parava para sempre)',
+              oi.startswith('Instalado') and nf == 4 and state['parts'] == p0 and await pg.evaluate("!!localStorage.getItem('tn_mapMan')"), oi + ' arquivos=%s partes baixadas=%s' % (nf, state['parts'] - p0))
         await pg.evaluate('window.__fail={}')
         for _ in range(20):
             if await pg.evaluate('!!TN.offPM'): break
@@ -128,7 +138,17 @@ async def main():
             si = await pg.text_content('#stoInfo')
             if 'Mapa offline' in si: break
             await pg.wait_for_timeout(300)
-        check('Armazenamento mostra o erro de leitura do mapa (e que os arquivos estão lá)', 'Erro (mapa)' in si and 'NotReadableError' in si and '4 arquivo(s) do download no aparelho' in si, si)
+        check('Armazenamento com a cópia do índice: mapa completo e o erro de leitura do manifest para o diagnóstico', 'usei a cópia do índice' in si and 'NotReadableError' in si and 'Mapa offline: 3 de 3 partes' in si, si)
+        await pg.evaluate("document.querySelector('#dlgSet').close()")
+        await pg.evaluate("localStorage.removeItem('tn_mapMan')")
+        await reload({'manifest.json': 999}); await pg.wait_for_timeout(1500)
+        await pg.evaluate("window.__fail={'manifest.json':999}")
+        await pg.evaluate("document.querySelector('#bSet').click()")
+        for _ in range(20):
+            si = await pg.text_content('#stoInfo')
+            if 'Mapa offline' in si: break
+            await pg.wait_for_timeout(300)
+        check('Armazenamento sem a cópia mostra o erro de leitura do mapa (e que os arquivos estão lá)', 'Erro (mapa)' in si and 'NotReadableError' in si and '4 arquivo(s) do download no aparelho' in si, si)
         check('sem erros de página', not errs, str(errs[:3]))
         await b.close()
     print('\nRESULTADO:', 'tudo certo' if not FAILS else 'FALHOU ' + str(FAILS))
