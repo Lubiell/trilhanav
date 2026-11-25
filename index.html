@@ -206,6 +206,9 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">O download usa uns 1,4 GB de internet e de espaço. Faça no Wi-Fi; se cair, é só tocar de novo que ele continua.</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><button class="btn" id="bOffDl">Baixar mapa de Minas Gerais (1,4 GB)</button><button class="btn g" id="bOffMap">Instalar de arquivo</button><button class="btn r" id="bOffDel">Remover</button></div>
   <input type="file" id="offIn" accept=".pmtiles,.part1,.part2,.part3,.part4,application/octet-stream" multiple hidden>
+  <h3>Armazenamento</h3>
+  <div class="small" id="stoInfo">Toque em "Verificar" para ver o que está guardado no aparelho.</div>
+  <div style="padding:8px 0"><button class="btn g" id="bSto">Verificar armazenamento</button></div>
   <h3>Atualização</h3>
   <div class="small" id="updInfo">Atualização automática só no app (APK).</div>
   <div class="small">O app procura atualização sozinho ao abrir (no máximo 1 vez a cada 12 h) e avisa quando houver versão nova.</div>
@@ -214,7 +217,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.6 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.7 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -370,6 +373,13 @@ const base={'Ruas (OSM)':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}
 const layersCtl=L.control.layers(base).addTo(map);let offLayer=null,offPM=null,offH=null;
 const MAPS_BASE='https://raw.githubusercontent.com/Lubiell/trilhanav/mapas/mg/';
 async function opfsDir(){return await navigator.storage.getDirectory()}
+/* (v2.7.7) texto de um arquivo do OPFS com até 3 tentativas (handle e File novos a cada vez): no Android do dono a leitura já falhou
+   com "state had changed since it was read from disk". Arquivo que não existe (NotFoundError) não tenta de novo. */
+const eMsg=e=>String((e&&e.name&&e.name!=='Error'?e.name+': ':'')+((e&&e.message)||e||'erro')).slice(0,140);
+async function opfsText(dir,name){let last;for(let k=0;k<3;k++){try{return await (await (await dir.getFileHandle(name)).getFile()).text()}
+  catch(e){last=e;if(e&&e.name==='NotFoundError')throw e;await new Promise(r=>setTimeout(r,300*(k+1)))}}throw last}
+var stoErr={};   /* último erro de leitura/gravação por assunto (radares, mapa), para Ajustes → Armazenamento */
+var stoPersist=null;try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().then(v=>{stoPersist=!!v}).catch(()=>{})}catch(e){}
 /* fonte PMTiles que lê um mapa guardado em várias partes, sem precisar juntar */
 /* "o estado mudou desde que foi lido do disco": o File é uma foto do arquivo; no Android a gravação termina depois e a foto fica velha */
 const staleFile=e=>/NotReadable|state had changed|changed since it was read/i.test(String(e&&(e.name+' '+e.message)));
@@ -380,19 +390,24 @@ class PartsSource{constructor(files,key,handles){this.files=files;this.key=key;t
   async getBytes(off,len){const end=Math.min(off+len,this.size),bufs=[];let total=0;
     for(let i=0;i<this.files.length;i++){const s=this.offs[i],e=s+this.files[i].size;if(e<=off)continue;if(s>=end)break;const b=await this.read(i,Math.max(off,s)-s,Math.min(end,e)-s);bufs.push(b);total+=b.byteLength}
     if(bufs.length===1)return{data:bufs[0]};const out=new Uint8Array(total);let q=0;for(const b of bufs){out.set(new Uint8Array(b),q);q+=b.byteLength}return{data:out.buffer}}}
-async function dlState(){try{const d=await opfsDir();const dir=await d.getDirectoryHandle('mapa-dl');const man=JSON.parse(await (await (await dir.getFileHandle('manifest.json')).getFile()).text());
+async function dlState(){try{const d=await opfsDir();const dir=await d.getDirectoryHandle('mapa-dl');let man;
+  try{man=JSON.parse(await opfsText(dir,'manifest.json'))}catch(e){if(e&&e.name!=='NotFoundError')stoErr.mapa='ler o mapa: '+eMsg(e);return null}
+  if(/^ler o mapa: /.test(stoErr.mapa||''))delete stoErr.mapa;
   const files=[],handles=[];let bytes=0;for(const pt of man.parts){try{const h=await dir.getFileHandle(pt.f),f=await h.getFile();if(f.size!==pt.size)continue;files.push(f);handles.push(h);bytes+=f.size}catch(e){}}
   return {man,files,handles,bytes,complete:files.length===man.parts.length}}catch(e){return null}}
 async function offSource(){const s=await dlState();if(s&&s.complete)return {src:new PartsSource(s.files,s.man.id,s.handles),size:s.bytes,label:s.man.label};
   const d=await opfsDir();const f=await (await d.getFileHandle('mapa.pmtiles')).getFile();return {src:new pmtiles.FileSource(f),size:f.size,label:''}}
 const mb=b=>(b/1048576).toFixed(0);
-async function loadOffline(){try{if(!navigator.storage||!navigator.storage.getDirectory){$('#offInfo').textContent='Este navegador não suporta mapa offline.';if(!offLayer)base['Ruas (OSM)'].addTo(map);return false}
+async function loadOffline(){delete stoErr.mapa;try{if(!navigator.storage||!navigator.storage.getDirectory){$('#offInfo').textContent='Este navegador não suporta mapa offline.';if(!offLayer)base['Ruas (OSM)'].addTo(map);return false}
   const o=await offSource();const pm=new pmtiles.PMTiles(o.src);const h=await pm.getHeader();offPM=pm;offH=h;
   if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer)}
   offLayer=protomapsL.leafletLayer({url:pm,flavor:cfg.day?'light':'dark',lang:'pt',maxDataZoom:h.maxZoom,attribution:'© OpenStreetMap · Protomaps'});
-  layersCtl.addBaseLayer(offLayer,'Offline'+(o.label?' ('+esc(o.label)+')':''));Object.values(base).forEach(l=>map.removeLayer(l));offLayer.addTo(map);
+  loadOffline.retried=0;layersCtl.addBaseLayer(offLayer,'Offline'+(o.label?' ('+esc(o.label)+')':''));Object.values(base).forEach(l=>map.removeLayer(l));offLayer.addTo(map);
   $('#offInfo').textContent='Instalado'+(o.label?' ('+o.label+')':'')+': '+mb(o.size)+' MB · zoom até '+h.maxZoom+' · área '+h.minLon.toFixed(1)+','+h.minLat.toFixed(1)+' a '+h.maxLon.toFixed(1)+','+h.maxLat.toFixed(1);return true}
-  catch(e){if(!offLayer)base['Ruas (OSM)'].addTo(map);const s=await dlState();if(s&&s.bytes&&!dlBusy)$('#offInfo').textContent='Download incompleto: '+mb(s.bytes)+' de '+mb(s.man.size)+' MB. Toque em "Baixar" para continuar de onde parou.';return false}}
+  catch(e){if(!offLayer)base['Ruas (OSM)'].addTo(map);const s=stoErr.mapa?null:await dlState();if(s&&s.bytes&&!dlBusy)$('#offInfo').textContent='Download incompleto: '+mb(s.bytes)+' de '+mb(s.man.size)+' MB. Toque em "Baixar" para continuar de onde parou.';
+    else if(stoErr.mapa&&!dlBusy){$('#offInfo').textContent='Os arquivos do mapa estão no aparelho, mas não consegui ler agora ('+stoErr.mapa.replace(/^ler o mapa: |^abrir o mapa: /,'')+'). Feche e abra o app antes de baixar de novo ou apagar.';
+      if(!loadOffline.retried){loadOffline.retried=1;setTimeout(()=>{if(!offPM)loadOffline()},4000)}}
+    else if(e&&e.name!=='NotFoundError'&&!dlBusy){stoErr.mapa='abrir o mapa: '+eMsg(e);$('#offInfo').textContent='Os arquivos do mapa estão no aparelho, mas não consegui abrir agora ('+eMsg(e)+'). Feche e abra o app antes de baixar de novo ou apagar.'}return false}}
 async function installOffline(files){files=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
   const parts=files.filter(f=>/\.part\d+$/i.test(f.name));if(parts.length&&parts.length!==files.length){toast('Selecione só as partes do mapa',4000);return}
   toast('Instalando mapa offline… não feche o app',600000);try{try{await navigator.storage.persist()}catch(e){}
@@ -408,7 +423,10 @@ async function downloadMap(){if(dlBusy)return;const info=$('#offInfo'),btn=$('#b
   dlBusy=true;btn.disabled=true;info.textContent='Preparando o download…';
   try{try{await navigator.storage.persist()}catch(e){}
     const mr=await fetch(MAPS_BASE+'manifest.json',{cache:'no-store'});if(!mr.ok)throw new Error('sem acesso ao servidor do mapa (HTTP '+mr.status+')');const man=await mr.json();
-    const d=await opfsDir();const old=await dlState();if(old&&old.man.id!==man.id){try{await d.removeEntry('mapa-dl',{recursive:true})}catch(e){}}
+    const d=await opfsDir();delete stoErr.mapa;const old=await dlState();
+    /* índice do mapa guardado ilegível: sem saber de qual mapa são as partes, não mistura com as do novo (mesmo nome e tamanho) */
+    if(!old&&stoErr.mapa)throw new Error('não consegui ler o mapa que já está no aparelho; feche e abra o app e tente de novo');
+    if(old&&old.man.id!==man.id){try{await d.removeEntry('mapa-dl',{recursive:true})}catch(e){}}
     const dir=await d.getDirectoryHandle('mapa-dl',{create:true});
     {const w=await (await dir.getFileHandle('manifest.json',{create:true})).createWritable();await w.write(JSON.stringify(man));await w.close()}
     let have=0;const todo=[];for(const pt of man.parts){let ok=false;try{ok=(await (await dir.getFileHandle(pt.f)).getFile()).size===pt.size}catch(e){}if(ok)have+=pt.size;else todo.push(pt)}
@@ -869,12 +887,35 @@ function radEl(el){if(!el||el.type!=='node'||!Number.isFinite(el.lat)||!Number.i
   return {id:'o'+el.id,lat:el.lat,lon:el.lon,max:k==='radar'?parseMax(t.maxspeed):null,dir:null,user:false,k}}
 var radLayer=L.layerGroup().addTo(map);
 const parseMax=v=>{const m=/(\d+)/.exec(String(v==null?'':v));let n=m?+m[1]:NaN;if(/mph/i.test(String(v)))n=Math.round(n*1.609);return n>=5&&n<=200?n:null};
-async function radLoad(){try{const j=JSON.parse(await (await fsRead([],'radares.json')).text());if(j&&j.v>=2&&j.tiles&&typeof j.tiles==='object')for(const k of Object.keys(j.tiles))if(/^-?\d+_-?\d+$/.test(k)&&Number.isFinite(j.tiles[k]))radTiles[k]=j.tiles[k];
+/* (v2.7.7) radLoaded: só depois de ler o radares.json (ou de ver que ele não existe) o app pode gravar; senão a 1ª gravação apagaria o que
+   estava guardado (MG inteiro). O que já está na memória vale mais que o do arquivo (junta, não troca). */
+var radLoaded=false,radLoadP=null,radWarnR=false,radWarnW=false,radDirty=false,radGen=0;
+function radLoad(){if(!radLoadP)radLoadP=radLoad0().finally(()=>{radLoadP=null});return radLoadP}
+/* nova tentativa de leitura: um timer por vez (5, 10… 25 s, depois a cada minuto), enquanto não conseguir ler */
+function radRetry(){if(radLoaded||radLoad.tm)return;radLoad.retry=(radLoad.retry||0)+1;radLoad.tm=setTimeout(()=>{radLoad.tm=null;if(!radLoaded)radLoad()},radLoad.retry<=5?5000*radLoad.retry:60000)}
+async function radLoad0(){const gen=radGen,mem={...radTiles};let txt;try{txt=await opfsText(await opfsDir(),'radares.json')}
+  catch(e){if(e&&e.name==='NotFoundError'){radLoaded=true;delete stoErr.radares;if(radDirty)radSave()}
+    else{stoErr.radares='ler os radares guardados: '+eMsg(e);radRetry();
+      if(!radWarnR){radWarnR=true;toast('Não consegui ler os radares guardados ('+eMsg(e)+'). Para não apagá-los, os novos ficam só na memória até eu conseguir ler; tento de novo sozinho.',8000)}}
+    radDrawSoon();radInfo();return}
+  if(gen!==radGen){radLoaded=true;radInfo();return}   /* "Apagar radares" enquanto lia: não traz de volta */
+  try{const j=JSON.parse(txt),ft=(j&&j.tiles&&typeof j.tiles==='object')?j.tiles:{};
+    /* ponto do arquivo num quadrado que já foi baixado de novo nesta sessão (mais novo que o do arquivo) não volta: o OpenStreetMap pode tê-lo tirado */
+    const stale=(la,lo)=>{const k=radKey(la,lo);return mem[k]&&mem[k]>(ft[k]||0)};
+    if(j&&j.v>=2)for(const k of Object.keys(ft))if(/^-?\d+_-?\d+$/.test(k)&&Number.isFinite(ft[k]))radTiles[k]=Math.max(radTiles[k]||0,ft[k]);
   (Array.isArray(j&&j.pts)?j.pts:[]).forEach(a=>{if(!Array.isArray(a)||!/^[ou]\d+$/.test(String(a[0]))||!Number.isFinite(a[1])||!Number.isFinite(a[2]))return;const id=String(a[0]);
     const k=RADK[a[5]]?a[5]:'radar',exp=Number.isFinite(a[6])?a[6]:null;if(exp&&exp<Date.now())return;
-    radars.set(id,{id,lat:a[1],lon:a[2],max:Number.isFinite(a[3])?a[3]:null,dir:Number.isFinite(a[4])?a[4]:null,user:id[0]==='u',k,exp})})}catch(e){}radDrawSoon();radInfo()}
-function radSave(){clearTimeout(radSave.t);radSave.t=setTimeout(()=>{try{fsWrite([],'radares.json',JSON.stringify({v:2,tiles:radTiles,pts:[...radars.values()].map(r=>[r.id,+r.lat.toFixed(6),+r.lon.toFixed(6),r.max,r.dir,r.k||'radar',r.exp||null])})).catch(()=>{})}catch(e){}},400)}
-function radInfo(){const el=$('#radInfo');if(!el||radBulkOn)return;const c={radar:0,lombada:0,outro:0};for(const r of radars.values())c[r.k==='radar'||!r.k?'radar':r.k==='lombada'?'lombada':'outro']++;
+    if(!radars.has(id)&&(id[0]==='u'||!stale(a[1],a[2])))radars.set(id,{id,lat:a[1],lon:a[2],max:Number.isFinite(a[3])?a[3]:null,dir:Number.isFinite(a[4])?a[4]:null,user:id[0]==='u',k,exp})});delete stoErr.radares}
+  catch(e){stoErr.radares='arquivo de radares danificado ('+eMsg(e)+'): será refeito'}
+  radLoaded=true;if(radDirty)radSave();radDrawSoon();radInfo()}
+function radSave(){clearTimeout(radSave.t);radSave.t=setTimeout(()=>{radSave.t=null;radWrite()},400)}
+async function radWrite(){if(!radLoaded){await radLoad();if(!radLoaded){radDirty=true;return false}}
+  try{await fsWrite([],'radares.json',JSON.stringify({v:2,tiles:radTiles,pts:[...radars.values()].map(r=>[r.id,+r.lat.toFixed(6),+r.lon.toFixed(6),r.max,r.dir,r.k||'radar',r.exp||null])}));
+    delete stoErr.radaresW;radDirty=false;return true}
+  catch(e){radDirty=true;stoErr.radaresW='gravar os radares: '+eMsg(e);if(!radWarnW){radWarnW=true;toast('Não consegui guardar os radares no aparelho ('+eMsg(e)+')',6000)}return false}}
+/* grava já o que estiver esperando (antes do "Sair do app") */
+async function radFlush(){if(radSave.t||radDirty){clearTimeout(radSave.t);radSave.t=null;await radWrite()}}
+function radInfo(){const el=$('#radInfo');if(!el||radBulkOn)return;if(!radLoaded&&stoErr.radares){el.textContent='Não consegui ler os radares guardados ('+stoErr.radares.replace(/^ler os radares guardados: /,'')+'). Tento de novo sozinho; não apague.';return}const c={radar:0,lombada:0,outro:0};for(const r of radars.values())c[r.k==='radar'||!r.k?'radar':r.k==='lombada'?'lombada':'outro']++;
   el.textContent=radars.size?c.radar+' radares guardados'+(c.lombada?', '+c.lombada+' lombadas':'')+(c.outro?', '+c.outro+' avisos':'')+' ('+Object.keys(radTiles).length+' áreas baixadas).':'Nenhum radar guardado ainda.'}
 /* MG inteiro (ou outro retângulo) em blocos de step graus: um pedido por bloco, pulando os já baixados há menos de 30 dias */
 async function radBulk(box,step){if(radBulkOn)return null;radBulkOn=true;const [s0,w0,n0,e0]=box,bl=[];let done=0,fail=0,got=0;
@@ -936,7 +977,7 @@ $('#bRadArea').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('
 $('#bRadMG').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('Ligue o aviso de radares primeiro');return}if(radBulkOn){toast('Já está baixando');return}
   toast('Baixando radares e lombadas de Minas Gerais (uns 10 a 15 minutos; pode usar o app)…',6000);const r=await radBulk(MG_BOX,1);
   if(r)toast(r.fail?'Faltaram '+r.fail+' de '+r.blocks+' blocos (sem internet?): toque de novo para completar':'Pronto: radares e lombadas de MG guardados no aparelho',7000)};
-$('#bRadDel').onclick=async()=>{if(!await ask({title:'Apagar radares',msg:'Apaga os radares baixados e os marcados por você.',ok:'Apagar',danger:true}))return;radars.clear();radTiles={};radQ=[];radSave();radDraw();radInfo();toast('Radares apagados')};
+$('#bRadDel').onclick=async()=>{if(!await ask({title:'Apagar radares',msg:'Apaga os radares baixados e os marcados por você.',ok:'Apagar',danger:true}))return;radGen++;radLoaded=true;radars.clear();radTiles={};radQ=[];radSave();radDraw();radInfo();toast('Radares apagados')};
 radLoad();
 
 /* ---------- telefone, WhatsApp, música atual, comandos de voz e atualização (só no APK) ---------- */
@@ -1353,6 +1394,7 @@ async function appExit(){if(!NATIVE){toast('No navegador, feche a aba',3000);ret
   if(has)for(let k=0;k<2;k++)try{const {gpx,base}=recGpx();await fsWrite(['gpx','Gravações'],base+'.gpx',gpx);break}
     catch(e){if(k){toast('Não consegui guardar a trilha gravada ('+errTxt(e)+'). O app continua aberto: exporte a gravação antes de sair.',8000);return}await new Promise(r=>setTimeout(r,400))}
   recording=false;if(nav)navStop();
+  try{await radFlush()}catch(e){}
   try{await nat('voiceStop')}catch(e){}
   stopGPS();
   nat('exitApp').catch(e=>toast('Não consegui fechar o app ('+errTxt(e)+'). O GPS e o assistente de voz já pararam; feche pelo Android.',6000))}
@@ -1372,7 +1414,22 @@ bind.forEach(([id,k,f])=>$('#'+id).onchange=e=>{const v=f(e.target.value);if(!is
 binc.forEach(([id,k])=>$('#'+id).onchange=e=>{cfg[k]=e.target.checked;saveCfg();if(k==='crashOn')crashArmNow(true);if(k==='wx'){wxShow();if(cfg.wx)wxUpdate(true)}if(k==='voiceBt')nat('voiceBt',{on:!!cfg.voiceBt}).catch(()=>{});if(k==='voiceAlways'){cfg.voiceAlways?voiceAlwaysStart(true):nat('voiceStop').catch(()=>{})}if(k==='radar'){radDrawSoon();if(!cfg.radar)$('#radBox').classList.remove('on')}if((k==='navNoToll'||k==='navNoHwy')&&navPlan)navPlanRoutes()});
 $('#sCompOff').addEventListener('change',()=>{cfg.compLearned=true;saveCfg()});
 $('#bResetT').onclick=()=>{lean.maxL=0;lean.maxR=0;st.maxSpd=0;st.movSec=0;st.movKm=0;saveOdo();renderDash();toast('Estatísticas da viagem zeradas')};
-$('#bSet').onclick=()=>{fillSet();$('#dlgSet').showModal()};
+$('#bSet').onclick=()=>{fillSet();$('#dlgSet').showModal();stoCheck()};
+/* (v2.7.7) o que está guardado no OPFS e o último erro: o dono manda um print quando o mapa ou os radares somem */
+async function stoCheck(){const el=$('#stoInfo');if(!el)return;const L=[];
+  if(!navigator.storage||!navigator.storage.getDirectory){el.textContent='Este aparelho não tem armazenamento para o mapa offline.';return}
+  try{const p=navigator.storage.persisted?await navigator.storage.persisted():stoPersist;L.push('Guardado de forma permanente (o Android não apaga sozinho): '+(p?'sim':'não'))}catch(e){}
+  try{const est=await navigator.storage.estimate();if(est&&est.quota)L.push('Espaço do app: '+mb(est.usage||0)+' MB usados de '+mb(est.quota)+' MB')}catch(e){}
+  try{const st=await dlState();if(st)L.push('Mapa offline: '+st.files.length+' de '+st.man.parts.length+' partes ('+mb(st.bytes)+' de '+mb(st.man.size)+' MB)'+(st.complete?', completo':''));
+    else{let f=null,n=0;try{f=await (await (await opfsDir()).getFileHandle('mapa.pmtiles')).getFile()}catch(e){}
+      try{for await (const k of (await (await opfsDir()).getDirectoryHandle('mapa-dl')).keys())n++}catch(e){}
+      L.push(f?'Mapa offline: arquivo único de '+mb(f.size)+' MB':n?'Mapa offline: '+n+' arquivo(s) do download no aparelho, mas não consegui ler o índice (erro abaixo)':'Mapa offline: nenhum no aparelho')}}catch(e){L.push('Mapa offline: erro ao verificar ('+eMsg(e)+')')}
+  try{let sz=null;try{sz=(await (await (await opfsDir()).getFileHandle('radares.json')).getFile()).size}catch(e){}const c={r:0,l:0};for(const r of radars.values())r.k==='lombada'?c.l++:c.r++;
+    L.push('Radares: '+(sz==null?'nenhum arquivo guardado':'arquivo de '+Math.max(1,Math.round(sz/1024))+' KB')+'; carregados '+c.r+' radares/avisos e '+c.l+' lombadas ('+Object.keys(radTiles).length+' áreas)'+(radLoaded?'':' · ainda não li o arquivo'))}catch(e){}
+  try{const {files}=await fsList(['gpx','Gravações']);L.push('Gravações: '+files.filter(f=>/\.gpx$/i.test(f.name)).length+' arquivo(s)')}catch(e){L.push('Gravações: nenhuma')}
+  for(const [k,v] of Object.entries(stoErr))L.push('Erro ('+k.replace(/W$/,'')+'): '+v);
+  el.innerHTML=L.map(x=>'<div>'+esc(x)+'</div>').join('')}
+$('#bSto').onclick=stoCheck;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 /* sem botão "Fechar": tocar fora da janela fecha e o toque segue para o que estiver embaixo (tocar em outro botão da barra já troca de janela).
    A confirmação (dlgAsk) continua pedindo resposta. */
@@ -1502,7 +1559,7 @@ loadNotes();
 keepAwake();
 if(!NATIVE&&'serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* atalhos internos só para os testes automatizados (navegador controlado: navigator.webdriver); no uso normal não ficam expostos */
-if(navigator.webdriver)window.TN={radBulk,poiNear,offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get vLog(){return vLog},get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
+if(navigator.webdriver)window.TN={radBulk,poiNear,offSearch,placeIndex,resetSrch:()=>{srchIdx=null;srchP=null},get srchIdx(){return srchIdx},offNavRoute,offNavReq,offlineRouteTo,get offPM(){return offPM},mkRoute,onImpact,sosCancel,get sos(){return sos},rangeKm,fillUp,get fuelKm(){return fuelKm},renderDash,DASH,fuelFind,limCheck,get limCur(){return limCur},get limCells(){return limCells},get lean(){return lean},leanTxt,wxFetch,wxUpdate,wxAlerts,wxRoute,get wxD(){return wxD},applyHeading,onHeard,onVoiceState,loadContacts,voiceVocab,get contactsAll(){return contactsAll},get voiceSt(){return voiceSt},parseCmd,runCmd,onCall,onWa,onMedia,voiceCmd,checkUpdate,get callSt(){return callSt},get waMsgs(){return waMsgs},get nowPlay(){return nowPlay},openPhone,dial,get nav(){return nav},get navPlan(){return navPlan},navStart,navStop,navUpdate,routeReq,geoSearch,dec6,parseTrip,radars,radCheck,radQueue,get vLog(){return vLog},radLoad,radSave,radFlush,get radLoaded(){return radLoaded},stoCheck,get stoErr(){return stoErr},loadOffline,get radTiles(){return radTiles},get radQ(){return radQ},radDraw,radMk,spokenDist,fmtKm,openNavDlg,navPick,navPlanRoutes,get navSel(){return navSel},st,cfg,onPos,get track(){return track},NATIVE,mvtRoads,sunElev,autoTheme,themeNow,get rnotes(){return rnotes},exportGPX,makeZip,esc,map,say,spoken,comp,onOrient,applyHeading,eulerHeading,showGpx,hideGpx};
 </script>
 </body>
 </html>
