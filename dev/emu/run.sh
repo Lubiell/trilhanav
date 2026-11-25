@@ -19,7 +19,10 @@ done
 echo "== $(date +%T) SDK em $SDK; baixando o emulador e o Android 14"
 yes 2>/dev/null | timeout 300 sdkmanager --licenses >/dev/null 2>&1
 timeout 900 sdkmanager --install emulator platform-tools "$IMG" >/dev/null || { echo "sdkmanager falhou"; exit 1; }
-echo no | timeout 120 avdmanager create avd -n tn -k "$IMG" -d pixel_6 --force >/dev/null || { echo "avdmanager falhou"; exit 1; }
+# o avdmanager e o emulador procuravam o aparelho virtual em pastas diferentes ("Unknown AVD name [tn]"): a mesma para os dois
+export ANDROID_AVD_HOME="$HOME/.android/avd"; mkdir -p "$ANDROID_AVD_HOME"
+echo no | timeout 120 avdmanager create avd -n tn -k "$IMG" -d pixel_6 --force | tail -3 || { echo "avdmanager falhou"; exit 1; }
+echo "== aparelhos virtuais: $(emulator -list-avds | tr '\n' ' ')"
 echo "== $(date +%T) emulador: $(command -v emulator); $(emulator -version 2>&1 | head -1)"
 emulator -avd tn -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect -memory 4096 -partition-size 8192 \
   >"$OUT/emulador.log" 2>&1 &
