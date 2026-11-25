@@ -217,7 +217,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.7 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.8 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -259,7 +259,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">Andando a 25 km/h ou mais, um impacto forte e a moto parada por 15 s: o app conta 30 s (alarme e voz). Sem "Estou bem" ou "Trilha, cancelar", manda SMS com a sua localização para até 3 contatos e liga para o primeiro. Também dá para adicionar um contato da Agenda abaixo pelo botão SOS. Não é um equipamento certificado: pode falhar ou dar alarme falso.</div>
   <h3>Comandos de voz</h3>
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
-  <label>Ouvir pelo microfone do fone/intercom Bluetooth (enquanto ligado, a música fica com qualidade de ligação) <input type="checkbox" id="sVoiceBt"></label>
+  <label>Ouvir pelo microfone do fone/intercom Bluetooth (deixe desligado para a música não abaixar: enquanto ligado, o Bluetooth fica no canal de ligação e a música sai baixa, com som de ligação) <input type="checkbox" id="sVoiceBt"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, próxima música", "Trilha, pausar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
   <div class="small">Só para a música: diga "Trilha" e o comando (ou toque em <b>Voz</b> e fale): "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume". Dois bipes agudos: entendeu; um bipe grave: não entendeu. No aviso de queda, "cancelar" ou "estou bem" cancela.</div>
   <div class="small" style="padding-top:8px">Os botões de música do intercomunicador do capacete (tocar, pausar, próxima) funcionam direto no Android, sem o app: é o jeito mais seguro. Se usar só os botões, desligue o "Assistente de voz sempre ligado" para gastar menos bateria.</div>
@@ -333,8 +333,11 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:true};
+const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:false};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
+/* (v2.7.8) a pedido do dono ("não abaixar a música do Spotify; sobrepor só nos avisos do app"): o microfone do capacete deixava o Bluetooth
+   no canal de ligação (SCO) o tempo todo e a música ia junto, baixa e com som de ligação. Passa a vir desligado, também para quem já usava. */
+if(!LS.get('mig278',false)){cfg.voiceBt=false;LS.set('cfg',cfg);LS.set('mig278',true)}
 const saveCfg=()=>LS.set('cfg',cfg);
 /* restos das funções de rali (até a v2.6.3: o GPX guardado podia ocupar MBs da cota do localStorage) e das teclas do controle de guidão (até a v2.7.1) */
 try{for(const k of Object.keys(localStorage))if(/^tn_(keys|gpx|gpxName|gpxKey|gpxPath|wpState|marks|chrono|trailOn|rbScroll_.*|zones_.*)$/.test(k))localStorage.removeItem(k)}catch(e){}
@@ -391,8 +394,11 @@ class PartsSource{constructor(files,key,handles){this.files=files;this.key=key;t
     for(let i=0;i<this.files.length;i++){const s=this.offs[i],e=s+this.files[i].size;if(e<=off)continue;if(s>=end)break;const b=await this.read(i,Math.max(off,s)-s,Math.min(end,e)-s);bufs.push(b);total+=b.byteLength}
     if(bufs.length===1)return{data:bufs[0]};const out=new Uint8Array(total);let q=0;for(const b of bufs){out.set(new Uint8Array(b),q);q+=b.byteLength}return{data:out.buffer}}}
 async function dlState(){try{const d=await opfsDir();const dir=await d.getDirectoryHandle('mapa-dl');let man;
-  try{man=JSON.parse(await opfsText(dir,'manifest.json'))}catch(e){if(e&&e.name!=='NotFoundError')stoErr.mapa='ler o mapa: '+eMsg(e);return null}
-  if(/^ler o mapa: /.test(stoErr.mapa||''))delete stoErr.mapa;
+  try{man=JSON.parse(await opfsText(dir,'manifest.json'));if(!man||!Array.isArray(man.parts))throw new SyntaxError('índice do mapa incompleto');if(/^ler o mapa/.test(stoErr.mapa||''))delete stoErr.mapa}
+  catch(e){if(e&&e.name==='NotFoundError')return null;
+    /* (v2.7.8) índice ilegível ou danificado: usa a cópia que o download guarda no localStorage (sem ela, não sabe de qual mapa são as partes) */
+    const c=LS.get('mapMan',null);if(!c||!Array.isArray(c.parts)){stoErr.mapa='ler o mapa: '+eMsg(e);return null}
+    man=c;stoErr.mapa='ler o mapa (usei a cópia do índice): '+eMsg(e)}
   const files=[],handles=[];let bytes=0;for(const pt of man.parts){try{const h=await dir.getFileHandle(pt.f),f=await h.getFile();if(f.size!==pt.size)continue;files.push(f);handles.push(h);bytes+=f.size}catch(e){}}
   return {man,files,handles,bytes,complete:files.length===man.parts.length}}catch(e){return null}}
 async function offSource(){const s=await dlState();if(s&&s.complete)return {src:new PartsSource(s.files,s.man.id,s.handles),size:s.bytes,label:s.man.label};
@@ -404,8 +410,8 @@ async function loadOffline(){delete stoErr.mapa;try{if(!navigator.storage||!navi
   offLayer=protomapsL.leafletLayer({url:pm,flavor:cfg.day?'light':'dark',lang:'pt',maxDataZoom:h.maxZoom,attribution:'© OpenStreetMap · Protomaps'});
   loadOffline.retried=0;layersCtl.addBaseLayer(offLayer,'Offline'+(o.label?' ('+esc(o.label)+')':''));Object.values(base).forEach(l=>map.removeLayer(l));offLayer.addTo(map);
   $('#offInfo').textContent='Instalado'+(o.label?' ('+o.label+')':'')+': '+mb(o.size)+' MB · zoom até '+h.maxZoom+' · área '+h.minLon.toFixed(1)+','+h.minLat.toFixed(1)+' a '+h.maxLon.toFixed(1)+','+h.maxLat.toFixed(1);return true}
-  catch(e){if(!offLayer)base['Ruas (OSM)'].addTo(map);const s=stoErr.mapa?null:await dlState();if(s&&s.bytes&&!dlBusy)$('#offInfo').textContent='Download incompleto: '+mb(s.bytes)+' de '+mb(s.man.size)+' MB. Toque em "Baixar" para continuar de onde parou.';
-    else if(stoErr.mapa&&!dlBusy){$('#offInfo').textContent='Os arquivos do mapa estão no aparelho, mas não consegui ler agora ('+stoErr.mapa.replace(/^ler o mapa: |^abrir o mapa: /,'')+'). Feche e abra o app antes de baixar de novo ou apagar.';
+  catch(e){if(!offLayer)base['Ruas (OSM)'].addTo(map);const hard=stoErr.mapa&&!/usei a cópia/.test(stoErr.mapa),s=hard?null:await dlState();if(s&&s.bytes&&!dlBusy)$('#offInfo').textContent='Download incompleto: '+mb(s.bytes)+' de '+mb(s.man.size)+' MB. Toque em "Baixar" para continuar de onde parou.';
+    else if(hard&&!dlBusy){$('#offInfo').textContent='Os arquivos do mapa estão no aparelho, mas não consegui ler agora ('+stoErr.mapa.replace(/^ler o mapa: |^abrir o mapa: /,'')+'). Feche e abra o app antes de baixar de novo ou apagar.';
       if(!loadOffline.retried){loadOffline.retried=1;setTimeout(()=>{if(!offPM)loadOffline()},4000)}}
     else if(e&&e.name!=='NotFoundError'&&!dlBusy){stoErr.mapa='abrir o mapa: '+eMsg(e);$('#offInfo').textContent='Os arquivos do mapa estão no aparelho, mas não consegui abrir agora ('+eMsg(e)+'). Feche e abra o app antes de baixar de novo ou apagar.'}return false}}
 async function installOffline(files){files=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
@@ -418,18 +424,36 @@ async function installOffline(files){files=[...files].sort((a,b)=>a.name.localeC
 /* download do mapa direto pelo app: parte por parte, conferindo cada uma, e retoma de onde parou */
 let dlBusy=false,dlRetryMs=3000;
 async function sha256hex(buf){const h=await crypto.subtle.digest('SHA-256',buf);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-async function downloadMap(){if(dlBusy)return;const info=$('#offInfo'),btn=$('#bOffDl');
+/* (v2.7.8) parte já no aparelho confere com o mapa novo? 'ok', 'bad' (leu e o SHA-256 não bate) ou null (não conseguiu ler: não apaga,
+   baixa de novo por cima). Relê com File novo se o Android disser que o arquivo "mudou". */
+async function partOk(fh,pt){if(!pt.sha256||!crypto.subtle)return 'ok';
+  for(let k=0;k<3;k++){try{return (await sha256hex(await (await fh.getFile()).arrayBuffer()))===pt.sha256?'ok':'bad'}catch(e){if(!staleFile(e))return null;await new Promise(r=>setTimeout(r,300*(k+1)))}}return null}
+async function downloadMap(o){if(dlBusy)return;const auto=!!(o&&o.auto===true),info=$('#offInfo'),btn=$('#bOffDl');
   if(!navigator.storage||!navigator.storage.getDirectory){info.textContent='Este navegador não suporta mapa offline.';return}
   dlBusy=true;btn.disabled=true;info.textContent='Preparando o download…';
   try{try{await navigator.storage.persist()}catch(e){}
     const mr=await fetch(MAPS_BASE+'manifest.json',{cache:'no-store'});if(!mr.ok)throw new Error('sem acesso ao servidor do mapa (HTTP '+mr.status+')');const man=await mr.json();
     const d=await opfsDir();delete stoErr.mapa;const old=await dlState();
-    /* índice do mapa guardado ilegível: sem saber de qual mapa são as partes, não mistura com as do novo (mesmo nome e tamanho) */
-    if(!old&&stoErr.mapa)throw new Error('não consegui ler o mapa que já está no aparelho; feche e abra o app e tente de novo');
+    /* (v2.7.8) índice do mapa guardado ilegível ou danificado (ex.: manifest.json vazio): até a 2.7.7 o download parava aqui para sempre
+       ("não consegui ler o mapa que já está no aparelho"). Sem saber de qual mapa são as partes, confere cada uma pelo SHA-256 do mapa
+       novo: a que bate fica (não baixa de novo), a que não bate é apagada e baixada. */
+    const unk=!old&&!!stoErr.mapa;
     if(old&&old.man.id!==man.id){try{await d.removeEntry('mapa-dl',{recursive:true})}catch(e){}}
     const dir=await d.getDirectoryHandle('mapa-dl',{create:true});
-    {const w=await (await dir.getFileHandle('manifest.json',{create:true})).createWritable();await w.write(JSON.stringify(man));await w.close()}
-    let have=0;const todo=[];for(const pt of man.parts){let ok=false;try{ok=(await (await dir.getFileHandle(pt.f)).getFile()).size===pt.size}catch(e){}if(ok)have+=pt.size;else todo.push(pt)}
+    let have=0,nk=0;const todo=[],unread=[];for(const pt of man.parts){let ok=false;try{const fh=await dir.getFileHandle(pt.f);ok=(await fh.getFile()).size===pt.size;
+        if(ok&&unk){info.textContent='Conferindo o mapa que já está no aparelho: parte '+(++nk)+' de '+man.parts.length+'…';const v=await partOk(fh,pt);ok=v==='ok';
+          if(v==='bad')try{await dir.removeEntry(pt.f)}catch(e){}else if(v===null)unread.push(pt.f)}}catch(e){}
+      if(ok)have+=pt.size;else todo.push(pt)}
+    /* automático: nos dados móveis não baixa as partes (1,4 GB); espera o Wi-Fi. A parte que não deu para conferir não é apagada à toa:
+       fica fora do índice (na próxima vez confere de novo) e só é trocada quando o app vai mesmo baixar */
+    const wait=auto&&todo.length&&!onWifi();
+    if(!wait)for(const f of unread)try{await dir.removeEntry(f)}catch(e){}
+    if(!wait||!unread.length){
+      LS.set('mapMan',man);   /* cópia do índice antes de baixar qualquer parte: vale se o manifest.json do aparelho ficar ilegível */
+      {const w=await (await dir.getFileHandle('manifest.json',{create:true})).createWritable();await w.write(JSON.stringify(man));await w.close()}
+      delete stoErr.mapa}
+    if(wait){info.textContent=(have?'Mapa de '+man.label+': '+mb(have)+' de '+mb(man.size)+' MB no aparelho. O resto':'Mapa de '+man.label+' ('+mb(man.size)+' MB) para usar sem internet: ele')+' baixa sozinho quando o celular estiver no Wi-Fi (ou toque em "Baixar").';return}
+    if(auto&&todo.length)toast('Baixando o mapa de '+man.label+' para usar sem internet (Wi-Fi). Pode usar o app.',5000);
     let free=null;try{const est=await navigator.storage.estimate();if(est.quota)free=est.quota-(est.usage||0)}catch(e){}
     if(free!==null&&free<man.size-have+5e7)throw new Error('espaço insuficiente no aparelho: faltam '+Math.ceil((man.size-have+5e7-free)/1e6)+' MB livres');
     for(const pt of todo){let tries=0;for(;;){try{
@@ -445,14 +469,23 @@ async function downloadMap(){if(dlBusy)return;const info=$('#offInfo'),btn=$('#b
         have+=pt.size;break}
       catch(e){if(++tries>=4)throw e;info.textContent=(staleFile(e)?'O armazenamento do celular demorou para gravar':'A conexão falhou')+', tentando de novo ('+tries+'/3)…';await new Promise(r=>setTimeout(r,dlRetryMs*tries))}}}
     try{await d.removeEntry('mapa.pmtiles')}catch(e){}
-    dlBusy=false;toast('Mapa de '+man.label+' instalado ✅',4000);beep(1200,150);await loadOffline()}
+    dlBusy=false;if(!auto||todo.length||unk){toast('Mapa de '+man.label+' instalado ✅',4000);beep(1200,150)}await loadOffline()}
   catch(e){const msg=/Failed to fetch|NetworkError|network|Load failed/i.test(e.message||'')?'sem conexão com a internet':staleFile(e)?'o armazenamento do celular não terminou de gravar a tempo':(e.message||e);info.textContent='Download interrompido: '+msg+'. Toque em "Baixar" de novo para continuar de onde parou.'}
   finally{dlBusy=false;btn.disabled=false}}
-$('#bOffDl').onclick=downloadMap;
+$('#bOffDl').onclick=()=>downloadMap();
+/* (v2.7.8) a pedido do dono ("o app tem que baixar sozinho os dados necessários para rodar tudo offline"): sem mapa no aparelho, o download
+   do mapa de MG começa sozinho no Wi-Fi e continua de onde parou a cada vez que o app abre ou o celular entra no Wi-Fi. Só com o tipo de
+   conexão conhecido (celular); no computador o navigator.connection.type não existe e nada começa sozinho. */
+const netType=()=>{const c=navigator.connection;return c&&c.type&&c.type!=='none'&&c.type!=='unknown'?c.type:''};
+const onWifi=()=>netType()==='wifi'||netType()==='ethernet';
+async function mapAuto(){if(dlBusy||offPM||!navigator.onLine||!netType())return;
+  try{await (await opfsDir()).getFileHandle('mapa.pmtiles');return}catch(e){}   /* mapa instalado por arquivo: não troca sozinho */
+  downloadMap({auto:true})}
+try{navigator.connection&&navigator.connection.addEventListener('change',()=>{if(onWifi())mapAuto()})}catch(e){}
 $('#bOffMap').onclick=()=>$('#offIn').click();$('#offIn').onchange=e=>{const f=e.target.files;if(f.length)installOffline(f);e.target.value=''};
-$('#bOffDel').onclick=async()=>{if(dlBusy){toast('Espere o download terminar');return}const d=await opfsDir();let n=0;try{await d.removeEntry('mapa.pmtiles');n++}catch(e){}try{await d.removeEntry('mapa-dl',{recursive:true});n++}catch(e){}try{await d.removeEntry('busca.json')}catch(e){}srchIdx=null;
+$('#bOffDel').onclick=async()=>{if(dlBusy){toast('Espere o download terminar');return}const d=await opfsDir();let n=0;try{await d.removeEntry('mapa.pmtiles');n++}catch(e){}try{await d.removeEntry('mapa-dl',{recursive:true});n++}catch(e){}try{await d.removeEntry('busca.json')}catch(e){}srchIdx=null;LS.set('mapMan',null);
   offPM=null;offH=null;if(offLayer){map.removeLayer(offLayer);layersCtl.removeLayer(offLayer);offLayer=null}Object.values(base).forEach(l=>map.removeLayer(l));base['Ruas (OSM)'].addTo(map);$('#offInfo').textContent='Nenhum mapa offline instalado.';toast(n?'Mapa offline removido':'Nada para remover')};
-loadOffline();
+loadOffline().then(ok=>{if(!ok)setTimeout(mapAuto,8000)});
 let trackLine=null,recLine=L.polyline([],{color:'#e64545',weight:3}).addTo(map),follow=true;
 const meIcon=L.divIcon({className:'',html:'<svg width="34" height="34" viewBox="0 0 100 100" id="meSvg"><circle cx="50" cy="50" r="46" fill="#1e9be0" fill-opacity=".25"/><path d="M50 8 L80 86 L50 68 L20 86 Z" fill="#1e9be0" stroke="#fff" stroke-width="5"/></svg>',iconSize:[34,34],iconAnchor:[17,17]});
 const me=L.marker([0,0],{icon:meIcon,interactive:false});
@@ -482,7 +515,8 @@ function drawGPX(){if(trackLine)map.removeLayer(trackLine);trackLine=null;if(tra
 
 /* ---------- abrir arquivos ---------- */
 $('#gOpen').onclick=()=>{$('#dlgGpx').close();$('#fileIn').click()};
-$('#fileIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)showGpx(await f.text(),f.name)};
+$('#fileIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{showGpx(await f.text(),f.name)}catch(err){toast('Não consegui abrir '+f.name+' ('+eMsg(err)+')',6000)}};
 $('#fileName').onclick=()=>{if(track.length)hideGpx()};
 /* ---------- navegação ---------- */
 function updateNav(){if(nav&&navSide())return;$('#cap').textContent='---';$('#wpDist').textContent='—';$('#wpLabel').textContent='sem rota';$('#capArrow').style.transform=''}
@@ -979,6 +1013,11 @@ $('#bRadMG').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('Li
   if(r)toast(r.fail?'Faltaram '+r.fail+' de '+r.blocks+' blocos (sem internet?): toque de novo para completar':'Pronto: radares e lombadas de MG guardados no aparelho',7000)};
 $('#bRadDel').onclick=async()=>{if(!await ask({title:'Apagar radares',msg:'Apaga os radares baixados e os marcados por você.',ok:'Apagar',danger:true}))return;radGen++;radLoaded=true;radars.clear();radTiles={};radQ=[];radSave();radDraw();radInfo();toast('Radares apagados')};
 radLoad();
+/* (v2.7.8) radares e lombadas de MG baixam sozinhos com internet, depois do aviso de internet aceito (só blocos fixos de MG, sem a sua posição); o radBulk pula o que foi baixado
+   há menos de 30 dias, então depois da 1ª vez só renova o que venceu. Como o mapa, só com o tipo de conexão conhecido (celular). */
+async function radAuto(){if(!cfg.radar||radBulkOn||!navigator.onLine||!netType()||!LS.get('netOk',false))return;   /* como os radares perto de você: só depois do aviso de internet */if(!radLoaded){await radLoad();if(!radLoaded)return}
+  const r=await radBulk(MG_BOX,1);if(r&&r.got&&!r.fail)toast('Radares e lombadas de MG guardados para usar sem internet',5000)}
+setTimeout(radAuto,15000);try{navigator.connection&&navigator.connection.addEventListener('change',()=>{if(netType())setTimeout(radAuto,5000)})}catch(e){}
 
 /* ---------- telefone, WhatsApp, música atual, comandos de voz e atualização (só no APK) ---------- */
 /* Contatos, ligações e mensagens ficam no aparelho: nada disto vai para a rede. As mensagens ficam só na memória (as últimas 20). */
@@ -1486,7 +1525,7 @@ async function gAct(act,n){const base=['gpx',...gCwd];
   renderGpx()}
 $('#bGpx').onclick=()=>{$('#dlgGpx').showModal();renderGpx()};
 $('#gImport').onclick=()=>$('#gImportIn').click();
-$('#gImportIn').onchange=async e=>{const base=['gpx',...gCwd];let n=0;for(const f of e.target.files){try{await fsWrite(base,await fsUnique(base,cleanName(f.name)),await f.text());n++}catch(err){toast('Falhou: '+f.name)}}e.target.value='';if(n)toast(n+' arquivo(s) importado(s)');renderGpx()};
+$('#gImportIn').onchange=async e=>{const base=['gpx',...gCwd];let n=0;for(const f of e.target.files){try{await fsWrite(base,await fsUnique(base,cleanName(f.name)),await f.text());n++}catch(err){toast('Falhou: '+f.name+' ('+eMsg(err)+')',6000)}}e.target.value='';if(n)toast(n+' arquivo(s) importado(s)');renderGpx()};
 $('#gNewDir').onclick=async()=>{const v=await ask({title:'Nova pasta',value:''});const nn=v&&cleanName(v);if(nn){try{await opfsAt(['gpx',...gCwd,nn],true)}catch(e){toast('Nome de pasta não aceito')}renderGpx()}};
 /* ---------- notas e fotos na gravação ---------- */
 let recSession=LS.get('recSession',null),rnotes=[],noteLayer=null,notePhoto=null;
