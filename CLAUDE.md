@@ -2,11 +2,15 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.8, 25/11/2026)
+## Estado (v2.7.9, 25/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
 
-**v2.7.8:** pedidos do dono depois de testar a 2.7.7:
+**v2.7.9:**
+- **Download automático não começava** (achado no teste do emulador, `.github/workflows/emulador.yml`): sem a permissão `ACCESS_NETWORK_STATE` o WebView não acompanha a rede e o `navigator.connection.type` fica `'unknown'`; o `mapAuto`/`radAuto` da 2.7.8 só rodam com o tipo conhecido. A permissão entrou no `patch-android.py` (comum: o Android concede sem perguntar).
+- *"Comando de voz não responde quando a moto está andando"* / *"não posso tirar a mão do guidão… tem que ter um comando para ativar, tipo o da Alexa ou do Google"*: com o microfone do celular (2.7.8) o vento cobre a voz. Expliquei ao dono que com o **Helmet V10** (fone Bluetooth comum) voz sem mãos e música em qualidade normal não cabem juntas: só o perfil de ligação (HFP/SCO) tem microfone, e nele a música vai junto, mono (a Alexa/o Google com fone comum também escutam pelo microfone do celular [Provável]). Ele escolheu **"voz sem mãos"**: `DEF.voiceBt=true` de novo e a migração `tn_mig279` liga **uma vez** para quem a 2.7.8 desligou (desligar depois fica valendo). No nativo, `scoVolume` (`TrilhaVoiceService`): ao abrir o SCO põe o volume de ligação na proporção do volume da música (nunca abaixa o do dono) e volta ao fechar; o comando "aumentar/abaixar" mexe também no `STREAM_VOICE_CALL` com o capacete ligado. **Não testado no capacete** (emulador não tem Bluetooth). Alternativa citada: intercom com comando de voz próprio (Cardo "Hey Cardo", Sena "Hey Sena").
+
+**v2.7.8:** pedidos do dono depois de testar a 2.7.7 (o microfone do capacete desligado de fábrica foi revertido na 2.7.9):
 - *"Não abaixar a música do Spotify quando o aplicativo estiver funcionando, sobrepor a música somente em casos de notificações"*: o `voiceBt` (microfone do capacete) vinha **ligado por padrão** e deixava o Bluetooth no canal de ligação (SCO) o tempo todo; a música ia junto, baixa e mono. Agora `DEF.voiceBt=false` e a migração `tn_mig278` desliga **uma vez** para quem já tinha (ligar de novo fica valendo). O TTS continua abaixando a música só enquanto fala (`AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK`). Consequência: o "Trilha, …" sempre ligado escuta pelo microfone do celular (com capacete e vento, [Provável] quase não ouve); os botões de música do intercom continuam. [Provável] a causa (o celular não foi visto).
 - *"Não está aceitando baixar os mapas"* (na tela: "não consegui ler o mapa que já está no aparelho"): o guarda da 2.7.7 parava o download **para sempre** se o `manifest.json` do aparelho não lesse ou não fosse JSON (ex.: vazio, `SyntaxError`; o `getFileHandle(create:true)` cria o arquivo vazio antes da gravação terminar). Agora: cópia do índice no `localStorage` (`tn_mapMan`, gravada antes de baixar qualquer parte) que o `dlState` usa se o manifest não ler; sem cópia (dados da 2.7.7), o `downloadMap` confere cada parte pelo SHA-256 (`partOk`: `'ok'`/`'bad'`/`null`), mantém as que batem, apaga só a que leu e não bateu; a que **não deu para ler** não é apagada (fica fora do índice e é trocada só quando o app vai mesmo baixar), e regrava o manifest (com parte sem conferir, o índice não é gravado: senão ela valeria só pelo tamanho). Diagnóstico: "ler o mapa (usei a cópia do índice): …".
 - *"O app tem que baixar os dados necessários automaticamente, para rodar tudo offline"*: `mapAuto` (8 s depois de abrir sem mapa, e quando o celular entra no Wi-Fi) baixa o mapa de MG **só no Wi-Fi** (`navigator.connection.type`; nos dados móveis confere o que tem e diz que o resto vem no Wi-Fi; mapa instalado por arquivo não é trocado); `radAuto` (15 s depois de abrir) roda o `radBulk(MG_BOX,1)` com qualquer internet, **só com o aviso de internet aceito** (`tn_netOk`, como os radares perto de você; blocos fixos de MG, sem a posição; pula o que tem <30 dias). Sem tipo de conexão (computador, testes) nada começa sozinho.
@@ -59,7 +63,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v25`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v26`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin` (`exitApp`: Sair do app), `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
@@ -68,13 +72,13 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - **Mapa**: online (OSM/OpenTopoMap/Esri) e offline `.pmtiles` no OPFS (download do mapa de MG do branch `mapas`, retomável e com SHA-256, ou por arquivo em partes); gira com o rumo (`cfg.rot`/`cfg.navRot`, `map.setBearing(360 − rumo)`); bússola do aparelho parado/devagar, GPS acima de `compSpd`, ajuste aprendido pelo GPS.
 - **Ir para**: Photon + Valhalla (moto, pt-BR, até 3 alternativas) com rede; sem rede, busca e rota pelo mapa offline (acima). Cartão de manobra, voz curva a curva, recálculo, chegada, recentes/favoritos, "De" opcional, toque longo no mapa, "Seguir em linha reta". Aviso de privacidade antes do 1º pedido (`tn_netOk`).
-- **Voz e telefone (APK)**: TTS nativo que abaixa a música; assistente Vosk sempre ligado com a palavra "Trilha" (`TrilhaVoiceService`, microfone do capacete por SCO com `cfg.voiceBt`, desligado por padrão desde a 2.7.8); comandos de voz **só de música** (desde a 2.7.4) e o "cancelar" do aviso de queda; telefone (atender/recusar/ligar pela tela), WhatsApp (mensagens e chamadas pela notificação), música atual e Spotify.
+- **Voz e telefone (APK)**: TTS nativo que abaixa a música; assistente Vosk sempre ligado com a palavra "Trilha" (`TrilhaVoiceService`, microfone do capacete por SCO com `cfg.voiceBt`, ligado por padrão (desligado só na 2.7.8)); comandos de voz **só de música** (desde a 2.7.4) e o "cancelar" do aviso de queda; telefone (atender/recusar/ligar pela tela), WhatsApp (mensagens e chamadas pela notificação), música atual e Spotify.
 - **Radares, lombadas e avisos** (Overpass `maps.mail.ru`; MG inteiro de uma vez; blitz/buraco/obra marcados por voz), **limite da via** (`maxspeed`), **clima** (Open-Meteo, reserva MET Norway), **postos**, **inclinação** (giroscópio × velocidade), **autonomia**, **SOS** (queda → SMS + ligação; padrão desligado).
 - **Gravação** de trilha (GPX, com **notas e fotos**, exporta GPX ou ZIP), **Arquivos** (pastas no OPFS; ver GPX no mapa), **Painel** personalizável (`DASH`), tema dia/noite pelo sol, trava de toque (cadeado).
 
 ### Onde o app guarda coisas
 
-- `localStorage` (prefixo `tn_`): `cfg`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `mapMan` (cópia do índice do mapa baixado, 2.7.8), `mig278`, `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) e do controle de guidão (`keys`, até a v2.7.1) são apagadas ao abrir.
+- `localStorage` (prefixo `tn_`): `cfg`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `mapMan` (cópia do índice do mapa baixado, 2.7.8), `mig278`, `mig279`, `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) e do controle de guidão (`keys`, até a v2.7.1) são apagadas ao abrir.
 - OPFS: `gpx/` (pastas; `gpx/Gravações/`), `notas/<sessão>/`, `mapa-dl/` (partes do mapa + `manifest.json`), `mapa.pmtiles`, `radares.json` (radares, lombadas e avisos), `busca.json` (índice de cidades da busca offline).
 
 ## Fluxo de trabalho e de release
@@ -127,6 +131,8 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 - **Celular deitado** (altura ≤480 px): conferir o `#side` em 740×360 e 568×320.
 - **Permissões da sessão**: no modo Auto o `keytool` (credencial) foi recusado várias vezes com o "ok" do dono no chat e só passou depois de um pedido explícito dele ("faça tudo automaticamente"); ler `node_modules` e apagar pasta com `rm` recursivo forçado são barrados por hook (`guard.sh`, que olha o texto do comando inteiro, até dentro de heredoc). A regra `Read(./**/*.p12)` impede mandar a chave ao Drive por referência de arquivo (na 2.7.1 foi em base64, com o ok do dono: o `.p12` é cifrado AES-256 e a senha nunca passou pelo chat). Use caminho absoluto fora do projeto para a chave.
 - **Nunca gravar por cima de um arquivo que não se conseguiu ler** (o `radares.json` da 2.7.6 perdia MG inteiro assim): ler com nova tentativa e só gravar depois de ler ou de ver `NotFoundError`.
+- **Teste no emulador** (`emulador.yml` + `dev/emu/`: roda sozinho a cada push no branch de trabalho que mexe em `dev/emu/`, `index.html` ou `android-app/`; compila o APK do branch, instala a versão publicada anterior, atualiza por cima, e confere no Android 14 de verdade; relatório impresso no log do job, prints no artefato): o tradutor ARM→x86 do emulador **não roda o Vosk** (SIGILL na instrução `0xd50320bf`, SEVL; no celular ARM roda): o teste nega o microfone. O `avdmanager` e o `emulator` precisam do mesmo `ANDROID_AVD_HOME`. O APK é de depuração (`assembleDebug`), então o WebView aceita DevTools: `dev/emu/cdp.mjs` avalia JS dentro do app pelo `adb forward`. O link do artefato do GitHub vence em ~10 min e a sessão costuma reiniciar logo depois de pedir: ler o resultado pelo log do job.
+- **`navigator.connection.type` no APK** só funciona com `ACCESS_NETWORK_STATE` no manifesto (sem ela: `'unknown'`).
 - Patches grandes no `index.html` por script Python com `assert count == 1` por trecho; o arquivo tem linhas longas. Para apagar blocos, cada unidade de topo do `<script>` começa na coluna 0 e as continuações são recuadas; conferir com `node --check` no script extraído.
 
 ## Como testar
@@ -134,6 +140,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 ```
 cd trilhanav && python3 -m http.server 8765 &
 cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30; do python3 $t.py; done
+# no Android (emulador): Actions → Emulador (ou push no branch de trabalho)
 python3 fixtures.py --clean
 ```
 

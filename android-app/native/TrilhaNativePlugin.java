@@ -742,6 +742,10 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
     public void volume(PluginCall call) {
         int d = "down".equals(call.getString("dir")) ? AudioManager.ADJUST_LOWER : AudioManager.ADJUST_RAISE;
         audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, d, AudioManager.FLAG_SHOW_UI);
+        // (2.7.9) com o microfone do capacete ligado a música sai pelo canal de ligação: o volume que se ouve é o dele
+        if (TrilhaVoiceService.onHeadset()) {
+            try { audio.adjustStreamVolume(AudioManager.STREAM_VOICE_CALL, d, 0); } catch (Exception e) { }
+        }
         call.resolve();
     }
 

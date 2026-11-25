@@ -1,6 +1,6 @@
 """v2.7.8, a pedido do dono:
-- "não abaixar a música do Spotify quando o app estiver funcionando; sobrepor só nas notificações do app": o microfone do capacete (SCO,
-  que leva a música junto para o canal de ligação) vem desligado, também para quem já tinha (migração única); ligar de novo fica valendo.
+- microfone do capacete: a 2.7.8 desligou (música sem abaixar), mas assim o "Trilha" não ouvia com a moto andando; na 2.7.9 o dono escolheu
+  "voz sem mãos" e ele volta a vir ligado, também para quem a 2.7.8 desligou (migração única); desligar depois fica valendo.
 - "não está aceitando baixar os mapas" (na 2.7.7: "não consegui ler o mapa que já está no aparelho"): manifest.json vazio/danificado não
   bloqueia mais; as partes são conferidas pelo SHA-256 e só a ruim baixa de novo.
 - "o app tem que baixar sozinho os dados necessários para rodar tudo offline": mapa de MG sozinho no Wi-Fi (nos dados móveis espera o Wi-Fi),
@@ -46,19 +46,19 @@ async def main():
             pg.on('pageerror', lambda e: errs.append(str(e)))
             return ctx, pg, st, errs
 
-        # ---------- Spotify: microfone do capacete ----------
+        # ---------- microfone do capacete (voz sem mãos) ----------
         ctx, pg, st, errs = await ctx_for('')
         await pg.goto(URL); await pg.wait_for_timeout(1200)
-        check('instalação nova: microfone do capacete desligado (a música não vai para o canal de ligação)', await pg.evaluate('TN.cfg.voiceBt') is False)
-        await pg.evaluate("localStorage.setItem('tn_cfg',JSON.stringify({voiceBt:true,voice:true}));localStorage.removeItem('tn_mig278')")
+        check('instalação nova: microfone do capacete ligado ("Trilha" ouve com a moto andando)', await pg.evaluate('TN.cfg.voiceBt') is True)
+        await pg.evaluate("localStorage.setItem('tn_cfg',JSON.stringify({voiceBt:false,voice:true}));localStorage.setItem('tn_mig278','true');localStorage.removeItem('tn_mig279')")
         await pg.reload(); await pg.wait_for_timeout(1200)
-        check('quem vinha da 2.7.7 com ele ligado: desliga uma vez (e guarda)', await pg.evaluate('TN.cfg.voiceBt') is False
-              and json.loads(await pg.evaluate("localStorage.getItem('tn_cfg')"))['voiceBt'] is False)
-        await pg.evaluate("localStorage.setItem('tn_cfg',JSON.stringify({...JSON.parse(localStorage.getItem('tn_cfg')),voiceBt:true}))")
+        check('quem vinha da 2.7.8 (desligado pela migração dela): liga uma vez (e guarda)', await pg.evaluate('TN.cfg.voiceBt') is True
+              and json.loads(await pg.evaluate("localStorage.getItem('tn_cfg')"))['voiceBt'] is True)
+        await pg.evaluate("localStorage.setItem('tn_cfg',JSON.stringify({...JSON.parse(localStorage.getItem('tn_cfg')),voiceBt:false}))")
         await pg.reload(); await pg.wait_for_timeout(1200)
-        check('ligado de novo pelo dono: continua ligado (a migração é uma vez só)', await pg.evaluate('TN.cfg.voiceBt') is True)
+        check('desligado depois pelo dono: continua desligado (a migração é uma vez só)', await pg.evaluate('TN.cfg.voiceBt') is False)
         lab = await pg.evaluate("document.querySelector('#sVoiceBt').parentElement.textContent")
-        check('Ajustes explicam que ligado a música abaixa', 'música não abaixar' in lab, lab)
+        check('Ajustes explicam: funciona andando e a música vai pelo canal de ligação', 'funciona com a moto andando' in lab and 'canal de ligação' in lab, lab)
 
         # ---------- no computador (sem tipo de conexão): nada baixa sozinho ----------
         await pg.wait_for_timeout(16500)

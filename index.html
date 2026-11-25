@@ -217,7 +217,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.8 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.9 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -259,7 +259,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">Andando a 25 km/h ou mais, um impacto forte e a moto parada por 15 s: o app conta 30 s (alarme e voz). Sem "Estou bem" ou "Trilha, cancelar", manda SMS com a sua localização para até 3 contatos e liga para o primeiro. Também dá para adicionar um contato da Agenda abaixo pelo botão SOS. Não é um equipamento certificado: pode falhar ou dar alarme falso.</div>
   <h3>Comandos de voz</h3>
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
-  <label>Ouvir pelo microfone do fone/intercom Bluetooth (deixe desligado para a música não abaixar: enquanto ligado, o Bluetooth fica no canal de ligação e a música sai baixa, com som de ligação) <input type="checkbox" id="sVoiceBt"></label>
+  <label>Ouvir pelo microfone do fone/intercom Bluetooth (o "Trilha" funciona com a moto andando; enquanto ligado, a música sai pelo canal de ligação, em mono) <input type="checkbox" id="sVoiceBt"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, próxima música", "Trilha, pausar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
   <div class="small">Só para a música: diga "Trilha" e o comando (ou toque em <b>Voz</b> e fale): "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume". Dois bipes agudos: entendeu; um bipe grave: não entendeu. No aviso de queda, "cancelar" ou "estou bem" cancela.</div>
   <div class="small" style="padding-top:8px">Os botões de música do intercomunicador do capacete (tocar, pausar, próxima) funcionam direto no Android, sem o app: é o jeito mais seguro. Se usar só os botões, desligue o "Assistente de voz sempre ligado" para gastar menos bateria.</div>
@@ -333,11 +333,11 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:false};
+const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
-/* (v2.7.8) a pedido do dono ("não abaixar a música do Spotify; sobrepor só nos avisos do app"): o microfone do capacete deixava o Bluetooth
-   no canal de ligação (SCO) o tempo todo e a música ia junto, baixa e com som de ligação. Passa a vir desligado, também para quem já usava. */
-if(!LS.get('mig278',false)){cfg.voiceBt=false;LS.set('cfg',cfg);LS.set('mig278',true)}
+/* (v2.7.9) o dono escolheu "voz sem mãos": com o microfone do celular (2.7.8) o "Trilha" não ouvia com a moto andando. O microfone do capacete
+   volta a vir ligado, também para quem a 2.7.8 desligou (a música fica no canal de ligação; o nativo segura o volume dela, scoVolume). */
+if(!LS.get('mig279',false)){cfg.voiceBt=true;LS.set('cfg',cfg);LS.set('mig279',true)}
 const saveCfg=()=>LS.set('cfg',cfg);
 /* restos das funções de rali (até a v2.6.3: o GPX guardado podia ocupar MBs da cota do localStorage) e das teclas do controle de guidão (até a v2.7.1) */
 try{for(const k of Object.keys(localStorage))if(/^tn_(keys|gpx|gpxName|gpxKey|gpxPath|wpState|marks|chrono|trailOn|rbScroll_.*|zones_.*)$/.test(k))localStorage.removeItem(k)}catch(e){}
