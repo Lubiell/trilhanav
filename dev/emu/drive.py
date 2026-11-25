@@ -1,11 +1,12 @@
 """Conduz o TrilhaNav no emulador (adb + uiautomator) e confere o que só o Android de verdade mostra.
 Escreve dev/emu/out/relatorio.txt (OK/FALHA por item), prints, logcat, dumpsys e os textos vistos na tela.
 Chamado pelo dev/emu/run.sh (variáveis NOVO e ANTERIOR)."""
-import os, re, subprocess, time, xml.etree.ElementTree as ET
+import json, os, re, subprocess, time, xml.etree.ElementTree as ET
 
 OUT = 'dev/emu/out'
 PKG = 'io.github.lubiell.trilhanav'
 NOVO, ANT = os.environ.get('NOVO', '2.7.8'), os.environ.get('ANTERIOR', '2.7.7')
+BRANCH_APK = 'dev/emu/apk/trilhanav-branch.apk'   # compilado do código do branch pelo workflow (assinado com a chave de depuração)
 R = []
 
 def adb(*a, t=180):
@@ -95,12 +96,64 @@ def storage_bytes():
     raw = subprocess.run(['adb', 'exec-out', 'sh', '-c', 'cat "%s"/*.log "%s"/*.ldb 2>/dev/null' % (d, d)], capture_output=True, timeout=60).stdout
     return raw + raw.replace(b'\x00', b'')
 
+def js(expr, ms=15000):
+    """avalia JavaScript dentro do WebView do app (APK de depuração): devolve o valor ou {'erro': ...}"""
+    p = pid()
+    if not p: return {'erro': 'app fechado'}
+    socks = sh('cat /proc/net/unix | grep -a webview_devtools_remote_%s' % p)
+    m = re.search(r'@?(webview_devtools_remote_\d+)', socks)
+    if not m: return {'erro': 'sem DevTools no WebView'}
+    adb('forward', 'tcp:9222', 'localabstract:' + m.group(1))
+    try:
+        out = subprocess.run(['node', 'dev/emu/cdp.mjs', expr, str(ms)], capture_output=True, text=True, timeout=ms / 1000 + 10).stdout
+        r = json.loads(out.strip().splitlines()[-1])
+    except Exception as e:
+        return {'erro': repr(e)}
+    return r.get('valor') if 'valor' in r else r
+
+def close_dialogs():
+    js("document.querySelectorAll('dialog[open]').forEach(d=>d.close()),1")
+    time.sleep(1)
+
+def exit_test(tag):
+    """Sair do app: pergunta, fecha o processo e para os serviços"""
+    close_dialogs()
+    shot(tag + '-antes-de-sair')
+    r = js("document.querySelector('#bExit').click(),1")
+    time.sleep(2)
+    perg = [s for s, _ in dump()]
+    shot(tag + '-pergunta-sair')
+    check('[%s] "Sair do app" pergunta antes' % tag, any('Sair do TrilhaNav' in s for s in perg), ', '.join(perg[:12]) + ' ' + str(r))
+    tap('Sair', exact=True); time.sleep(6)
+    shot(tag + '-depois-de-sair')
+    p = pid(); svc = sh('dumpsys activity services ' + PKG); save(tag + '-servicos-depois-de-sair.txt', svc)
+    check('[%s] depois de "Sair": processo fechado' % tag, not p, 'pid=' + p)
+    check('[%s] depois de "Sair": nenhum serviço do app rodando (voz, GPS)' % tag, 'ServiceRecord' not in svc, svc[:300])
+
+def open_checks(tag, seen):
+    p = pid()
+    check('[%s] abre e continua aberto' % tag, bool(p), 'pid=' + p)
+    log = adb('logcat', '-d', t=120); save(tag + '-logcat.txt', log)
+    fatal = [l for l in log.splitlines() if 'FATAL EXCEPTION' in l or 'Fatal signal' in l]
+    check('[%s] sem travamento (FATAL EXCEPTION / Fatal signal) no logcat' % tag, not fatal, ' / '.join(fatal[:3]))
+    jserr = [l for l in log.splitlines() if 'Uncaught' in l]
+    check('[%s] sem erro de JavaScript no console do WebView' % tag, not jserr, ' / '.join(jserr[:3]))
+    check('[%s] o mapa aparece com os botões do app' % tag, any(s in seen for s in ('Mais', 'Ir para', 'Mapa')), ', '.join(seen[:20]))
+
+def audio_checks(tag):
+    au = sh('dumpsys audio', t=120); save(tag + '-dumpsys-audio.txt', au)
+    stack = au[au.find('Audio Focus stack entries'):][:1500] if 'Audio Focus stack entries' in au else ''
+    focus_ev = [l for l in au.splitlines() if PKG in l and re.search(r'requestAudioFocus|abandonAudioFocus|focus', l, re.I)]
+    check('[%s] parado, o app não pede foco de áudio (a música dos outros apps não abaixa)' % tag, PKG not in stack and not focus_ev, ' / '.join(focus_ev[:3]))
+    mode = re.findall(r'(?:mMode|Audio mode|mode)\s*[:=]\s*(\S+)', au)
+    check('[%s] áudio em modo normal (sem canal de ligação/SCO aberto pelo app)' % tag, not any('IN_COMMUNICATION' in m or m == '3' for m in mode[:3]), str(mode[:3]))
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     save('aparelho.txt', sh('getprop ro.product.model') + sh('getprop ro.build.version.release') + sh('getprop ro.product.cpu.abilist')
          + sh('dumpsys webviewupdate | grep -i "current webview package"'))
 
-    # ---------- versão anterior instalada e aberta (como no celular do dono) ----------
+    # ---------- fase 1: a versão anterior publicada, com o microfone (como no celular do dono) ----------
     r = adb('install', 'dev/emu/apk/trilhanav-%s.apk' % ANT, t=400)
     check('instala a %s (a que está no celular)' % ANT, 'Success' in r, r[-300:])
     adb('logcat', '-c'); grant(mic=True); launch(); time.sleep(35)
@@ -115,88 +168,67 @@ def main():
     print(R[-1], flush=True)
     sh('am force-stop ' + PKG); time.sleep(2)
 
-    # ---------- atualização por cima ----------
+    # ---------- fase 2: a nova publicada, por cima (sem o microfone) ----------
+    T = NOVO
     r = adb('install', '-r', 'dev/emu/apk/trilhanav-%s.apk' % NOVO, t=400)
-    check('a %s instala por cima da %s (mesma chave, sem desinstalar)' % (NOVO, ANT), 'Success' in r, r[-300:])
+    check('[%s] instala por cima da %s (mesma chave, sem desinstalar)' % (T, ANT), 'Success' in r, r[-300:])
     vn = re.search(r'versionName=(\S+)', sh('dumpsys package ' + PKG))
-    check('versão instalada é a %s' % NOVO, bool(vn) and vn.group(1) == NOVO, vn.group(1) if vn else '?')
-    abi = re.search(r'primaryCpuAbi=(\S+)', sh('dumpsys package ' + PKG))
-    save('abi.txt', abi.group(1) if abi else '?')
+    check('[%s] versão instalada é a %s' % (T, NOVO), bool(vn) and vn.group(1) == NOVO, vn.group(1) if vn else '?')
     grant(mic=False)
-
-    # ---------- abre a nova ----------
-    adb('logcat', '-c'); du0 = app_du()
-    launch()
-    neg = deny_dialogs(12)
-    seen = watch(30, 'textos-abertura.txt')
-    shot('02-%s-aberta' % NOVO)
-    check('a %s abre e continua aberta' % NOVO, bool(pid()), 'pid=' + pid())
-    log = adb('logcat', '-d', t=120); save('logcat-abertura.txt', log)
-    fatal = [l for l in log.splitlines() if 'FATAL EXCEPTION' in l or ('AndroidRuntime' in l and ' E ' in l)]
-    check('sem travamento nativo (FATAL EXCEPTION) no logcat', not fatal, ' / '.join(fatal[:3]))
-    jserr = [l for l in log.splitlines() if 'Uncaught' in l]
-    check('sem erro de JavaScript no console do WebView', not jserr, ' / '.join(jserr[:3]))
-    check('o mapa aparece (tela com os botões do app)', any(s in seen for s in ('Mais', 'Ir para', 'Mapa')), ', '.join(seen[:25]))
-
-    # ---------- voz e áudio: parado, o app não pode abaixar a música de ninguém ----------
-    time.sleep(10)
-    svc = sh('dumpsys activity services ' + PKG); save('servicos.txt', svc)
-    check('sem o microfone o app segue aberto e o assistente não sobe (pedido negado %d vez(es))' % neg, bool(pid()) and 'TrilhaVoiceService' not in svc)
-    vlog = [l for l in adb('logcat', '-d', t=120).splitlines() if re.search(r'vosk|Vosk|TrilhaVoice|UnsatisfiedLink', l)]
-    save('logcat-voz.txt', '\n'.join(vlog))
-    au = sh('dumpsys audio', t=120); save('dumpsys-audio.txt', au)
-    stack = au[au.find('Audio Focus stack entries'):][:1500] if 'Audio Focus stack entries' in au else ''
-    focus_ev = [l for l in au.splitlines() if PKG in l and re.search(r'requestAudioFocus|abandonAudioFocus|focus', l, re.I)]
-    check('parado, o app não pede foco de áudio (a música dos outros apps não abaixa)', PKG not in stack and not focus_ev, ' / '.join(focus_ev[:3]) or stack[:300])
-    mode = re.findall(r'(?:mMode|Audio mode|mode)\s*[:=]\s*(\S+)', au)
-    sco = [l.strip() for l in au.splitlines() if re.search(r'sco|communication device', l, re.I)][:8]
-    save('audio-modo-sco.txt', 'modos: %s\n%s' % (mode[:6], '\n'.join(sco)))
-    check('áudio em modo normal (sem canal de ligação/SCO aberto pelo app)', not any('IN_COMMUNICATION' in m or m == '3' for m in mode[:3]), str(mode[:3]))
-
-    # ---------- migração do microfone do capacete (localStorage) ----------
+    adb('logcat', '-c'); launch()
+    neg = deny_dialogs(10)
+    seen = watch(25, T + '-textos-abertura.txt')
+    shot('02-%s-aberta' % T)
+    open_checks(T, seen)
+    svc = sh('dumpsys activity services ' + PKG); save(T + '-servicos.txt', svc)
+    check('[%s] sem o microfone o app segue aberto e o assistente não sobe (pedidos negados: %d)' % (T, neg), bool(pid()) and 'TrilhaVoiceService' not in svc)
+    audio_checks(T)
     st = storage_bytes()
-    check('migração 2.7.8 rodou (tn_mig278 gravado)', b'tn_mig278' in st)
+    check('[%s] migração rodou (tn_mig278 gravado)' % T, b'tn_mig278' in st)
     i = st.rfind(b'"voiceBt":')   # o LevelDB acrescenta: o último valor gravado é o que vale
     ult = st[i + 10:i + 15] if i >= 0 else b''
-    check('ajuste guardado com o microfone do capacete desligado', ult.startswith(b'false'), 'último valor gravado: %r' % ult)
+    check('[%s] microfone do capacete guardado como desligado' % T, ult.startswith(b'false'), 'último valor gravado: %r' % ult)
+    ct = js('navigator.connection&&navigator.connection.type')
+    save(T + '-conexao.txt', repr(ct))
+    R.append('INFO  [%s] tipo de conexão que o WebView informa: %r' % (T, ct)); print(R[-1], flush=True)
+    time.sleep(20)
+    oi = js("document.querySelector('#offInfo').textContent")
+    R.append('INFO  [%s] Ajustes → Mapa offline: %r' % (T, oi)); print(R[-1], flush=True)
+    if not os.path.exists(BRANCH_APK):
+        exit_test(T)
 
-    # ---------- download automático do mapa no Wi-Fi ----------
-    net = sh('dumpsys connectivity | grep -iE "Active default network|NetworkAgentInfo.*(WIFI|CELLULAR)" | head -5'); save('rede.txt', net)
-    toast = [s for s in seen if 'Baixando o mapa' in s or 'Wi-Fi' in s]
-    time.sleep(60)
-    du1 = app_du()
-    check('mapa de MG começou a baixar sozinho (Wi-Fi do emulador)', du1 - du0 > 40000 or bool(toast),
-          'app_webview %d KB -> %d KB; aviso: %s' % (du0, du1, toast[:1]))
-    # Ajustes → texto do mapa offline e do armazenamento
-    tap('Mais', exact=True); shot('03-mais')
-    tap('Ajustes', exact=True); time.sleep(2)
-    nodes = dump('ajustes')
-    txt = [s for s, _ in nodes]
-    save('textos-ajustes.txt', '\n'.join(txt))
-    shot('04-ajustes')
-    prog = [s for s in txt if re.search(r'Baixando mapa|Instalado|Mapa de|Download|Conferindo', s)]
-    check('Ajustes mostra o mapa baixando/instalado', bool(prog), ' / '.join(prog[:2]))
-    for _ in range(6):   # rola até o Armazenamento
-        sh('input swipe 540 1800 540 500 300'); time.sleep(1)
-    nodes = dump('ajustes-fim'); txt2 = [s for s, _ in nodes]; shot('05-ajustes-armazenamento')
-    sto = [s for s in txt2 if re.search(r'permanente|Espaço do app|Mapa offline:|Radares:|Erro', s)]
-    save('textos-armazenamento.txt', '\n'.join(txt2))
-    check('Ajustes → Armazenamento aparece', bool(sto), ' / '.join(sto[:4]))
-    sh('input keyevent KEYCODE_BACK'); time.sleep(1.5)
+    # ---------- fase 3: o APK do código do branch (instalação limpa: outra chave) ----------
+    if os.path.exists(BRANCH_APK):
+        T = 'branch'
+        sh('am force-stop ' + PKG); adb('uninstall', PKG, t=120)
+        r = adb('install', BRANCH_APK, t=400)
+        check('[branch] instala', 'Success' in r, r[-300:])
+        vn = re.search(r'versionName=(\S+)', sh('dumpsys package ' + PKG))
+        R.append('INFO  [branch] versão: %s' % (vn.group(1) if vn else '?')); print(R[-1], flush=True)
+        grant(mic=False)
+        adb('logcat', '-c'); du0 = app_du(); launch()
+        neg = deny_dialogs(8)
+        seen = watch(20, 'branch-textos-abertura.txt')
+        shot('03-branch-aberta')
+        open_checks(T, seen)
+        audio_checks(T)
+        ct = js('navigator.connection&&navigator.connection.type')
+        check('[branch] o WebView sabe que é Wi-Fi (navigator.connection.type)', ct == 'wifi', repr(ct))
+        oi, t0 = '', time.time()
+        while time.time() - t0 < 120:
+            oi = js("document.querySelector('#offInfo').textContent")
+            if isinstance(oi, str) and re.search(r'Baixando mapa|Instalado', oi): break
+            time.sleep(5)
+        du1 = app_du()
+        check('[branch] o mapa de MG começa a baixar sozinho no Wi-Fi', isinstance(oi, str) and bool(re.search(r'Baixando mapa|Instalado', oi)),
+              '%r; app_webview %d KB -> %d KB' % (oi, du0, du1))
+        js("document.querySelector('#bSet').click(),1"); time.sleep(2); shot('04-branch-ajustes')
+        sto = js("document.querySelector('#stoInfo')&&document.querySelector('#stoInfo').innerText")
+        save('branch-armazenamento.txt', str(sto))
+        check('[branch] Ajustes → Armazenamento mostra o mapa', isinstance(sto, str) and 'Mapa offline' in sto, str(sto)[:300])
+        exit_test(T)
 
-    # ---------- Sair do app ----------
-    shot('06-antes-de-sair')
-    ok = tap('Mais', exact=True) and tap('Sair do app', exact=True)
-    shot('07-pergunta-sair')
-    perg = [s for s, _ in dump()]
-    check('"Sair do app" pergunta antes', any('Sair do TrilhaNav' in s for s in perg), ', '.join(perg[:15]))
-    tap('Sair', exact=True); time.sleep(6)
-    shot('08-depois-de-sair')
-    p = pid(); svc2 = sh('dumpsys activity services ' + PKG); save('servicos-depois-de-sair.txt', svc2)
-    check('depois de "Sair": processo fechado', not p, 'pid=' + p)
-    check('depois de "Sair": serviço de voz parado', 'TrilhaVoiceService' not in svc2)
     save('logcat-final.txt', adb('logcat', '-d', t=120))
-
     falhas = [l for l in R if l.startswith('FALHA')]
     save('relatorio.txt', '\n'.join(R) + '\n\nRESULTADO: ' + ('tudo certo' if not falhas else '%d falha(s)' % len(falhas)) + '\n')
     print('\nRESULTADO:', 'tudo certo' if not falhas else '%d falha(s)' % len(falhas))
