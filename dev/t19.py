@@ -133,6 +133,7 @@ async def main():
         b1 = await pg.evaluate("Math.round(TN.map.getBearing())")
         check('durante a rota o mapa gira com a direção (rumo 90° → mapa a 270°), mesmo com "Mapa gira" desligado', b1 == 270 and not await pg.evaluate('TN.cfg.rot'), str(b1))
         await pg.evaluate("document.querySelector('#navEnd').click()"); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#askOk').click()"); await pg.wait_for_timeout(200)   # 2.7.10: o Sair pergunta antes
         b2 = await pg.evaluate("Math.round(TN.map.getBearing())")
         check('"Sair" encerra a rota e o mapa volta ao norte', not await pg.evaluate('!!TN.nav') and b2 == 0, str(b2))
         await pg.evaluate("TN.cfg.navRot=false"); await pg.evaluate("TN.openNavDlg()"); await pg.wait_for_timeout(300)

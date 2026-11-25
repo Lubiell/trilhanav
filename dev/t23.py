@@ -88,6 +88,7 @@ async def main():
 
         # coordenada digitada sem aceitar a internet: acha sem rede
         await pg.evaluate("document.querySelector('#navEnd').click()"); await pg.wait_for_timeout(200)
+        await pg.evaluate("document.querySelector('#askOk').click()"); await pg.wait_for_timeout(200)   # 2.7.10: o Sair pergunta antes
         await pg.evaluate("document.querySelector('#bNav').click()"); await pg.wait_for_timeout(400)
         await pg.evaluate("document.querySelectorAll('#dlgAsk[open]').forEach(d=>d.close())"); await pg.wait_for_timeout(200)
         await pg.fill('#navQ', '-20.024, -44.000'); await pg.press('#navQ', 'Enter'); await pg.wait_for_timeout(600)

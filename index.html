@@ -30,8 +30,7 @@ body.portrait .card{flex:1 1 45%}
 /* celular deitado (guidão): TOTAL, PARCIAL, CAP e VELOCIDADE cabem na altura sem rolar */
 @media (orientation:landscape) and (max-height:480px){
   #app{grid-template-rows:34px 1fr 56px}
-  #navCard{grid-template-columns:48px 1fr auto;padding:4px 8px;top:4px}#navArr{width:46px;height:46px}#navTxt{font-size:14px;-webkit-line-clamp:1}
-  body.navOn #paneMap .leaflet-top{top:70px}body.navOn #banner{top:72px}
+  #navCard{padding:4px 8px;top:4px}#navTxt{font-size:14px;-webkit-line-clamp:1}body.navExp #navArr{width:46px;height:46px}
   #side{gap:4px;padding:4px}
   #side .card{padding:3px 10px;border-radius:9px;flex:1 1 0;min-height:0;display:flex;flex-direction:column;justify-content:center}
   #side .card h4{font-size:10px;letter-spacing:1.5px}
@@ -64,19 +63,29 @@ body.portrait .card{flex:1 1 45%}
 .b span{font-size:10.5px;color:var(--mut);white-space:nowrap}
 .b .ic{width:25px;height:25px;flex:0 0 auto}
 .b.on .ic{color:var(--acc)}
-#navCard{position:absolute;left:8px;right:8px;top:8px;z-index:880;display:none;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 10px;box-shadow:0 6px 18px #0007;cursor:pointer}
-body.navOn #navCard{display:grid}
-#navArr{width:60px;height:60px;background:var(--card);border-radius:10px}
+#navCard{position:absolute;left:8px;right:8px;top:8px;z-index:880;display:none;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 8px;box-shadow:0 6px 18px #0007;cursor:pointer;touch-action:none}
+/* (2.7.10) só na aba Mapa; escondido ("–") a rota continua e fica a bolinha #navPill; em cima ou embaixo (cfg.navPos); compacto, toque abre os detalhes */
+body.navOn.pMap:not(.navHid) #navCard{display:grid}
+body.navBot #navCard{top:auto;bottom:8px}
+#navArr{width:42px;height:42px;background:var(--card);border-radius:10px}
+body.navExp #navCard{grid-template-columns:64px 1fr auto auto;gap:10px;padding:6px 10px}body.navExp #navArr{width:60px;height:60px}
+#navCard .nvh{min-width:40px;height:40px;padding:0;font-size:22px;line-height:1}
+#navPill{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:880;display:none;align-items:center;gap:6px;padding:4px 12px 4px 4px;border-radius:24px;border:1px solid var(--line);background:var(--panel);color:var(--fg,#fff);font-weight:700;font-size:16px;box-shadow:0 4px 12px #0007}
+#navPill img{width:36px;height:36px;border-radius:50%;background:var(--card)}
+body.navOn.pMap.navHid #navPill{display:flex}body.navBot #navPill{top:auto;bottom:8px}
+body.navOn.navBot.pMap:not(.navHid) #radBox,body.navOn.navBot.pMap:not(.navHid) #limBox{bottom:76px}
+body.navOn.navBot.pMap:not(.navHid) #paneMap .leaflet-bottom{bottom:60px}
 #navDist{text-align:left;line-height:1.05}
-#navTxt{font-size:17px;font-weight:700;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-#navSub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#navCard .nvb{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+#navTxt{font-size:15px;font-weight:700;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+body.navExp #navTxt{font-size:17px;-webkit-line-clamp:2}
+#navSub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none}body.navExp #navSub{display:block}
+#navCard .nvb{display:none;flex-direction:column;gap:6px;align-items:flex-end}body.navExp #navCard .nvb{display:flex}
 #navEta{font-family:Orbitron,monospace;font-size:13px;font-weight:700;white-space:nowrap}
 #navCard .nvb .row{gap:6px}
-body.navOn #paneMap .leaflet-top{top:92px}
-body.portrait #navCard{grid-template-columns:56px 1fr;row-gap:4px}body.portrait #navArr{width:54px;height:54px}body.portrait #navCard .nvb{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}
-body.portrait.navOn #paneMap .leaflet-top{top:140px}
-body.navOn #banner{top:96px}
+body.navOn.pMap:not(.navBot):not(.navHid) #paneMap .leaflet-top{top:60px}body.navOn.navExp.pMap:not(.navBot):not(.navHid) #paneMap .leaflet-top{top:92px}
+body.portrait.navExp #navCard{grid-template-columns:56px 1fr auto;row-gap:4px}body.portrait.navExp #navArr{width:54px;height:54px}body.portrait.navExp #navCard .nvb{grid-column:1/-1;grid-row:2;flex-direction:row;justify-content:space-between;align-items:center}
+body.portrait.navOn.navExp.pMap:not(.navBot):not(.navHid) #paneMap .leaflet-top{top:140px}
+body.navOn.pMap:not(.navBot):not(.navHid) #banner{top:64px}body.navOn.navExp.pMap:not(.navBot):not(.navHid) #banner{top:96px}
 #radBox{position:absolute;right:12px;bottom:28px;z-index:870;display:none;width:84px;height:84px;border-radius:50%;background:#fff;color:#111;border:7px solid #d11;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 14px #0008;line-height:1}
 #radBox.on{display:flex}#radBox.over{animation:pisca .5s steps(2) infinite}
 #radBox b{font-family:Orbitron,monospace;font-size:26px}#radBox span{font-size:11px;font-weight:700;margin-top:3px}
@@ -146,8 +155,10 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
     </div>
     <div id="view">
       <div id="banner"></div>
-      <div id="navCard" title="Toque para repetir a instrução"><img id="navArr" alt=""><div style="min-width:0"><div id="navDist" class="mid"></div><div id="navTxt"></div><div id="navSub" class="small"></div></div>
-        <div class="nvb"><div id="navEta"></div><div class="row"><button class="btn r" id="navEnd" title="Encerrar a rota">Sair</button></div></div></div>
+      <div id="navCard" title="Toque para ver os detalhes; arraste para cima ou para baixo"><img id="navArr" alt="" title="Toque para repetir a instrução"><div style="min-width:0"><div id="navDist" class="mid"></div><div id="navTxt"></div><div id="navSub" class="small"></div></div>
+        <div class="nvb"><div id="navEta"></div><div class="row"><button class="btn g" id="navPos" title="Levar o cartão para baixo ou para cima">⇅</button><button class="btn r" id="navEnd" title="Encerrar a rota">Sair</button></div></div>
+        <button class="btn g nvh" id="navHide" title="Esconder (a rota e a voz continuam)">–</button></div>
+      <button id="navPill" title="Mostrar a direção"><img id="navPillArr" alt=""><span id="navPillDist"></span></button>
       <div id="limBox" title="Limite de velocidade da via"></div>
       <div id="radBox"><b id="radLim">?</b><span id="radDist"></span></div>
       <div class="pane on" id="paneMap"><div id="map"></div></div>
@@ -217,7 +228,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.9 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.10 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -333,7 +344,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:true};
+const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:true,navPos:'top'};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 /* (v2.7.9) o dono escolheu "voz sem mãos": com o microfone do celular (2.7.8) o "Trilha" não ouvia com a moto andando. O microfone do capacete
    volta a vir ligado, também para quem a 2.7.8 desligou (a música fica no canal de ligação; o nativo segura o volume dela, scoVolume). */
@@ -362,7 +373,8 @@ if(navigator.getBattery)navigator.getBattery().then(b=>{const u=()=>$('#bat').te
 
 /* ---------- telas ---------- */
 let curPane='paneMap';
-function showPane(id){curPane=id;document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===id));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.toggle('on',b.dataset.pane===id));if(id==='paneMap')setTimeout(mapShown,50);if(id==='paneDash')renderDash()}
+function showPane(id){curPane=id;document.body.classList.toggle('pMap',id==='paneMap');document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===id));document.querySelectorAll('#bot [data-pane]').forEach(b=>b.classList.toggle('on',b.dataset.pane===id));if(id==='paneMap')setTimeout(mapShown,50);if(id==='paneDash')renderDash()}
+document.body.classList.add('pMap');   /* (2.7.10) o app abre na aba Mapa: o cartão de direção só aparece nela */
 document.querySelectorAll('#bot [data-pane]').forEach(b=>b.onclick=()=>showPane(b.dataset.pane));
 let rzW=innerWidth,rzH=innerHeight,rzT=null;
 function orient(){document.body.classList.toggle('portrait',innerHeight>innerWidth)}addEventListener('resize',()=>{orient();map&&map.invalidateSize();
@@ -822,10 +834,10 @@ function manIcon(m){if(!m)return tulipSvg(0);if(m.type===26||m.type===27)return 
 
 /* ---- navegação ---- */
 function navStart(rt,to,from){nav={rt,to,from:from||'',custom:!!from,joined:!from,q:null,mi:-1,said:{},off:0,lastRe:0,busy:false,arrived:false};navPlan=null;
-  document.body.classList.add('navOn');showPane('paneMap');map.invalidateSize();follow=true;navDraw();
+  document.body.classList.add('navOn');document.body.classList.remove('navHid','navExp');navPosApply();showPane('paneMap');map.invalidateSize();follow=true;navDraw();
   if(fix&&!from)map.setView([fix.lat,fix.lon],Math.max(map.getZoom(),16),{animate:false});else if($('#map').clientWidth>0)map.fitBounds(L.latLngBounds(rt.pts.map(q=>[q.lat,q.lon])),{padding:[40,40]});
   say('Rota para '+to.name+': '+spokenDist(rt.len)+', cerca de '+sayMin(rt.time),true);radRoute(rt);wxRoute(rt,to);try{applyHeading()}catch(e){}navUpdate();navRender();updateNav()}
-function navStop(why){if(!nav)return;nav=null;document.body.classList.remove('navOn');navDraw();try{applyHeading()}catch(e){}$('#radBox').classList.remove('on');if(why)toast(why);updateNav()}
+function navStop(why){if(!nav)return;nav=null;document.body.classList.remove('navOn');navNote();navDraw();try{applyHeading()}catch(e){}$('#radBox').classList.remove('on');if(why)toast(why);updateNav()}
 function navUpdate(){if(!nav||!fix)return;const rt=nav.rt,lq=nav.q;
   let q=projPoly(rt,fix,lq?Math.max(0,lq.i-40):0,lq?lq.i+600:Infinity);if(lq&&q.d>50){const g=projPoly(rt,fix);if(g.d<q.d-25)q=g}
   nav.q=q;if(!nav.joined){if(q.d<=40)nav.joined=true;else{nav.mi=-1;navRender();return}}
@@ -849,17 +861,43 @@ async function navReroute(){if(!nav||nav.busy||!fix)return;const N=nav;N.busy=tr
   finally{N.busy=false}}
 function navRender(){if(!nav)return;const q=nav.q,rt=nav.rt;
   if(!nav.joined){const s=rt.pts[0],d=fix?hav(fix,s):0,b=fix?brg(fix,s):0;$('#navArr').src=tulipSvg(heading==null?0:angDiff(b,heading));$('#navDist').textContent=fix?fmtKm(d):'';
-    $('#navTxt').textContent='Vá até o início da rota';$('#navSub').textContent='Partida: '+nav.from;$('#navEta').textContent=fmtKm(rt.len)+' · '+fmtMin(rt.time);return}
+    $('#navTxt').textContent='Vá até o início da rota';$('#navSub').textContent='Partida: '+nav.from;$('#navEta').textContent=fmtKm(rt.len)+' · '+fmtMin(rt.time);navPillSync();return}
   const m=nav.mi>0?rt.man[nav.mi]:null,along=q?q.along:0,remain=Math.max(0,rt.len-along),secs=rt.time*remain/Math.max(1,rt.len);
   $('#navArr').src=nav.arrived?flagSvg(true):manIcon(m);$('#navDist').textContent=m&&!nav.arrived?fmtKm(m.along-along):'';
   $('#navTxt').textContent=nav.arrived?'Você chegou':m?m.txt:'Siga a rota';$('#navSub').textContent=nav.arrived?nav.to.name:(m&&m.street)||nav.to.name;
-  $('#navEta').textContent=new Date(Date.now()+secs*1000).toTimeString().slice(0,5)+' · '+fmtKm(remain)+' · '+fmtMin(secs)}
+  $('#navEta').textContent=new Date(Date.now()+secs*1000).toTimeString().slice(0,5)+' · '+fmtKm(remain)+' · '+fmtMin(secs);navPillSync()}
 /* CAP do painel lateral durante a rota: aponta um pouco à frente na rota e mostra a distância até a próxima manobra */
 function navSide(){if(!fix||!nav.q)return false;const q=nav.q,tgt=nav.joined?rtAt(nav.rt,q.along+Math.max(40,speedKmh/3.6*5)):nav.rt.pts[0],b=brg(fix,tgt),m=nav.joined&&nav.mi>0?nav.rt.man[nav.mi]:null;
   $('#wpLabel').textContent='ROTA: '+nav.to.name;$('#cap').textContent=String(Math.round(b)).padStart(3,'0')+'°';$('#wpDist').textContent=fmtKm(m?m.along-q.along:hav(fix,tgt));
   $('#capArrow').style.transform='rotate('+(heading==null?b:b-heading)+'deg)';return true}
-$('#navEnd').onclick=e=>{e.stopPropagation();navStop('Rota encerrada')};
-$('#navCard').onclick=()=>{if(!nav)return;const m=nav.mi>0?nav.rt.man[nav.mi]:null;if(m&&nav.q)say('Em '+spokenDist(m.along-nav.q.along)+', '+lc1(m.alert),true);else if(!nav.joined)say('Vá até o início da rota',true)};
+/* (2.7.10) a pedido do dono ("janela de direção menor, poder movê-la, aparecer em segundo plano; quando fecha ela para de dar a direção;
+   fica em cima de outras abas"): compacto (toque abre os detalhes), "–" esconde sem parar a rota (fica a bolinha com a seta),
+   "Sair" pergunta antes, em cima ou embaixo (arrastar ou ⇅, guardado em cfg.navPos), só na aba Mapa, notificação em segundo plano. */
+function navPosApply(){document.body.classList.toggle('navBot',cfg.navPos==='bottom')}
+function navPosSet(p){cfg.navPos=p==='bottom'?'bottom':'top';saveCfg();navPosApply()}
+function navPillSync(){$('#navPillArr').src=$('#navArr').src;$('#navPillDist').textContent=$('#navDist').textContent||'';navNote()}
+let navNoteK='',navNoteT=0;
+function navNote(){if(!NATIVE)return;
+  if(!nav||!document.hidden){if(navNoteK){navNoteK='';nat('navNotify',{off:true}).catch(()=>{})}return}
+  const ti=($('#navDist').textContent?$('#navDist').textContent+' · ':'')+$('#navTxt').textContent,eta=$('#navEta').textContent.split(' · ')[0],
+    tx=($('#navSub').textContent||'')+(eta&&nav.joined?' · chegada '+eta:''),k=ti+'|'+tx,txt=$('#navTxt').textContent;
+  /* no máximo uma atualização a cada 3 s, menos quando a manobra muda */
+  if(k===navNoteK||(Date.now()-navNoteT<3000&&navNoteK.indexOf('· '+txt+'|')>=0))return;
+  navNoteK=k;navNoteT=Date.now();nat('navNotify',{title:ti,text:tx}).catch(()=>{})}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)navNoteK='';navNote()});   /* ao esconder: mostra já; ao voltar: tira */
+let navDrag=null,navDragT=0;
+$('#navCard').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;navDrag={y:e.clientY,on:false};try{$('#navCard').setPointerCapture(e.pointerId)}catch(_){}});
+$('#navCard').addEventListener('pointermove',e=>{if(!navDrag)return;const dy=e.clientY-navDrag.y;if(Math.abs(dy)>24)navDrag.on=true;if(navDrag.on)$('#navCard').style.transform='translateY('+dy+'px)'});
+const navDragEnd=e=>{if(!navDrag)return;const d=navDrag;navDrag=null;$('#navCard').style.transform='';if(!d.on)return;navDragT=Date.now();
+  const v=$('#view').getBoundingClientRect();navPosSet(e.clientY>v.top+v.height/2?'bottom':'top')};
+$('#navCard').addEventListener('pointerup',navDragEnd);$('#navCard').addEventListener('pointercancel',()=>{navDrag=null;$('#navCard').style.transform=''});
+$('#navEnd').onclick=async e=>{e.stopPropagation();if(!nav)return;const n0=nav;
+  if(await ask({title:'Encerrar a rota?',msg:'A voz curva a curva e a linha da rota param. Para só tirar o cartão da frente, use o "–".',ok:'Encerrar',danger:true})&&nav===n0)navStop('Rota encerrada')};
+$('#navHide').onclick=e=>{e.stopPropagation();document.body.classList.add('navHid');document.body.classList.remove('navExp');toast('Direção escondida: a rota e a voz continuam. Toque na seta para mostrar.',3500)};
+$('#navPill').onclick=()=>document.body.classList.remove('navHid');
+$('#navPos').onclick=e=>{e.stopPropagation();navPosSet(cfg.navPos==='bottom'?'top':'bottom')};
+$('#navArr').onclick=e=>{e.stopPropagation();if(!nav)return;const m=nav.mi>0?nav.rt.man[nav.mi]:null;if(m&&nav.q)say('Em '+spokenDist(m.along-nav.q.along)+', '+lc1(m.alert),true);else if(!nav.joined)say('Vá até o início da rota',true)};
+$('#navCard').onclick=()=>{if(!nav||Date.now()-navDragT<400)return;document.body.classList.toggle('navExp')};
 
 /* ---- tela "Ir para" ---- */
 let navSel={from:null,to:null},navField='to',navSeq=0,navTmr=null,navResults=[];
@@ -1050,6 +1088,7 @@ function renderVLog(){const el=$('#vLog');if(!el)return;
   el.innerHTML=vLog.length?vLog.map(x=>'<div class="lr"><span><span class="small">'+new Date(x.t).toTimeString().slice(0,8)+' · '+(x.src==='g'?'botão Voz':'assistente')+(x.n>1?' · '+x.n+' vezes':'')+'</span><br>"'+esc(x.text)+'"'+
     (x.alts.length?' <span class="small">(ou: '+x.alts.map(a=>'"'+esc(a)+'"').join(', ')+')</span>':'')+'<br><b>'+esc(x.res)+'</b></span></div>').join(''):'<div class="small" style="padding:6px 0">Nada ouvido desde que o app abriu.</div>'}
 const nat=(fn,o)=>{if(!NATIVE)return Promise.reject(new Error('só no app (APK)'));try{return NP.nat[fn](o||{})}catch(e){return Promise.reject(e)}};
+if(NATIVE)setTimeout(()=>{if(!nav)nat('navNotify',{off:true}).catch(()=>{})},1500);   /* (2.7.10) tira a notificação de rota que sobrou se o Android fechou o app no meio da rota */
 const errTxt=e=>String((e&&e.message)||e||'erro').slice(0,160);
 const fmtNum=n=>String(n||'').replace(/[^+0-9*#]/g,'');
 /* diálogo aberto (modal) fica por cima de tudo e bloquearia Atender/Recusar: fecha */

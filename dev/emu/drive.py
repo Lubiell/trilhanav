@@ -149,6 +149,42 @@ def audio_checks(tag):
     mode = re.findall(r'(?:mMode|Audio mode|mode)\s*[:=]\s*(\S+)', au)
     check('[%s] áudio em modo normal (sem canal de ligação/SCO aberto pelo app)' % tag, not any('IN_COMMUNICATION' in m or m == '3' for m in mode[:3]), str(mode[:3]))
 
+# rota de teste em L (600 m para leste, vira à direita, 500 m para o sul) perto de BH, no formato do Valhalla (como o t15/t31)
+NAVJS = r"""(()=>{const la0=-19.92,lo0=-43.94,K=1/111194.9,KL=1/(111194.9*Math.cos(la0*Math.PI/180)),pts=[];
+for(let i=0;i<31;i++)pts.push([la0,lo0+i*20*KL]);const c=pts[30];for(let i=1;i<26;i++)pts.push([c[0]-i*20*K,c[1]]);
+const enc=p=>{let o='',pl=0,po=0;for(const [la,lo] of p){const a=Math.round(la*1e6),b=Math.round(lo*1e6);for(let v of [a-pl,b-po]){v=v<0?~(v<<1):v<<1;
+  while(v>=0x20){o+=String.fromCharCode((0x20|(v&0x1f))+63);v>>=5}o+=String.fromCharCode(v+63)}pl=a;po=b}return o};
+const n=pts.length,man=[{type:1,instruction:'Siga para o leste na Rua A.',verbal_pre_transition_instruction:'Siga para o leste na Rua A.',street_names:['Rua A'],begin_shape_index:0,end_shape_index:30,length:0.6,time:50},
+ {type:10,instruction:'Vire à direita na Rua B.',verbal_transition_alert_instruction:'Vire à direita na Rua B.',verbal_pre_transition_instruction:'Vire à direita na Rua B.',street_names:['Rua B'],begin_shape_index:30,end_shape_index:n-1,length:0.5,time:40},
+ {type:4,instruction:'Você chegou ao seu destino.',verbal_pre_transition_instruction:'Você chegou ao seu destino.',begin_shape_index:n-1,end_shape_index:n-1,length:0,time:0}];
+navStart(parseTrip({legs:[{shape:enc(pts),maneuvers:man}],summary:{length:1.1,time:90}}),{name:'Teste',lat:pts[n-1][0],lon:pts[n-1][1]});
+onPos({timestamp:Date.now(),coords:{latitude:pts[5][0],longitude:pts[5][1],altitude:800,accuracy:5,speed:10,heading:90}});return !!nav})()"""
+
+def nav_notif():
+    return [l for l in sh('dumpsys notification --noredact', t=60).splitlines() if 'NotificationRecord' in l and PKG in l and 'id=4343' in l]
+
+def nav_test(tag):
+    """(2.7.10) cartão de direção compacto e notificação com a próxima manobra em segundo plano"""
+    close_dialogs()
+    lon = -43.94 + 5 * 20 / (111194.9 * __import__('math').cos(__import__('math').radians(-19.92)))
+    adb('emu', 'geo', 'fix', '%.6f' % lon, '-19.92')   # o GPS do emulador no começo da rota de teste
+    r = js(NAVJS)
+    check('[%s] rota de teste começou' % tag, r is True, repr(r))
+    time.sleep(2)
+    h = js("Math.round(document.querySelector('#navCard').getBoundingClientRect().height)")
+    shot(tag + '-rota')
+    check('[%s] cartão de direção compacto (uma faixa, ≤ 80 px)' % tag, isinstance(h, int) and 0 < h <= 80, repr(h))
+    sh('input keyevent KEYCODE_HOME'); time.sleep(5)
+    hid = js('document.hidden')
+    nn = nav_notif()
+    full = sh('dumpsys notification --noredact', t=60); save(tag + '-notificacoes.txt', full)
+    R.append('INFO  [%s] em segundo plano o WebView diz document.hidden=%r' % (tag, hid)); print(R[-1], flush=True)
+    check('[%s] em segundo plano: notificação da rota (canal tn_rota) com a próxima manobra' % tag, bool(nn) and 'tn_rota' in nn[0],
+          (nn[0][:300] if nn else 'nenhuma notificação 4343'))
+    shot(tag + '-segundo-plano')
+    launch(); time.sleep(4)
+    check('[%s] de volta ao app: a notificação da rota sai' % tag, not nav_notif())
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     save('aparelho.txt', sh('getprop ro.product.model') + sh('getprop ro.build.version.release') + sh('getprop ro.product.cpu.abilist')
@@ -229,6 +265,7 @@ def main():
         sto = js("document.querySelector('#stoInfo')&&document.querySelector('#stoInfo').innerText")
         save('branch-armazenamento.txt', str(sto))
         check('[branch] Ajustes → Armazenamento mostra o mapa', isinstance(sto, str) and 'Mapa offline' in sto, str(sto)[:300])
+        nav_test(T)
         exit_test(T)
 
     save('logcat-final.txt', adb('logcat', '-d', t=120))

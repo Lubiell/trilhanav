@@ -577,9 +577,50 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
 
     /** Sair do app (v2.7.6): para os serviços que o app iniciou (assistente de voz, GPS em segundo plano), fecha a tela e a tira dos
      *  recentes e encerra o processo. Serviço parado com stopService não volta sozinho (START_STICKY só reinicia serviço iniciado). */
+    // ---------------------------------------------------------------- rota em segundo plano
+
+    static final int NAV_NOTIF = 4343;
+
+    /** (2.7.10) próxima manobra numa notificação enquanto o app está em segundo plano (Spotify ou WhatsApp na frente, tela apagada):
+     *  title = "100 m · Vire à esquerda…", text = rua e chegada; off = tira. Silenciosa; tocar abre o app. Sem a permissão de
+     *  notificação (Android 13+) o Android simplesmente não mostra. */
+    @PluginMethod
+    public void navNotify(PluginCall call) {
+        Context c = getContext();
+        try {
+            if (call.getBoolean("off", false)) { NotificationManagerCompat.from(c).cancel(NAV_NOTIF); call.resolve(); return; }
+            android.app.NotificationManager nm = (android.app.NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (Build.VERSION.SDK_INT >= 26 && nm != null && nm.getNotificationChannel("tn_rota") == null) {
+                android.app.NotificationChannel ch = new android.app.NotificationChannel("tn_rota", "TrilhaNav (rota)", android.app.NotificationManager.IMPORTANCE_LOW);
+                ch.setShowBadge(false);
+                nm.createNotificationChannel(ch);
+            }
+            Intent open = c.getPackageManager().getLaunchIntentForPackage(c.getPackageName());
+            android.app.PendingIntent pi = open == null ? null : android.app.PendingIntent.getActivity(c, 1, open,
+                android.app.PendingIntent.FLAG_IMMUTABLE | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+            androidx.core.app.NotificationCompat.Builder b = new androidx.core.app.NotificationCompat.Builder(c, "tn_rota")
+                .setSmallIcon(android.R.drawable.ic_menu_directions)
+                .setContentTitle(call.getString("title", "TrilhaNav"))
+                .setContentText(call.getString("text", ""))
+                .setCategory(androidx.core.app.NotificationCompat.CATEGORY_NAVIGATION)
+                .setVisibility(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
+                .setOnlyAlertOnce(true)
+                .setSilent(true);
+            if (pi != null) b.setContentIntent(pi);
+            NotificationManagerCompat.from(c).notify(NAV_NOTIF, b.build());
+        } catch (SecurityException e) {
+            // sem a permissão de notificação: segue sem
+        } catch (Exception e) {
+            call.reject("notificação: " + e.getMessage()); return;
+        }
+        call.resolve();
+    }
+
     @PluginMethod
     public void exitApp(PluginCall call) {
         Context c = getContext();
+        try { NotificationManagerCompat.from(c).cancel(NAV_NOTIF); } catch (Exception e) { }
         c.stopService(new Intent(c, TrilhaVoiceService.class));
         try {
             android.app.ActivityManager am = (android.app.ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
