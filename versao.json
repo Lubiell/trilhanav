@@ -1,7 +1,7 @@
 {
- "version": "2.7.6",
- "code": 20706,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.6.apk",
- "sha256": "55026d1e755fb3233ef99cf0d9d6f85e6bc3b237f58726f60982f20303dfd538",
- "notes": "Botão \"Sair do app\" (em Mais): fecha o app de verdade, guarda a trilha gravada e para o GPS e o assistente de voz."
+ "version": "2.7.7",
+ "code": 20707,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.7.apk",
+ "sha256": "a4ef3df245dc4b2a9a23593065af04bac197105ebd58d14199375ba6e9b60dbb",
+ "notes": "Radares e mapa baixados não somem mais quando o celular falha ao ler o armazenamento. Nova tela Ajustes → Armazenamento mostra o que está guardado."
 }
