@@ -12,3 +12,5 @@ dev/testmap.pmtiles
 *.jks
 *.keystore
 senha*.txt
+dev/emu/out/
+dev/emu/apk/
