@@ -1,7 +1,7 @@
 {
- "version": "2.7.8",
- "code": 20708,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.8.apk",
- "sha256": "1f202b9095b089480e2d8dc024e1810fea254cca95c9a9290ea98c9924e8404a",
- "notes": "A música do Spotify não abaixa mais o tempo todo (o microfone do capacete vem desligado). O download do mapa não trava mais em \"não consegui ler o mapa\". O mapa de MG baixa sozinho no Wi-Fi e os radares e lombadas de MG baixam sozinhos."
+ "version": "2.7.9",
+ "code": 20709,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.9.apk",
+ "sha256": "8468d842efcba1e0c729b59f072c247cb590ea2f2eb98b773df74a84b05fb2e2",
+ "notes": "O mapa de MG e os radares voltam a baixar sozinhos (o mapa no Wi-Fi). O \"Trilha\" volta a ouvir pelo microfone do capacete, para funcionar com a moto andando; a música vai pelo canal de ligação, com o volume mantido."
 }
