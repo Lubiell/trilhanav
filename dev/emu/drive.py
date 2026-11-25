@@ -136,7 +136,8 @@ def open_checks(tag, seen):
     log = adb('logcat', '-d', t=120); save(tag + '-logcat.txt', log)
     fatal = [l for l in log.splitlines() if 'FATAL EXCEPTION' in l or 'Fatal signal' in l]
     check('[%s] sem travamento (FATAL EXCEPTION / Fatal signal) no logcat' % tag, not fatal, ' / '.join(fatal[:3]))
-    jserr = [l for l in log.splitlines() if 'Uncaught' in l]
+    # só o console do WebView (chromium/Capacitor); o "Uncaught remote exception" do JavaBinder é do sistema, não do app
+    jserr = [l for l in log.splitlines() if 'Uncaught' in l and re.search(r'chromium|Console|Capacitor', l)]
     check('[%s] sem erro de JavaScript no console do WebView' % tag, not jserr, ' / '.join(jserr[:3]))
     check('[%s] o mapa aparece com os botões do app' % tag, any(s in seen for s in ('Mais', 'Ir para', 'Mapa')), ', '.join(seen[:20]))
 
