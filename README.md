@@ -4,7 +4,8 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.7.9.apk`** (atual) | 2.7.9 (versionCode 20709) | `main` `e4bb3a5` (merge do PR #20), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 | 56 MB (modelo de voz) |
+| **`trilhanav-2.7.10.apk`** (atual) | 2.7.10 (versionCode 20710) | `main` `b863447` (merge do PR #22), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 | 56 MB (modelo de voz) |
+| `trilhanav-2.7.9.apk` | 2.7.9 (versionCode 20709) | `main` `e4bb3a5` (merge do PR #20), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 | 56 MB (modelo de voz) |
 | `trilhanav-2.7.8.apk` | 2.7.8 (versionCode 20708) | `main` `d219bba` (merge do PR #18), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
 | `trilhanav-2.7.7.apk` | 2.7.7 (versionCode 20707) | `main` `575ca9d` (merge do PR #16), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
 | `trilhanav-2.7.6.apk` | 2.7.6 (versionCode 20706) | `main` `66bf127` (merge do PR #14), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
@@ -13,13 +14,14 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.7.9):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.9.apk
+**Baixar no celular (2.7.10):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.10.apk
 
 (A 2.7.4, a 2.7.3, a 2.7.2, a 2.7.1, a 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.7.10: `7a7032305f65f89031ff83a8ca0e66c268da0e446b7f448e819e9c0be9b97b0e`
 - 2.7.9: `8468d842efcba1e0c729b59f072c247cb590ea2f2eb98b773df74a84b05fb2e2`
 - 2.7.8: `1f202b9095b089480e2d8dc024e1810fea254cca95c9a9290ea98c9924e8404a`
 - 2.7.7: `a4ef3df245dc4b2a9a23593065af04bac197105ebd58d14199375ba6e9b60dbb`

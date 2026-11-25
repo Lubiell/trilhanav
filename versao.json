@@ -1,7 +1,7 @@
 {
- "version": "2.7.9",
- "code": 20709,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.9.apk",
- "sha256": "8468d842efcba1e0c729b59f072c247cb590ea2f2eb98b773df74a84b05fb2e2",
- "notes": "O mapa de MG e os radares voltam a baixar sozinhos (o mapa no Wi-Fi). O \"Trilha\" volta a ouvir pelo microfone do capacete, para funcionar com a moto andando; a música vai pelo canal de ligação, com o volume mantido."
+ "version": "2.7.10",
+ "code": 20710,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.10.apk",
+ "sha256": "7a7032305f65f89031ff83a8ca0e66c268da0e446b7f448e819e9c0be9b97b0e",
+ "notes": "Cartão de direção menor (toque para ver os detalhes), pode ficar em cima ou embaixo, esconde com \"–\" sem parar a rota, só aparece na aba Mapa e, com o app em segundo plano, a próxima manobra aparece na notificação. O \"Sair\" da rota pergunta antes."
 }
