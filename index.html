@@ -228,7 +228,7 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0"><button class="btn g" id="bExport">Exportar trilha gravada (GPX)</button><button class="btn g" id="bResetT">Zerar estatísticas da viagem</button><button class="btn g" id="bBackup">Backup ajustes</button><button class="btn g" id="bRestore">Restaurar ajustes</button></div>
   <div style="padding:6px 0"><button class="btn r" id="bNewRec">Limpar gravação e notas</button></div>
   <input type="file" id="restoreIn" accept=".json" hidden>
-  <div class="small" style="padding-top:8px">TrilhaNav v2.7.10 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
+  <div class="small" style="padding-top:8px">TrilhaNav v2.7.11 · mapas, ruas e radares © colaboradores do OpenStreetMap</div>
 </div></dialog>
 
 <dialog id="dlgMedia"><div class="hd"><b>Música</b></div><div class="bd">
@@ -260,6 +260,9 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <h3>Mensagens do WhatsApp (desta viagem)</h3><div id="phWa"></div>
   <div class="small" id="phDiag" style="padding-top:6px"></div>
   <label>Ler mensagens em voz alta <select id="sWaRead"><option value="nada">não</option><option value="nome">só quem mandou</option><option value="tudo">quem mandou e o texto</option></select></label>
+  <div class="small" style="padding-top:4px">Ler o texto só de algumas pessoas: toque em ☆ numa mensagem acima ou escreva o nome como aparece no WhatsApp. Fica só neste celular.</div>
+  <div class="nvf"><input id="waSelIn" placeholder="Nome (como no WhatsApp)" maxlength="40" autocomplete="off"><button class="btn g" id="waSelAdd">Adicionar</button></div>
+  <div class="small" id="waSelList" style="padding-bottom:6px"></div>
   <h3>Aviso de queda (SOS)</h3>
   <label>Detectar queda e avisar meus contatos <input type="checkbox" id="sCrashOn"></label>
   <label>Sensibilidade <select id="sCrashSens" style="width:auto"><option value="normal">normal (impacto de 4 g)</option><option value="alta">alta (3 g)</option></select></label>
@@ -270,6 +273,8 @@ h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
   <div class="small">Andando a 25 km/h ou mais, um impacto forte e a moto parada por 15 s: o app conta 30 s (alarme e voz). Sem "Estou bem" ou "Trilha, cancelar", manda SMS com a sua localização para até 3 contatos e liga para o primeiro. Também dá para adicionar um contato da Agenda abaixo pelo botão SOS. Não é um equipamento certificado: pode falhar ou dar alarme falso.</div>
   <h3>Comandos de voz</h3>
   <label>Assistente de voz sempre ligado (sem internet) <input type="checkbox" id="sVoiceAlways"></label>
+  <label>Sensibilidade do "Trilha" <select id="sVSens" style="width:auto"><option value="normal">normal</option><option value="alta">alta (responde mais fácil; mais chance de comando sem querer)</option></select></label>
+  <label>Atender ou recusar ligação por voz (enquanto toca, sem dizer "Trilha") <input type="checkbox" id="sVCall"></label>
   <label>Ouvir pelo microfone do fone/intercom Bluetooth (o "Trilha" funciona com a moto andando; enquanto ligado, a música sai pelo canal de ligação, em mono) <input type="checkbox" id="sVoiceBt"></label>
   <div class="small" style="padding-bottom:6px">Ligado, ele escuta o tempo todo e só age quando a frase começa com <b>"Trilha"</b>: "Trilha, próxima música", "Trilha, pausar". O reconhecimento é feito no próprio celular: nada do que você fala vai para a internet.</div>
   <div class="small">Só para a música: diga "Trilha" e o comando (ou toque em <b>Voz</b> e fale): "tocar", "pausar", "próxima", "anterior", "aumentar volume", "abaixar volume". Dois bipes agudos: entendeu; um bipe grave: não entendeu. No aviso de queda, "cancelar" ou "estou bem" cancela.</div>
@@ -344,7 +349,7 @@ const NP=NATIVE?{bg:CAP.registerPlugin('BackgroundGeolocation'),nat:CAP.register
 const LS={get(k,d){try{const v=localStorage.getItem('tn_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('tn_'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- configurações ---------- */
-const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:true,navPos:'top'};
+const DEF={spd:0,rot:false,snd:true,day:false,comp:true,compSpd:8,compOff:0,compLearned:false,voice:true,voiceVol:1,dayMode:'auto',radar:true,lomb:true,radarDist:600,radarTol:7,navNoToll:false,navNoHwy:false,navRot:true,crashOn:false,crashSens:'normal',crashName:'',tankL:0,kmL:0,reserveKm:40,dashBig:false,limOn:true,limTol:7,wx:true,wxVoice:true,waRead:'nome',updAuto:true,voiceAlways:true,voiceBt:true,navPos:'top',vSens:'normal',vCall:true};
 const cfg=Object.assign({},DEF,LS.get('cfg',{}));
 /* (v2.7.9) o dono escolheu "voz sem mãos": com o microfone do celular (2.7.8) o "Trilha" não ouvia com a moto andando. O microfone do capacete
    volta a vir ligado, também para quem a 2.7.8 desligou (a música fica no canal de ligação; o nativo segura o volume dela, scoVolume). */
@@ -1074,9 +1079,12 @@ function parseCmd(t){const s=normTxt(t);if(!s)return null;
   if(/\b(abaixar|abaixa|abaixe)\b/.test(s))return {a:'voldown'};
   if(/\b(tocar|toca|toque)\b/.test(s))return {a:'play'};
   if(/\b(cancelar|cancela)\b/.test(s))return {a:'none'};
+  /* (2.7.11) ligação: valem sem "Trilha" enquanto o telefone toca (onHeard) */
+  if(/\b(atender|atende)\b/.test(s))return {a:'answer'};
+  if(/\b(recusar|recusa)\b/.test(s)||(/\b(desligar|desliga)\b/.test(s)&&!/\b(musica|som|volume)\b/.test(s)))return {a:'end'};   /* "desligar a música" não derruba ligação */
   return null}
 /* (v2.7.5) o que cada comando faz, para o diagnóstico; bipe de "entendi" (dois agudos) e de "não entendi" (um grave) */
-const CMDL={play:'tocar',pause:'pausar',next:'próxima música',prev:'música anterior',volup:'aumentar volume',voldown:'abaixar volume',none:'cancelar'};
+const CMDL={play:'tocar',pause:'pausar',next:'próxima música',prev:'música anterior',volup:'aumentar volume',voldown:'abaixar volume',none:'cancelar',answer:'atender',end:'recusar/desligar'};
 const beepOk=()=>{beep(1500,70);setTimeout(()=>beep(1500,70),130)},beepNo=()=>beep(330,320);
 /* diagnóstico da voz: as últimas 10 frases ouvidas e o que o app fez com cada uma. Só na memória (some ao fechar o app) */
 var vLog=[];
@@ -1102,14 +1110,15 @@ function onCall(o){o=o||{};const st=['ringing','offhook','idle'].includes(o.stat
   callSt={state:st,name:String(o.name||'').slice(0,80)||(same?callSt.name:''),number:String(o.number||'').slice(0,30)||(same?callSt.number:''),
     src:o.src==='wa'?'wa':(same?callSt.src:''),app:String(o.app||'').slice(0,30)||(same?callSt.app:''),video:o.video!=null?!!o.video:(same?callSt.video:false)};
   if(st==='ringing'){if(prev==='ringing')return showCall('ringing');callCtx=null;showCall('ringing');vib([400,200,400]);
-    const who=callSt.name||'número desconhecido',txt=(callSt.src==='wa'?(callSt.video?'Chamada de vídeo do WhatsApp de ':'Ligação de WhatsApp de '):'Ligação de ')+who;say(txt,true)}
+    const num=String(callSt.number||'').replace(/\D/g,''),who=callSt.name||(num?'número '+num.split('').join(' '):'número desconhecido'),
+      txt=(callSt.src==='wa'?(callSt.video?'Chamada de vídeo do WhatsApp de ':'Ligação de WhatsApp de '):'Ligação de ')+who+(cfg.vCall!==false&&voiceLive()?'. Diga atender ou recusar':'');say(txt,true)}
   else if(st==='offhook'){if(dialT){clearTimeout(dialT);dialT=null}showCall('offhook')}
   else{hideCall();callCtx=null}}
 function dial(c){if(!c||!fmtNum(c.number)){say('Número inválido');return}if(dialT)clearTimeout(dialT);callCtx={name:String(c.name||'').slice(0,80),number:fmtNum(c.number)};
   showCall('dial');say('Ligando para '+(callCtx.name||callCtx.number.split('').join(' ')),true);
   dialT=setTimeout(()=>{dialT=null;nat('placeCall',{number:callCtx.number}).catch(e=>{hideCall();toast('Não consegui ligar: '+errTxt(e),5000);say('Não consegui ligar')})},3500)}
 function getFavs(){return (LS.get('phFav',[])||[]).filter(f=>f&&typeof f.name==='string'&&typeof f.number==='string').slice(0,30)}
-async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&(c.a==='none'||c.a==='end')){sosCancel();return}const st=callSt.state;
+async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&c.a==='none'){sosCancel();return}const st=callSt.state;
   switch(c.a){
     case 'answer':if(st!=='ringing'){say('Nenhuma ligação tocando');return}(callSt.src==='wa'?nat('waCallAction',{act:'answer'}):nat('answerCall')).then(()=>toast('Atendida')).catch(e=>{say('Não consegui atender');toast(errTxt(e),5000)});return;
     case 'none':case 'end':if(dialT){clearTimeout(dialT);dialT=null;hideCall();callCtx=null;say('Ligação cancelada');return}if(c.a==='none')return;if(st==='idle'){say('Nenhuma ligação');return}
@@ -1119,7 +1128,7 @@ async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&(c.a==='none'
     case 'play':if(nowPlay&&nowPlay.active)return media('play');return nat('spotifyPlay').catch(()=>toast('Spotify não respondeu'));
     default:return}}
 async function voiceCmd(){if(!NATIVE){toast('Comandos de voz só funcionam no app (APK)');return}
-  if(voiceLive()){vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
+  if(voiceLive()){vArmedT=Date.now()+8000;beep(1000,90);toast('Fale o comando…',4000);return}
   if(voiceBusy)return;voiceBusy=true;$('#bVoice').classList.add('on');
   toast('Fale agora…',4000);beep(1000,90);
   try{const r=await nat('listen',{ms:7000}),texts=(r&&r.texts||[]).map(String);let c=null;for(const t of texts){c=parseCmd(t);if(c)break}
@@ -1131,7 +1140,8 @@ function onWa(o){o=o||{};const m={app:String(o.app||'WhatsApp').slice(0,30),titl
   if(waMsgs.some(x=>x.title===m.title&&x.text===m.text&&Math.abs(x.t-m.t)<120000))return;
   waMsgs.unshift(m);waMsgs.length=Math.min(waMsgs.length,20);
   $('#waApp').textContent=m.app;$('#waT').textContent=m.title;$('#waX').textContent=m.text;$('#waCard').classList.add('on');clearTimeout(waT);waT=setTimeout(()=>$('#waCard').classList.remove('on'),10000);
-  if(callSt.state==='idle'&&cfg.waRead!=='nada'){beep(1300,60);say('Mensagem de '+m.title+(cfg.waRead==='tudo'?': '+m.text.slice(0,200):''))}
+  /* (2.7.11) dos escolhidos lê quem mandou e o texto; dos outros, segue o ajuste (não / só quem mandou / tudo) */
+  if(callSt.state==='idle'){const sel=waSelHas(m.title);if(sel||cfg.waRead!=='nada'){beep(1300,60);say('Mensagem de '+m.title+(sel||cfg.waRead==='tudo'?': '+m.text.slice(0,200):''))}}
   if($('#dlgPhone').open)renderWa()}
 $('#waCard').onclick=()=>$('#waCard').classList.remove('on');
 const appName=p=>({'com.spotify.music':'Spotify','com.google.android.apps.youtube.music':'YouTube Music','com.deezer.android.app':'Deezer'})[p]||'';
@@ -1139,7 +1149,7 @@ function onMedia(o){o=o||{};const prev=nowPlay;nowPlay={active:!!o.active,pkg:St
   const p=nowPlay,an=appName(p.pkg);$('#mNow').textContent=p.active?(p.playing?'▶ ':'⏸ ')+([p.title,p.artist].filter(Boolean).join(' — ')||'sem título')+(an?' ('+an+')':''):'Nada tocando';
   if(p.active&&p.playing&&p.title&&(!prev||prev.title!==p.title))toast('♪ '+[p.title,p.artist].filter(Boolean).join(' — ').slice(0,80),3000)}
 /* tela do telefone */
-async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCrashOn').checked=cfg.crashOn;$('#sCrashSens').value=cfg.crashSens;$('#sCrashName').value=cfg.crashName;renderSos();$('#sVoiceAlways').checked=cfg.voiceAlways;$('#sVoiceBt').checked=cfg.voiceBt;
+async function openPhone(results){if(!NATIVE){toast('Telefone só funciona no app (APK)');return}if(!$('#dlgPhone').open)$('#dlgPhone').showModal();$('#sWaRead').value=cfg.waRead;$('#sCrashOn').checked=cfg.crashOn;$('#sCrashSens').value=cfg.crashSens;$('#sCrashName').value=cfg.crashName;renderSos();$('#sVoiceAlways').checked=cfg.voiceAlways;$('#sVoiceBt').checked=cfg.voiceBt;$('#sVSens').value=cfg.vSens==='alta'?'alta':'normal';$('#sVCall').checked=cfg.vCall!==false;
   renderFavs();renderWa();renderVLog();if(results)renderRes(results);else renderAgenda();const st=await renderPerm();if(st&&st.contacts&&!contactsAll)loadContacts(false)}
 async function renderPerm(){let s={};try{s=await nat('phoneStatus')||{}}catch(e){}
   const it=[['Telefone (atender, recusar, ligar)',s.phone],['Agenda (nome de quem liga)',s.contacts],['Microfone (comandos de voz)',s.mic],['Acesso a notificações (WhatsApp e música)',s.notifAccess]];
@@ -1154,7 +1164,14 @@ function renderRes(list){list=(list||[]).slice(0,20);$('#phRes').innerHTML=list.
   $('#phRes').querySelectorAll('[data-rcall]').forEach(b=>b.onclick=()=>{$('#dlgPhone').close();dial(list[+b.dataset.rcall])});
   $('#phRes').querySelectorAll('[data-sos]').forEach(b=>b.onclick=()=>sosAddC(list[+b.dataset.sos]));
   $('#phRes').querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const c=list[+b.dataset.fav],f=getFavs();if(!f.some(x=>x.number===c.number))f.push({name:String(c.name).slice(0,80),number:String(c.number).slice(0,30)});LS.set('phFav',f.slice(0,30));renderFavs();toast('Favorito: '+c.name)})}
-function renderWa(){$('#phWa').innerHTML=waMsgs.length?waMsgs.map(m=>'<div class="lr"><span><b>'+esc(m.title)+'</b> <span class="small">'+new Date(m.t).toTimeString().slice(0,5)+'</span><br>'+esc(m.text)+'</span></div>').join(''):'<div class="small" style="padding:6px 0">Nenhuma mensagem desde que o app abriu.</div>'}
+function renderWa(){$('#phWa').innerHTML=waMsgs.length?waMsgs.map((m,i)=>'<div class="lr"><span><b>'+esc(m.title)+'</b> <span class="small">'+new Date(m.t).toTimeString().slice(0,5)+'</span><br>'+esc(m.text)+'</span>'
+  +'<button class="btn g" data-wasel="'+i+'" title="Ler em voz alta o texto das mensagens desta pessoa">'+(waSelHas(m.title)?'★ lê o texto':'☆ ler o texto')+'</button></div>').join(''):'<div class="small" style="padding:6px 0">Nenhuma mensagem desde que o app abriu.</div>';renderWaSel()}
+/* (2.7.11) a pedido do dono: "ler as mensagens do WhatsApp de pessoas selecionadas". Só nomes, só no aparelho (tn_waSel). Vale se o nome
+   escolhido aparece no título da notificação (pessoa ou "Fulano @ Grupo"); mínimo de 3 letras para não pegar todo mundo */
+const waSelGet=()=>(LS.get('waSel',[])||[]).filter(n=>typeof n==='string'&&normTxt(n).length>=3).slice(0,30);
+function waSelHas(title){const t=' '+normTxt(title)+' ';return t.length>2&&waSelGet().some(n=>t.includes(' '+normTxt(n)+' '))}   /* palavra inteira: "Ana" não pega "Mariana" */
+function waSelSet(list){LS.set('waSel',[...new Set(list.map(n=>String(n).trim().slice(0,40)).filter(n=>normTxt(n).length>=3))].slice(0,30))}
+function renderWaSel(){const l=waSelGet();$('#waSelList').innerHTML=l.length?'Lê o texto de: '+l.map((n,i)=>'<span class="chip">'+esc(n)+' <button class="btn g" data-wadel="'+i+'" title="Tirar da lista">×</button></span>').join(' '):'Nenhuma pessoa escolhida: as mensagens seguem o ajuste acima.'}
 let phT=null;$('#phQ').oninput=()=>{clearTimeout(phT);phT=setTimeout(renderAgenda,200)};
 $('#phRefresh').onclick=()=>loadContacts(true);
 $('#phDial').onclick=()=>{const n=fmtNum($('#phNum').value);if(n.length<2){toast('Digite o número');return}$('#dlgPhone').close();dial({name:'',number:n})};
@@ -1162,6 +1179,12 @@ $('#phReq').onclick=()=>nat('requestPhone').then(async()=>{const st=await render
 $('#phNotif').onclick=()=>nat('openNotifAccess').catch(e=>toast(errTxt(e)));
 $('#phApp').onclick=()=>nat('openAppSettings').catch(e=>toast(errTxt(e)));
 $('#sWaRead').onchange=e=>{cfg.waRead=e.target.value;saveCfg()};
+$('#sVSens').onchange=e=>{cfg.vSens=e.target.value==='alta'?'alta':'normal';saveCfg();if(NATIVE&&voiceLive()){nat('voiceWords',{words:voiceVocab()}).catch(()=>{});nat('voiceSens',{high:cfg.vSens==='alta'}).catch(()=>{})}};
+$('#sVCall').onchange=e=>{cfg.vCall=!!e.target.checked;saveCfg()};
+$('#phWa').addEventListener('click',e=>{const b=e.target.closest('[data-wasel]');if(!b)return;const m=waMsgs[+b.dataset.wasel];if(!m)return;
+  const l=waSelGet(),t=' '+normTxt(m.title)+' ';if(waSelHas(m.title))waSelSet(l.filter(n=>!t.includes(' '+normTxt(n)+' ')));else waSelSet([...l,m.title]);renderWa()});
+$('#waSelAdd').onclick=()=>{const v=$('#waSelIn').value.trim();if(normTxt(v).length<3){toast('Escreva pelo menos 3 letras do nome',3000);return}waSelSet([...waSelGet(),v]);$('#waSelIn').value='';renderWa()};
+$('#waSelList').addEventListener('click',e=>{const b=e.target.closest('[data-wadel]');if(!b)return;const l=waSelGet();l.splice(+b.dataset.wadel,1);waSelSet(l);renderWa()});
 $('#bPhone').onclick=()=>openPhone();$('#bVoice').onclick=()=>voiceCmd();
 $('#callAns').onclick=()=>runCmd({a:'answer'});$('#callEnd').onclick=()=>runCmd({a:'end'});
 $('#mVolDn').onclick=()=>runCmd({a:'voldown'});$('#mVolUp').onclick=()=>runCmd({a:'volup'});$('#mSpotBg').onclick=()=>nat('spotifyPlay').then(()=>toast('Spotify tocando em segundo plano')).catch(()=>toast('Spotify não respondeu (está instalado?)'));
@@ -1171,12 +1194,15 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- assistente de voz sempre ligado (Vosk, no aparelho) e agenda ---------- */
 var contactsAll=null,voiceSt='off',vArmedT=0;
-const VBASE='trilha a o ao de da do que por favor eu me não quero estou bem tô tocar toca toque pausar pausa pause próxima próximo anterior aumentar aumenta aumente abaixar abaixa abaixe música volume som cancelar cancela'.split(' ');
+const VBASE='trilha a o ao de da do que por favor eu me não quero estou bem tô tocar toca toque pausar pausa pause próxima próximo anterior aumentar aumenta aumente abaixar abaixa abaixe música volume som cancelar cancela atender atende recusar recusa desligar desliga'.split(' ');
+/* (2.7.11) sensibilidade "alta": aceita palavras que o Vosk escreve no lugar de "trilha" com vento, e o nativo reforça o microfone */
+const TRILHA_ALT=['trilho','trilhas'];
+const wakeRe=()=>cfg.vSens==='alta'?/\b(trilha|trilho|trilhas)\b/:/\btrilha\b/;
 const voiceLive=()=>voiceSt==='on'||voiceSt==='paused'||voiceSt==='loading';
-const voiceVocab=()=>[...new Set(VBASE)];
+const voiceVocab=()=>[...new Set([...VBASE,...(cfg.vSens==='alta'?TRILHA_ALT:[])])];
 async function voiceAlwaysStart(manual){if(!NATIVE||!cfg.voiceAlways)return;let st={};try{st=await nat('phoneStatus')||{}}catch(e){}
   if(!st.mic){if(manual)toast('Permita o microfone em Telefone para o assistente de voz',5000);return}
-  nat('voiceStart',{words:voiceVocab(),bt:!!cfg.voiceBt}).catch(e=>{if(manual)toast(errTxt(e),5000)})}
+  nat('voiceStart',{words:voiceVocab(),bt:!!cfg.voiceBt,high:cfg.vSens==='alta'}).catch(e=>{if(manual)toast(errTxt(e),5000)})}
 function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off'].includes(o.state)?o.state:'off';
   $('#bVoice').classList.toggle('live',voiceSt==='on');$('#bVoice span').textContent=voiceSt==='on'?(o.msg==='fone'?'Ouvindo (fone)':'Ouvindo'):voiceSt==='paused'?'Voz (pausa)':'Voz';
   if(voiceSt==='error')toast('Assistente de voz: '+String(o.msg||'erro').slice(0,80),5000)}
@@ -1184,15 +1210,20 @@ function onVoiceState(o){o=o||{};voiceSt=['on','paused','loading','error','off']
 function onHeard(o){const cl=t=>String(t||'').replace(/\[unk\]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   const show=t=>String(t||'').replace(/\[unk\]/g,'…').replace(/\s+/g,' ').trim().toLowerCase(),alts=(Array.isArray(o&&o.alts)?o.alts:[]).slice(0,3),orig=show(o&&o.text),altsS=alts.map(show);
   const raw=cl(o&&o.text);if(!raw){if(orig)vLogAdd('v','…',[],'ignorado: nada que o app conheça (ruído?)');return}
-  const i=raw.search(/\btrilha\b/),armed=Date.now()<vArmedT,sosOn=!!(sos&&sos.phase==='count');let rest;
-  if(i>=0)rest=raw.slice(i+6).trim();else if(armed||sosOn)rest=raw;else{vLogAdd('v',orig,altsS,'ignorado: sem "Trilha"');return}
-  if(!rest){vLogAdd('v',orig,altsS,'"Trilha": esperando o comando');vArmedT=Date.now()+6000;beep(1000,90);toast('Fale o comando…',4000);return}
+  /* (2.7.11) telefone tocando: "atender" e "recusar/desligar" valem sem "Trilha", só na hipótese mais provável (menos engano) */
+  if(callSt.state==='ringing'&&cfg.vCall!==false){const w0=normTxt(raw),c0=/^(atender|atende|recusar|recusa|desligar|desliga)$/.test(w0)?parseCmd(w0):null;if(c0&&(c0.a==='answer'||c0.a==='end')){vLogAdd('v',orig,altsS,'comando: '+CMDL[c0.a]+' (ligação tocando)');beepOk();vArmedT=0;runCmd(c0);return}}
+  /* (2.7.11) "Trilha" vale em qualquer das 3 hipóteses do Vosk (antes só na 1ª); no modo alta, também as palavras parecidas */
+  const W=wakeRe(),hy=[raw,...alts.map(cl)],hi=hy.findIndex(t=>W.test(t)),src=hi>=0?hy[hi]:raw,wm=hi>=0?W.exec(src):null,i=wm?wm.index:-1;
+  const armed=Date.now()<vArmedT,sosOn=!!(sos&&sos.phase==='count');let rest;
+  if(i>=0)rest=src.slice(i+wm[0].length).trim();else if(armed||sosOn)rest=raw;else{vLogAdd('v',orig,altsS,'ignorado: sem "Trilha"');return}
+  if(!rest){vLogAdd('v',orig,altsS,'"Trilha"'+(hi>0?' (pela '+(hi+1)+'ª hipótese)':'')+': esperando o comando');vArmedT=Date.now()+8000;beep(1000,90);toast('Fale o comando…',4000);return}
   /* a hipótese mais provável primeiro; as outras (o Vosk manda até 3) só valem se ela não for um comando */
   let c=parseCmd(rest),heard=rest;
-  if(!c)for(const a of alts){const t=cl(a),k=t.search(/\btrilha\b/),r=k>=0?t.slice(k+6).trim():t;if(!r||r===rest)continue;c=parseCmd(r);if(c){heard=r;break}}
+  if(!c)for(const a of alts){const t=cl(a),km=W.exec(t),r=km?t.slice(km.index+km[0].length).trim():t;if(!r||r===rest)continue;c=parseCmd(r);if(c){heard=r;break}}
   if(!c){if(i>=0||armed){vLogAdd('v',orig,altsS,'não entendi');beepNo();say(/^(?:(?:de|da|do|a|o|ao|e|que|por|eu|me)(?: |$))+$/.test(rest)?'Não entendi':'Não entendi: '+rest.slice(0,40))}
     else vLogAdd('v',orig,altsS,'ignorado: não é comando');return}
   if(i<0&&!armed&&c.a!=='none'){vLogAdd('v',orig,altsS,'ignorado: sem "Trilha"');return}
+  if((c.a==='answer'||c.a==='end')&&cfg.vCall===false&&!(sos&&sos.phase==='count')){vLogAdd('v',orig,altsS,'ignorado: atender/recusar por voz está desligado');return}
   vLogAdd('v',orig,altsS,'comando: '+CMDL[c.a]+(heard!==rest?' (pela 2ª hipótese)':''));beepOk();
   vArmedT=0;toast('🎤 '+heard.slice(0,60),2500);runCmd(c)}
 async function loadContacts(manual){if(!NATIVE)return;if(manual)toast('Lendo a agenda…',3000);

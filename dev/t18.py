@@ -48,7 +48,7 @@ async def main():
         vs = await calls('voiceStart')
         words = vs[0]['words'] if vs else []
         check('assistente liga sozinho ao abrir (permissão de microfone dada)', len(vs) == 1 and await pg.evaluate('TN.voiceSt') == 'on')
-        check('vocabulário: comandos de música, sem a agenda nem "atender"', all(w in words for w in ['trilha', 'próxima', 'música', 'volume', 'cancelar']) and not ({'maria', 'joão', 'mãe', 'atender', 'ir'} & set(words)) and len(words) < 120, str(len(words)))
+        check('vocabulário: música e atender/recusar (2.7.11), sem a agenda', all(w in words for w in ['trilha', 'próxima', 'música', 'volume', 'cancelar', 'atender', 'recusar']) and not ({'maria', 'joão', 'mãe', 'ir'} & set(words)) and len(words) < 120, str(len(words)))
         check('assistente pede o microfone do fone Bluetooth (2.7.9: padrão ligado de novo, voz sem mãos andando)', vs and vs[0].get('bt') is True, str(vs[0].get('bt') if vs else None))
         await pg.evaluate("__emit('voice',{state:'on',msg:'fone'})")
         check('ouvindo pelo fone: botão mostra "Ouvindo (fone)"', await pg.text_content('#bVoice span') == 'Ouvindo (fone)')
@@ -74,8 +74,10 @@ async def main():
         # ---------- ligação tocando ----------
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})"); await pg.wait_for_timeout(4500)
         check('ao tocar não abre a escuta do Google', not await calls('listen'))
-        await heard('música'); await heard('atender'); await pg.wait_for_timeout(150)
-        check('tocando: "atender" ou outra palavra solta não faz nada (atende pela tela)', not await calls('spotifyPlay') and not await calls('answerCall'))
+        await heard('música'); await pg.wait_for_timeout(150)
+        check('tocando: palavra solta que não é atender/recusar não faz nada', not await calls('spotifyPlay') and not await calls('answerCall'))
+        await heard('atender'); await pg.wait_for_timeout(150)
+        check('tocando: "atender" sem "Trilha" atende (2.7.11)', len(await calls('answerCall')) == 1)
         await pg.evaluate("__emit('call',{state:'idle'})")
 
         # ---------- botão Voz com o assistente ligado ----------
