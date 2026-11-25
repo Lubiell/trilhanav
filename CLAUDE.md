@@ -2,9 +2,17 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.9, 25/11/2026)
+## Estado (v2.7.10, 25/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
+
+**v2.7.10:** pedido do dono, com print da rota (cartão grande no topo): *"colocar a janela de direção menor e poder movê-la para outro lugar, e colocar a opção dela aparecer em segundo plano, pq quando fecha ela, para de dar a direção, e ela fica em cima de outras abas, não pode acontecer"*. Revisão: o `#navCard` ficava em `#view` (fora das abas) e aparecia sobre o Painel/Telefone; o único botão era "Sair" (`navStop` na hora). Ele aprovou a sugestão inteira, com "em cima ou embaixo":
+- **Compacto** (uma faixa: seta, distância, instrução numa linha, "–"); tocar no cartão abre/fecha os detalhes (`body.navExp`: rua, chegada, ⇅, Sair); **tocar na seta** repete a instrução por voz (antes era tocar no cartão).
+- **"–" esconde** (`body.navHid`) sem parar a rota: voz, linha e seta continuam; fica a bolinha `#navPill` (seta + distância, `navPillSync`) que traz o cartão de volta.
+- **"Sair" pergunta** ("Encerrar a rota?", `ask`).
+- **Em cima ou embaixo** (`cfg.navPos`, `body.navBot`): ⇅ ou arrastar (`pointer*` com `setPointerCapture`, encaixa pela metade da tela); embaixo, radar/limite e a atribuição sobem.
+- **Só na aba Mapa** (`body.pMap`, ligado no `showPane`).
+- **Segundo plano**: `navNote()` manda a próxima manobra para a notificação nativa `navNotify` (`TrilhaNativePlugin`, canal `tn_rota`, id 4343, silenciosa, tocar abre o app) quando `document.hidden`; no máximo a cada 3 s (menos quando a manobra muda); sai ao voltar ao app, ao encerrar a rota, no "Sair do app" e ao abrir o app (se sobrou). `t31` (novo); `t19`/`t23` confirmam o Sair. Emulador: `nav_test` (rota de teste por DevTools, HOME, `dumpsys notification`).
 
 **v2.7.9:**
 - **Download automático não começava** (achado no teste do emulador, `.github/workflows/emulador.yml`): sem a permissão `ACCESS_NETWORK_STATE` o WebView não acompanha a rede e o `navigator.connection.type` fica `'unknown'`; o `mapAuto`/`radAuto` da 2.7.8 só rodam com o tipo conhecido. A permissão entrou no `patch-android.py` (comum: o Android concede sem perguntar).
@@ -63,7 +71,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v26`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v27`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin` (`exitApp`: Sair do app), `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
@@ -139,14 +147,14 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30; do python3 $t.py; done
+cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31; do python3 $t.py; done
 # no Android (emulador): Actions → Emulador (ou push no branch de trabalho)
 python3 fixtures.py --clean
 ```
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz só de música (vocabulário do Vosk × `parseCmd`, uma palavra por ação, frases de música, comandos e sinônimos que saíram não fazem nada, hipóteses alternativas, "cancelar" do aviso de queda, bipes, diagnóstico da voz), `t27` radares/lombadas de uma região inteira, avisos guardados da 2.7.3, postos pelo mapa offline, `t28` botão "Sair do app" (pergunta, guarda a gravação, para voz e GPS, `exitApp`), `t29` mapa e radares com leitura/gravação do OPFS falhando (não grava por cima, nova tentativa, avisos, Ajustes → Armazenamento, cópia do índice e conferência pelo SHA-256), `t30` microfone do capacete desligado (e migração), manifest vazio, download automático do mapa (Wi-Fi × dados móveis × computador) e dos radares, erro ao abrir GPX.
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz só de música (vocabulário do Vosk × `parseCmd`, uma palavra por ação, frases de música, comandos e sinônimos que saíram não fazem nada, hipóteses alternativas, "cancelar" do aviso de queda, bipes, diagnóstico da voz), `t27` radares/lombadas de uma região inteira, avisos guardados da 2.7.3, postos pelo mapa offline, `t28` botão "Sair do app" (pergunta, guarda a gravação, para voz e GPS, `exitApp`), `t29` mapa e radares com leitura/gravação do OPFS falhando (não grava por cima, nova tentativa, avisos, Ajustes → Armazenamento, cópia do índice e conferência pelo SHA-256), `t30` microfone do capacete desligado (e migração), manifest vazio, download automático do mapa (Wi-Fi × dados móveis × computador) e dos radares, erro ao abrir GPX, `t31` cartão de direção (compacto, detalhes, esconder sem parar a rota, Sair com confirmação, em cima/embaixo por ⇅ e arrastando, só na aba Mapa, notificação em segundo plano, deitado).
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 
