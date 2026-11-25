@@ -52,10 +52,10 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 | Onde | O que tem |
 |---|---|
-| `main` | o código: v2.7.8 (merge do PR #18, `d219bba`, 25/11/2026) |
+| `main` | o código: v2.7.9 (merge do PR #20, `e4bb3a5`, 25/11/2026) |
 | `gh-pages` | https://lubiell.github.io/trilhanav/: desde a v2.7.0 só uma página de download (lê o `versao.json` e mostra o link do APK mais novo) e um `sw.js` que apaga o app antigo (PWA) do navegador de quem já tinha aberto. O código dessa página não está no `main` (só no `gh-pages`) |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.7.8.apk` (atual, 56 MB, **chave fixa** `c7654768…`; música sem abaixar, download do mapa destravado, mapa/radares de MG automáticos), 2.7.7, 2.7.6 e 2.7.5 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.4 a 2.7.1 saíram do branch, ficam no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.8.apk, SHA-256 `1f202b9095b089480e2d8dc024e1810fea254cca95c9a9290ea98c9924e8404a` |
+| `apk` (órfão) | `trilhanav-2.7.9.apk` (atual, 56 MB, **chave fixa** `c7654768…`; download automático funcionando, voz sem mãos pelo capacete; testado no emulador), 2.7.8, 2.7.7, 2.7.6 e 2.7.5 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.4 a 2.7.1 saíram do branch, ficam no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.9.apk, SHA-256 `8468d842efcba1e0c729b59f072c247cb590ea2f2eb98b773df74a84b05fb2e2` |
 | `claude/loving-lovelace-yzb96l` | branch de trabalho das sessões do Claude (recomeçado do `main` depois de cada merge) |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (código via `git archive`) e a pasta **"TrilhaNav - chave do APK (NAO APAGAR)"**: `trilhanav_chave_apk.p12` (PKCS12, alias `trilhanav`, 30 anos) + `trilhanav_chave_apk_senha.txt`. Só ali; nunca no git nem no chat em claro |
 
