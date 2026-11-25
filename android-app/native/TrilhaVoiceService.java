@@ -277,6 +277,7 @@ public class TrilhaVoiceService extends Service {
         final AudioDeviceInfo dev = btIn;
         loop = new Thread(() -> {
             AudioRecord ar = null;
+            android.media.audiofx.AutomaticGainControl agc = null;
             try {
                 int min = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
                 ar = new AudioRecord(bt ? MediaRecorder.AudioSource.VOICE_COMMUNICATION : MediaRecorder.AudioSource.VOICE_RECOGNITION,
@@ -284,7 +285,6 @@ public class TrilhaVoiceService extends Service {
                 if (bt && dev != null) ar.setPreferredDevice(dev);
                 if (ar.getState() != AudioRecord.STATE_INITIALIZED) { state("error", "microfone não abriu"); return; }
                 final boolean hi = boost;
-                android.media.audiofx.AutomaticGainControl agc = null;
                 if (hi) {
                     try {
                         if (android.media.audiofx.AutomaticGainControl.isAvailable()) {
@@ -321,12 +321,12 @@ public class TrilhaVoiceService extends Service {
                     }
                     if (res != null) deliver(res);
                 }
-                if (agc != null) { try { agc.release(); } catch (Exception ignored) { } }
             } catch (SecurityException e) {
                 state("error", "sem permissão do microfone");
             } catch (Exception e) {
                 state("error", "microfone: " + e.getMessage());
             } finally {
+                if (agc != null) { try { agc.release(); } catch (Exception ignored) { } }
                 if (ar != null) { try { ar.stop(); } catch (Exception ignored) { } ar.release(); }
                 running = false;
             }

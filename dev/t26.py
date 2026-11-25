@@ -42,7 +42,7 @@ SAIU = ['ir para guidoval', 'quero ir para ouro preto', 'me leva no posto', 'ir 
         'onde estou', 'quanto falta', 'repetir', 'que horas são', 'velocidade', 'clima', 'vai chover', 'posto', 'hospital', 'farmácia',
         'marcar blitz', 'marcar radar', 'apagar aviso', 'travar tela', 'gravar trilha', 'ler mensagens', 'ajuda', 'aproximar', 'autonomia', 'abasteci',
         # sinônimos que saíram na 2.7.5 (uma palavra por ação)
-        'trocar música', 'pula essa', 'outra música', 'volta a música', 'para a música', 'mais volume', 'baixa o som', 'diminui o volume',
+        'trocar música', 'pula essa', 'outra música', 'volta a música', 'desligar a música', 'para a música', 'mais volume', 'baixa o som', 'diminui o volume',
         'liga a música', 'continuar', 'esquece', 'tudo bem']
 
 FAKE = """
@@ -139,6 +139,8 @@ async def main():
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})"); await pg.wait_for_timeout(4500)
         r = await pg.evaluate("({st:document.querySelector('#callSt').textContent,ans:getComputedStyle(document.querySelector('#callAns')).display})")
         check('ligação chegando: anuncia quem liga e pede "atender ou recusar" (sem abrir a escuta do Google)', (await said_after(n0)) == ['Ligação de Maria Souza. Diga atender ou recusar'] and r['st'] == 'Ligação chegando' and r['ans'] != 'none' and not await calls('listen'), str(await said_after(n0)))
+        await heard('não atender'); await heard('não atende'); await heard('eu não quero atender')
+        check('tocando: "não atender" (negação) não atende (revisão 2.7.11)', len(await calls('answerCall')) == 0)
         await heard('atender')
         check('tocando: "atender" sem "Trilha" atende (telefone)', len(await calls('answerCall')) == 1)
         await pg.click('#callAns'); await pg.wait_for_timeout(100)
