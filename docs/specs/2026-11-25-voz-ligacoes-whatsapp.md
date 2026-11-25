@@ -1,5 +1,5 @@
 # Spec — "Trilha" mais sensível, atender/recusar por voz e WhatsApp de pessoas escolhidas (2.7.11)
-Data: 2026-11-25 · Estado: **proposta, esperando o ok do dono**
+Data: 2026-11-25 · Estado: **aprovada pelo dono em 25/11 ("Sim, como está")**
 
 ## Problema
 Com a moto andando, o "Trilha" às vezes não é reconhecido. Quando o telefone toca, só dá para atender ou recusar pela tela ou pelo botão do capacete (o atender/recusar por voz saiu na 2.7.4). E o WhatsApp é lido do mesmo jeito para todo mundo (`cfg.waRead`: não / só quem mandou / quem mandou e o texto).

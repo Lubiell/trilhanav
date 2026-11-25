@@ -2,9 +2,15 @@
 
 App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG, "Ir para" com rota por estradas com e sem internet, voz curva a curva, telefone/WhatsApp/música por voz no capacete, radares, clima, postos, SOS. Começou como navegador de rali off-road (roadbook, odômetro de rali); **na v2.7 o dono mandou tirar todo o rali** (o código antigo fica no histórico do git, até a v2.6.3). Dono: Jefferson (conta GitHub **Lubiell**). Repositório independente: não reaproveitar nada dos outros repos dele.
 
-## Estado (v2.7.10, 25/11/2026)
+## Estado (v2.7.11, 25/11/2026)
 
 **Nada da 2.6.x/2.7 rodou em celular real** (só Chrome headless e os testes). O dono só testou a 2.2.0 num Samsung.
+
+**v2.7.11:** pedido do dono (*"aumente a sensibilidade da voz para chamar o trilha, quando alguém ligar falar quem está ligando e dar opção desligar e receber ligação por comando de voz, ler as mensagens do WhatsApp de pessoas selecionadas"*). Tarefa de risco (mensagens = dado pessoal; atender/recusar por engano): **spec** `docs/specs/2026-11-25-voz-ligacoes-whatsapp.md`, aprovada ("Sim, como está").
+- **"Trilha" mais sensível**: vale em qualquer das 3 hipóteses do Vosk (`hy`/`wakeRe` no `onHeard`; antes só na 1ª); a espera depois de "Trilha" sozinho foi de 6 para 8 s. Ajuste **"Sensibilidade do Trilha"** (`cfg.vSens`, padrão `normal`): `alta` põe `TRILHA_ALT` ("trilho", "trilhas") na gramática e o nativo reforça o microfone (`voiceSens` → `TrilhaVoiceService.boost`: `AutomaticGainControl` se houver e o som ×2 antes do Vosk).
+- **Ligações**: anuncia "Ligação de Fulano" (sem nome: "número 5 5 3 1…") e, com o assistente ligado, "Diga atender ou recusar". **Enquanto toca**, "atender/atende" e "recusar/recusa/desligar/desliga" valem **sem "Trilha"**, só na hipótese principal (`parseCmd` → `answer`/`end`; `runCmd` já tinha `answerCall`/`endCall`/`waCallAction`). Ajuste **"Atender ou recusar ligação por voz"** (`cfg.vCall`, padrão ligado). Desligar por voz **durante** a ligação não dá (o microfone é da ligação). Isso desfaz a parte de ligações da 2.7.4.
+- **WhatsApp de pessoas escolhidas**: ☆ na mensagem (Telefone → Mensagens do WhatsApp) ou nome digitado → `tn_waSel` (só nomes, ≥3 letras, até 30, só no aparelho). Dos escolhidos lê quem mandou e o texto; dos outros segue o `cfg.waRead`. Vale se o nome aparece no título da notificação (pessoa ou "Fulano @ Grupo"); nomes passam por `esc()`.
+- `t32` (novo); `t16`/`t18`/`t22`/`t26` ajustados (atender/recusar por voz voltaram). **Voz não testada no emulador** (o Vosk não roda nele) nem no capacete.
 
 **v2.7.10:** pedido do dono, com print da rota (cartão grande no topo): *"colocar a janela de direção menor e poder movê-la para outro lugar, e colocar a opção dela aparecer em segundo plano, pq quando fecha ela, para de dar a direção, e ela fica em cima de outras abas, não pode acontecer"*. Revisão: o `#navCard` ficava em `#view` (fora das abas) e aparecia sobre o Painel/Telefone; o único botão era "Sair" (`navStop` na hora). Ele aprovou a sugestão inteira, com "em cima ou embaixo":
 - **Compacto** (uma faixa: seta, distância, instrução numa linha, "–"); tocar no cartão abre/fecha os detalhes (`body.navExp`: rua, chegada, ⇅, Sair); **tocar na seta** repete a instrução por voz (antes era tocar no cartão).
@@ -60,10 +66,10 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 | Onde | O que tem |
 |---|---|
-| `main` | o código: v2.7.9 (merge do PR #20, `e4bb3a5`, 25/11/2026) |
+| `main` | o código: v2.7.10 (merge do PR #22, `b863447`, 25/11/2026) |
 | `gh-pages` | https://lubiell.github.io/trilhanav/: desde a v2.7.0 só uma página de download (lê o `versao.json` e mostra o link do APK mais novo) e um `sw.js` que apaga o app antigo (PWA) do navegador de quem já tinha aberto. O código dessa página não está no `main` (só no `gh-pages`) |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.7.9.apk` (atual, 56 MB, **chave fixa** `c7654768…`; download automático funcionando, voz sem mãos pelo capacete; testado no emulador), 2.7.8, 2.7.7, 2.7.6 e 2.7.5 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.4 a 2.7.1 saíram do branch, ficam no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.9.apk, SHA-256 `8468d842efcba1e0c729b59f072c247cb590ea2f2eb98b773df74a84b05fb2e2` |
+| `apk` (órfão) | `trilhanav-2.7.10.apk` (atual, 56 MB, **chave fixa** `c7654768…`; cartão de direção compacto/móvel, notificação da rota; testado no emulador), 2.7.9, 2.7.8, 2.7.7, 2.7.6 e 2.7.5 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.4 a 2.7.1 saíram do branch, ficam no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.10.apk, SHA-256 `7a7032305f65f89031ff83a8ca0e66c268da0e446b7f448e819e9c0be9b97b0e` |
 | `claude/loving-lovelace-yzb96l` | branch de trabalho das sessões do Claude (recomeçado do `main` depois de cada merge) |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (código via `git archive`) e a pasta **"TrilhaNav - chave do APK (NAO APAGAR)"**: `trilhanav_chave_apk.p12` (PKCS12, alias `trilhanav`, 30 anos) + `trilhanav_chave_apk_senha.txt`. Só ali; nunca no git nem no chat em claro |
 
@@ -71,7 +77,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v27`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v28`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin` (`exitApp`: Sair do app), `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
@@ -86,7 +92,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ### Onde o app guarda coisas
 
-- `localStorage` (prefixo `tn_`): `cfg`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `mapMan` (cópia do índice do mapa baixado, 2.7.8), `mig278`, `mig279`, `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) e do controle de guidão (`keys`, até a v2.7.1) são apagadas ao abrir.
+- `localStorage` (prefixo `tn_`): `cfg`, `odo` (estatísticas da viagem: `maxSpd`, `movSec`, `movKm`), `lastPos`, `recSession`, `navRecent` (`fav`), `netOk`, `mapMan` (cópia do índice do mapa baixado, 2.7.8), `mig278`, `mig279`, `waSel` (pessoas do WhatsApp com o texto lido, 2.7.11), `phFav`, `updT`, `sosC`, `fuelKm`, `dashSel`. Chaves antigas do rali (`wpState`, `marks`, `gpx*`, `zones_*`, `chrono`) e do controle de guidão (`keys`, até a v2.7.1) são apagadas ao abrir.
 - OPFS: `gpx/` (pastas; `gpx/Gravações/`), `notas/<sessão>/`, `mapa-dl/` (partes do mapa + `manifest.json`), `mapa.pmtiles`, `radares.json` (radares, lombadas e avisos), `busca.json` (índice de cidades da busca offline).
 
 ## Fluxo de trabalho e de release
@@ -147,14 +153,14 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 ```
 cd trilhanav && python3 -m http.server 8765 &
-cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31; do python3 $t.py; done
+cd dev && python3 fixtures.py && for t in t t3 t4 t5 t7 t9 t11 t12 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32; do python3 $t.py; done
 # no Android (emulador): Actions → Emulador (ou push no branch de trabalho)
 python3 fixtures.py --clean
 ```
 
 Precisa de `playwright` (1.65.2; os testes usam `/usr/bin/google-chrome`) e Pillow. `fixtures.py` gera `rb.pdf`, `small.pmtiles` (+3 partes), `dl/` e `testmap.pmtiles` (de `make_testmap.py`); `roads.pmtiles` (malha z14 com rio e uma ponte) e `t.gpx` ficam no repositório.
 
-`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz só de música (vocabulário do Vosk × `parseCmd`, uma palavra por ação, frases de música, comandos e sinônimos que saíram não fazem nada, hipóteses alternativas, "cancelar" do aviso de queda, bipes, diagnóstico da voz), `t27` radares/lombadas de uma região inteira, avisos guardados da 2.7.3, postos pelo mapa offline, `t28` botão "Sair do app" (pergunta, guarda a gravação, para voz e GPS, `exitApp`), `t29` mapa e radares com leitura/gravação do OPFS falhando (não grava por cima, nova tentativa, avisos, Ajustes → Armazenamento, cópia do índice e conferência pelo SHA-256), `t30` microfone do capacete desligado (e migração), manifest vazio, download automático do mapa (Wi-Fi × dados móveis × computador) e dos radares, erro ao abrir GPX, `t31` cartão de direção (compacto, detalhes, esconder sem parar a rota, Sair com confirmação, em cima/embaixo por ⇅ e arrastando, só na aba Mapa, notificação em segundo plano, deitado).
+`t` fumaça (sem restos de rali), `t3`/`t4` mapa offline por arquivo e por download, `t5` bússola, `t7` rotação do mapa, `t9` Arquivos/notas/tema, `t11` integração do APK, `t12` backup malicioso/MVT malformado, `t14` 1ª posição, exportar no APK, celular deitado, offline real com service worker, `t15` modo cidade e radares, `t16` telefone/WhatsApp/música/voz/atualização, `t17` partida do GPS no APK, `t18` assistente/agenda, `t19` mapa girando na rota, "ir para" por voz, clima, `t20` barra + Mais, postos, limite da via, inclinação, `t21` SOS/autonomia/painel, `t22` ligação do WhatsApp, `t23` Ir para offline (malha/ponte), música, voz, janelas sem Fechar, sem rali, `t24` busca offline e rota longa offline (`testmap.pmtiles`), `t25` download do mapa num Android que dá `NotReadableError` ao reler, `t26` comandos de voz só de música (vocabulário do Vosk × `parseCmd`, uma palavra por ação, frases de música, comandos e sinônimos que saíram não fazem nada, hipóteses alternativas, "cancelar" do aviso de queda, bipes, diagnóstico da voz), `t27` radares/lombadas de uma região inteira, avisos guardados da 2.7.3, postos pelo mapa offline, `t28` botão "Sair do app" (pergunta, guarda a gravação, para voz e GPS, `exitApp`), `t29` mapa e radares com leitura/gravação do OPFS falhando (não grava por cima, nova tentativa, avisos, Ajustes → Armazenamento, cópia do índice e conferência pelo SHA-256), `t30` microfone do capacete desligado (e migração), manifest vazio, download automático do mapa (Wi-Fi × dados móveis × computador) e dos radares, erro ao abrir GPX, `t31` cartão de direção (compacto, detalhes, esconder sem parar a rota, Sair com confirmação, em cima/embaixo por ⇅ e arrastando, só na aba Mapa, notificação em segundo plano, deitado), `t32` "Trilha" nas 3 hipóteses e espera de 8 s, sensibilidade normal × alta (gramática e reforço), WhatsApp de pessoas escolhidas (☆, nome digitado, grupo, ajuste "não", sem rede, nome com HTML).
 
 `t13` testa o pacote web do APK: `bash android-app/build-apk.sh --www-only`, servir `android-app/www` na porta 8766 e rodar `python3 t13.py` (e `python3 t16.py http://localhost:8766/index.html`).
 

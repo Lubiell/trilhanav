@@ -51,6 +51,8 @@ public class TrilhaVoiceService extends Service {
     static volatile Sink sink;
     static volatile String grammar = "[\"trilha\", \"[unk]\"]";
     static volatile boolean useBt = false;
+    /** (2.7.11) sensibilidade "alta" do "Trilha": ganho automático do Android (se houver) e o som ×2 antes do Vosk */
+    static volatile boolean boost = false;
     /** com vento ou motor o Vosk quase não acha o silêncio do fim da frase: a frase fecha quando o que foi ouvido para de mudar
      *  por STILL_MS, e no máximo MAX_SEC depois de começar a ouvir alguma coisa (silêncio e ruído sem palavra não contam) */
     static final int MAX_SEC = 8, STILL_MS = 1200;
@@ -95,6 +97,16 @@ public class TrilhaVoiceService extends Service {
             s.paused = !holds.isEmpty();
             if (!s.paused) synchronized (s.recLock) { if (s.rec != null) s.rec.reset(); }
             s.report();
+        });
+    }
+
+    /** (2.7.11) muda a sensibilidade; recomeça a captura para ligar/desligar o ganho automático */
+    static void setBoost(boolean on) {
+        if (boost == on) return;
+        boost = on;
+        main.post(() -> {
+            TrilhaVoiceService s = self;
+            if (s != null && s.model != null) s.restartLoop();
         });
     }
 
@@ -271,6 +283,16 @@ public class TrilhaVoiceService extends Service {
                     16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, Math.max(min, 8192));
                 if (bt && dev != null) ar.setPreferredDevice(dev);
                 if (ar.getState() != AudioRecord.STATE_INITIALIZED) { state("error", "microfone não abriu"); return; }
+                final boolean hi = boost;
+                android.media.audiofx.AutomaticGainControl agc = null;
+                if (hi) {
+                    try {
+                        if (android.media.audiofx.AutomaticGainControl.isAvailable()) {
+                            agc = android.media.audiofx.AutomaticGainControl.create(ar.getAudioSessionId());
+                            if (agc != null) agc.setEnabled(true);
+                        }
+                    } catch (Exception e) { agc = null; }
+                }
                 ar.startRecording();
                 short[] buf = new short[2048];
                 long fed = 0, still = 0;
@@ -279,6 +301,7 @@ public class TrilhaVoiceService extends Service {
                 while (running) {
                     int n = ar.read(buf, 0, buf.length);
                     if (n <= 0 || paused) { fed = 0; still = 0; lastP = ""; continue; }
+                    if (hi) for (int k = 0; k < n; k++) { int v = buf[k] * 2; buf[k] = (short) (v > 32767 ? 32767 : (v < -32768 ? -32768 : v)); }
                     String res = null;
                     synchronized (recLock) {
                         if (rec != null) {
@@ -298,6 +321,7 @@ public class TrilhaVoiceService extends Service {
                     }
                     if (res != null) deliver(res);
                 }
+                if (agc != null) { try { agc.release(); } catch (Exception ignored) { } }
             } catch (SecurityException e) {
                 state("error", "sem permissão do microfone");
             } catch (Exception e) {
