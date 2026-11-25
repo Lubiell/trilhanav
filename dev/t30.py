@@ -91,6 +91,8 @@ async def main():
           w=await h.createWritable();await w.write(b);await w.close();localStorage.removeItem('tn_mapMan')})()''')
         await pg.evaluate("Object.defineProperty(navigator,'connection',{configurable:true,get:()=>({type:'cellular',addEventListener(){}})})")
         await pg.add_init_script(conn('cellular'))
+        # a parte 3 está boa, mas o celular não deixa ler (erro que não é "o arquivo mudou"): não pode ser apagada
+        await pg.add_init_script("window.__bad3=true;const _ab=Blob.prototype.arrayBuffer;File.prototype.arrayBuffer=function(){return window.__bad3&&this.name==='small.pmtiles.part3'?Promise.reject(new DOMException('não deu','InvalidStateError')):_ab.call(this)}")
         await pg.reload(); await pg.wait_for_timeout(1800)
         oi = await pg.text_content('#offInfo')
         check('manifest vazio e sem cópia: não abre e explica (como na 2.7.7)', 'estão no aparelho' in oi and not await pg.evaluate('!!TN.offPM'), oi)
@@ -98,23 +100,28 @@ async def main():
         await pg.wait_for_timeout(9000)   # automático nos dados móveis: confere o que tem e espera o Wi-Fi para a parte estragada
         oi = await pg.text_content('#offInfo')
         check('dados móveis: confere as partes, não baixa nada e diz que o resto vem no Wi-Fi', st['parts'] == p0 and 'baixa sozinho quando o celular estiver no Wi-Fi' in oi, oi)
+        ex = await pg.evaluate('''(async()=>{const d=await (await navigator.storage.getDirectory()).getDirectoryHandle('mapa-dl');const r={};
+          for(const n of ['small.pmtiles.part2','small.pmtiles.part3'])try{await d.getFileHandle(n);r[n]=true}catch(e){r[n]=false}return r})()''')
+        check('… apaga só a parte que leu e não bateu; a que não conseguiu ler fica (2.7.8, revisão)', ex == {'small.pmtiles.part2': False, 'small.pmtiles.part3': True}, str(ex))
+        check('… e, com parte sem conferir, não grava o índice (senão ela passaria a valer só pelo tamanho)', await pg.evaluate("localStorage.getItem('tn_mapMan')") is None)
         await pg.evaluate('downloadMap()')
         for _ in range(30):
             if await pg.evaluate('!!TN.offPM'): break
             await pg.wait_for_timeout(300)
         oi = await pg.text_content('#offInfo')
-        check('"Baixar" à mão: baixa só a parte estragada (antes: "não consegui ler o mapa" para sempre) e o mapa abre',
-              oi.startswith('Instalado') and st['parts'][len(p0):] == ['small.pmtiles.part2'], oi + ' novas=%s' % st['parts'][len(p0):])
+        check('"Baixar" à mão: baixa só a estragada e a que não deu para conferir (antes: "não consegui ler o mapa" para sempre) e o mapa abre',
+              oi.startswith('Instalado') and st['parts'][len(p0):] == ['small.pmtiles.part2', 'small.pmtiles.part3'], oi + ' novas=%s' % st['parts'][len(p0):])
         man = await pg.evaluate('''(async()=>JSON.parse(await (await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('mapa-dl')).getFileHandle('manifest.json')).getFile()).text()).id)()''')
         check('… e o manifest.json do aparelho volta a valer', man == 'teste-1', str(man))
         check('sem erros de página (2)', not errs, str(errs[:3]))
         await ctx.close()
 
-        # ---------- dados móveis sem nada no aparelho: não baixa 1,4 GB sozinho ----------
-        ctx, pg, st, errs = await ctx_for(conn('cellular'))
-        await pg.goto(URL); await pg.wait_for_timeout(10000)
+        # ---------- dados móveis sem nada no aparelho e sem o aviso de internet aceito ----------
+        ctx, pg, st, errs = await ctx_for(conn('cellular') + "localStorage.removeItem('tn_netOk');")
+        await pg.goto(URL); await pg.wait_for_timeout(16500)
         oi = await pg.text_content('#offInfo')
         check('dados móveis e nenhum mapa: não baixa as partes e avisa que baixa no Wi-Fi', not st['parts'] and 'Wi-Fi' in oi, oi)
+        check('sem o aviso de internet aceito: radares não baixam sozinhos (como os radares perto de você)', st['over'] == 0, str(st['over']))
 
         # ---------- GPX que não abre: aviso (antes: nada acontecia) ----------
         await pg.evaluate("const _t=File.prototype.text;File.prototype.text=function(){return this.name==='ruim.gpx'?Promise.reject(new DOMException('o arquivo mudou','NotReadableError')):_t.call(this)};0")

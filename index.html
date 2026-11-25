@@ -424,9 +424,10 @@ async function installOffline(files){files=[...files].sort((a,b)=>a.name.localeC
 /* download do mapa direto pelo app: parte por parte, conferindo cada uma, e retoma de onde parou */
 let dlBusy=false,dlRetryMs=3000;
 async function sha256hex(buf){const h=await crypto.subtle.digest('SHA-256',buf);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-/* (v2.7.8) parte já no aparelho confere com o mapa novo? (relê com File novo se o Android disser que o arquivo "mudou") */
-async function partOk(fh,pt){if(!pt.sha256||!crypto.subtle)return true;
-  for(let k=0;k<3;k++){try{return (await sha256hex(await (await fh.getFile()).arrayBuffer()))===pt.sha256}catch(e){if(!staleFile(e))return false;await new Promise(r=>setTimeout(r,300*(k+1)))}}return false}
+/* (v2.7.8) parte já no aparelho confere com o mapa novo? 'ok', 'bad' (leu e o SHA-256 não bate) ou null (não conseguiu ler: não apaga,
+   baixa de novo por cima). Relê com File novo se o Android disser que o arquivo "mudou". */
+async function partOk(fh,pt){if(!pt.sha256||!crypto.subtle)return 'ok';
+  for(let k=0;k<3;k++){try{return (await sha256hex(await (await fh.getFile()).arrayBuffer()))===pt.sha256?'ok':'bad'}catch(e){if(!staleFile(e))return null;await new Promise(r=>setTimeout(r,300*(k+1)))}}return null}
 async function downloadMap(o){if(dlBusy)return;const auto=!!(o&&o.auto===true),info=$('#offInfo'),btn=$('#bOffDl');
   if(!navigator.storage||!navigator.storage.getDirectory){info.textContent='Este navegador não suporta mapa offline.';return}
   dlBusy=true;btn.disabled=true;info.textContent='Preparando o download…';
@@ -439,14 +440,19 @@ async function downloadMap(o){if(dlBusy)return;const auto=!!(o&&o.auto===true),i
     const unk=!old&&!!stoErr.mapa;
     if(old&&old.man.id!==man.id){try{await d.removeEntry('mapa-dl',{recursive:true})}catch(e){}}
     const dir=await d.getDirectoryHandle('mapa-dl',{create:true});
-    let have=0,nk=0;const todo=[];for(const pt of man.parts){let ok=false;try{const fh=await dir.getFileHandle(pt.f);ok=(await fh.getFile()).size===pt.size;
-        if(ok&&unk){info.textContent='Conferindo o mapa que já está no aparelho: parte '+(++nk)+' de '+man.parts.length+'…';ok=await partOk(fh,pt);if(!ok)try{await dir.removeEntry(pt.f)}catch(e){}}}catch(e){}
+    let have=0,nk=0;const todo=[],unread=[];for(const pt of man.parts){let ok=false;try{const fh=await dir.getFileHandle(pt.f);ok=(await fh.getFile()).size===pt.size;
+        if(ok&&unk){info.textContent='Conferindo o mapa que já está no aparelho: parte '+(++nk)+' de '+man.parts.length+'…';const v=await partOk(fh,pt);ok=v==='ok';
+          if(v==='bad')try{await dir.removeEntry(pt.f)}catch(e){}else if(v===null)unread.push(pt.f)}}catch(e){}
       if(ok)have+=pt.size;else todo.push(pt)}
-    LS.set('mapMan',man);   /* cópia do índice antes de baixar qualquer parte: vale se o manifest.json do aparelho ficar ilegível */
-    {const w=await (await dir.getFileHandle('manifest.json',{create:true})).createWritable();await w.write(JSON.stringify(man));await w.close()}
-    delete stoErr.mapa;
-    /* automático: nos dados móveis não baixa as partes (1,4 GB); espera o Wi-Fi */
-    if(auto&&todo.length&&!onWifi()){info.textContent=(have?'Mapa de '+man.label+': '+mb(have)+' de '+mb(man.size)+' MB no aparelho. O resto':'Mapa de '+man.label+' ('+mb(man.size)+' MB) para usar sem internet: ele')+' baixa sozinho quando o celular estiver no Wi-Fi (ou toque em "Baixar").';return}
+    /* automático: nos dados móveis não baixa as partes (1,4 GB); espera o Wi-Fi. A parte que não deu para conferir não é apagada à toa:
+       fica fora do índice (na próxima vez confere de novo) e só é trocada quando o app vai mesmo baixar */
+    const wait=auto&&todo.length&&!onWifi();
+    if(!wait)for(const f of unread)try{await dir.removeEntry(f)}catch(e){}
+    if(!wait||!unread.length){
+      LS.set('mapMan',man);   /* cópia do índice antes de baixar qualquer parte: vale se o manifest.json do aparelho ficar ilegível */
+      {const w=await (await dir.getFileHandle('manifest.json',{create:true})).createWritable();await w.write(JSON.stringify(man));await w.close()}
+      delete stoErr.mapa}
+    if(wait){info.textContent=(have?'Mapa de '+man.label+': '+mb(have)+' de '+mb(man.size)+' MB no aparelho. O resto':'Mapa de '+man.label+' ('+mb(man.size)+' MB) para usar sem internet: ele')+' baixa sozinho quando o celular estiver no Wi-Fi (ou toque em "Baixar").';return}
     if(auto&&todo.length)toast('Baixando o mapa de '+man.label+' para usar sem internet (Wi-Fi). Pode usar o app.',5000);
     let free=null;try{const est=await navigator.storage.estimate();if(est.quota)free=est.quota-(est.usage||0)}catch(e){}
     if(free!==null&&free<man.size-have+5e7)throw new Error('espaço insuficiente no aparelho: faltam '+Math.ceil((man.size-have+5e7-free)/1e6)+' MB livres');
@@ -1007,9 +1013,9 @@ $('#bRadMG').onclick=async()=>{if(!await netOk())return;if(!cfg.radar){toast('Li
   if(r)toast(r.fail?'Faltaram '+r.fail+' de '+r.blocks+' blocos (sem internet?): toque de novo para completar':'Pronto: radares e lombadas de MG guardados no aparelho',7000)};
 $('#bRadDel').onclick=async()=>{if(!await ask({title:'Apagar radares',msg:'Apaga os radares baixados e os marcados por você.',ok:'Apagar',danger:true}))return;radGen++;radLoaded=true;radars.clear();radTiles={};radQ=[];radSave();radDraw();radInfo();toast('Radares apagados')};
 radLoad();
-/* (v2.7.8) radares e lombadas de MG baixam sozinhos com internet (só blocos fixos de MG, sem a sua posição); o radBulk pula o que foi baixado
+/* (v2.7.8) radares e lombadas de MG baixam sozinhos com internet, depois do aviso de internet aceito (só blocos fixos de MG, sem a sua posição); o radBulk pula o que foi baixado
    há menos de 30 dias, então depois da 1ª vez só renova o que venceu. Como o mapa, só com o tipo de conexão conhecido (celular). */
-async function radAuto(){if(!cfg.radar||radBulkOn||!navigator.onLine||!netType())return;if(!radLoaded){await radLoad();if(!radLoaded)return}
+async function radAuto(){if(!cfg.radar||radBulkOn||!navigator.onLine||!netType()||!LS.get('netOk',false))return;   /* como os radares perto de você: só depois do aviso de internet */if(!radLoaded){await radLoad();if(!radLoaded)return}
   const r=await radBulk(MG_BOX,1);if(r&&r.got&&!r.fail)toast('Radares e lombadas de MG guardados para usar sem internet',5000)}
 setTimeout(radAuto,15000);try{navigator.connection&&navigator.connection.addEventListener('change',()=>{if(netType())setTimeout(radAuto,5000)})}catch(e){}
 
