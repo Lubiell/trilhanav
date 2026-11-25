@@ -214,6 +214,8 @@ def main():
         audio_checks(T)
         ct = js('navigator.connection&&navigator.connection.type')
         check('[branch] o WebView sabe que é Wi-Fi (navigator.connection.type)', ct == 'wifi', repr(ct))
+        vb = js('cfg.voiceBt')
+        check('[branch] microfone do capacete ligado por padrão (voz sem mãos, 2.7.9)', vb is True, repr(vb))
         oi, t0 = '', time.time()
         while time.time() - t0 < 120:
             oi = js("document.querySelector('#offInfo').textContent")

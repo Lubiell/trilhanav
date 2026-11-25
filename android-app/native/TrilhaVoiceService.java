@@ -68,6 +68,7 @@ public class TrilhaVoiceService extends Service {
     private AudioManager am;
     private boolean btOn = false;
     private AudioDeviceInfo btIn = null;
+    private int savedCallVol = -1;
     private final Runnable btTick = new Runnable() {
         @Override public void run() { if (self == TrilhaVoiceService.this) { applyBt(); main.postDelayed(this, 15000); } }
     };
@@ -202,10 +203,29 @@ public class TrilhaVoiceService extends Service {
         } catch (Exception e) {
             btOn = false;
         }
+        if (was != btOn) scoVolume(btOn);
         btIn = null;
         if (btOn) for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_INPUTS)) if (d.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) { btIn = d; break; }
         if (was != btOn && running) { restartLoop(); }
         else report();
+    }
+
+    /** (2.7.9) com o canal de ligação (SCO) aberto a música sai por ele e com o volume de ligação, que costuma estar mais baixo:
+     *  ao abrir, põe o volume de ligação na mesma proporção do volume da música (nunca abaixa o que o dono deixou); ao fechar, volta. */
+    private void scoVolume(boolean on) {
+        try {
+            if (on && savedCallVol < 0) {
+                savedCallVol = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+                int mMax = Math.max(1, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)), vMax = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+                int want = Math.round((float) am.getStreamVolume(AudioManager.STREAM_MUSIC) * vMax / mMax);
+                am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, Math.min(vMax, Math.max(savedCallVol, want)), 0);
+            } else if (!on && savedCallVol >= 0) {
+                am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, savedCallVol, 0);
+                savedCallVol = -1;
+            }
+        } catch (Exception e) {
+            // sem permissão de mexer no volume de ligação (Não perturbe) ou aparelho que não deixa: segue sem ajustar
+        }
     }
 
     private boolean hasBtInput() {
