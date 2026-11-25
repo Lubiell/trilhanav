@@ -22,8 +22,9 @@ FileSystemFileHandle.prototype.getFile=function(){const n=this.name;__reads[n]=(
 FileSystemFileHandle.prototype.createWritable=function(o){const n=this.name;if(__failW[n]>0){__failW[n]--;return Promise.reject(new DOMException('cota cheia','QuotaExceededError'))}return _cw.call(this,o)};
 """
 RADS = [['o%d' % (i + 1), -19.5 + (i % 50) * 0.002, -44.5 + (i // 50) * 0.002, 60, None, 'radar' if i % 3 else 'lombada', None] for i in range(500)]
+RADS.append(['o77777', -19.9, -43.9, 40, None, 'radar', None])   # no quadrado que o radBulk do teste baixa de novo (o OSM "tirou" este radar)
 READ_FILE = '''(async()=>{const d=await navigator.storage.getDirectory();const h=await d.getFileHandle('radares.json');
-  const f=await FileSystemFileHandle.prototype.getFile.call(h);return JSON.parse(await f.text()).pts.length})()'''
+  const f=await FileSystemFileHandle.prototype.getFile.call(h);const p=JSON.parse(await f.text()).pts.map(a=>a[0]);return {n:p.length,novo:p.includes('o900001'),velho:p.includes('o77777'),u:p.includes('u1')}})()'''
 
 async def main():
     async with async_playwright() as p:
@@ -51,32 +52,38 @@ async def main():
 
         # ---------- radares guardados (500, como depois de baixar uma região) ----------
         await pg.evaluate('''(pts)=>(async()=>{const d=await navigator.storage.getDirectory();const w=await (await d.getFileHandle('radares.json',{create:true})).createWritable();
-          await w.write(JSON.stringify({v:2,tiles:{'-80_-178':Date.now()},pts}));await w.close()})()''', RADS)
+          await w.write(JSON.stringify({v:2,tiles:{'-78_-178':Date.now(),'-80_-176':Date.now()-40*864e5},pts}));await w.close()})()''', RADS)
         await reload()
-        check('radares guardados voltam ao abrir', await pg.evaluate('TN.radars.size') == 500 and await pg.evaluate('TN.radLoaded'))
+        check('radares guardados voltam ao abrir', await pg.evaluate('TN.radars.size') == 501 and await pg.evaluate('TN.radLoaded'))
 
         # ---------- leitura falha 2 vezes ao abrir: a 3ª tentativa lê ----------
         await reload({'radares.json': 2})
-        check('leitura falhou 2 vezes ao abrir: tenta de novo e carrega os 500', await pg.evaluate('TN.radars.size') == 500 and await pg.evaluate('TN.radLoaded'), str(await pg.evaluate('TN.radars.size')))
+        check('leitura falhou 2 vezes ao abrir: tenta de novo e carrega os 501', await pg.evaluate('TN.radars.size') == 501 and await pg.evaluate('TN.radLoaded'), str(await pg.evaluate('TN.radars.size')))
 
         # ---------- leitura sempre falha: um radar novo chega e NÃO pode apagar os 500 guardados ----------
         await reload({'radares.json': 999})
-        check('leitura sempre falha: ainda não leu o arquivo', not await pg.evaluate('TN.radLoaded') and await pg.evaluate('TN.radars.size') == 0)
-        r = await pg.evaluate('TN.radBulk([-20,-44,-19.75,-43.75],0.25)')
         for _ in range(20):
-            t = await pg.text_content('#toast')
-            if 'Não consegui ler' in t: break
+            t0 = await pg.text_content('#toast')
+            if 'Não consegui ler' in t0: break
             await pg.wait_for_timeout(300)
+        check('leitura sempre falha: ainda não leu o arquivo e avisa já ao abrir (sem esperar gravar)', not await pg.evaluate('TN.radLoaded') and await pg.evaluate('TN.radars.size') == 0 and 'Não consegui ler os radares guardados' in t0, t0)
+        check('… e Ajustes não diz "nenhum radar guardado"', 'Não consegui ler os radares guardados' in await pg.text_content('#radInfo'), await pg.text_content('#radInfo'))
+        r = await pg.evaluate('TN.radBulk([-20,-44,-19.75,-43.75],0.25)'); await pg.wait_for_timeout(2500)
         await pg.evaluate('window.__fail={}')
         n = await pg.evaluate(READ_FILE)
-        check('radar novo com o arquivo ilegível: não grava por cima (os 500 continuam no aparelho)', n == 500, 'pontos no arquivo: %s' % n)
-        check('… e avisa que não leu os radares guardados', 'Não consegui ler os radares guardados' in t, t)
+        check('radar novo com o arquivo ilegível: não grava por cima (os 501 continuam no aparelho)', n['n'] == 501 and not n['novo'], 'arquivo: %s' % n)
         for _ in range(30):   # nova tentativa de leitura (a cada 5 s), agora sem falha
             if await pg.evaluate('TN.radLoaded'): break
             await pg.wait_for_timeout(500)
-        check('quando a leitura volta: junta os 500 guardados com o novo', await pg.evaluate('TN.radLoaded') and await pg.evaluate('TN.radars.size') == 501, str(await pg.evaluate('TN.radars.size')))
-        await pg.evaluate('TN.radSave()'); await pg.evaluate('TN.radFlush()')
-        check('"gravar agora" (usado no Sair do app) grava sem esperar: 501 no arquivo', await pg.evaluate(READ_FILE) == 501)
+        r = await pg.evaluate("({n:TN.radars.size,novo:TN.radars.has('o900001'),velho:TN.radars.has('o77777')})")
+        check('quando a leitura volta: junta os guardados com o novo, sem trazer de volta o que o quadrado novo não tem', await pg.evaluate('TN.radLoaded') and r == {'n': 501, 'novo': True, 'velho': False}, str(r))
+        for _ in range(20):
+            n = await pg.evaluate(READ_FILE)
+            if n['novo']: break
+            await pg.wait_for_timeout(300)
+        check('… e grava sozinho o que ficou só na memória (sem ninguém pedir)', n['n'] == 501 and n['novo'] and not n['velho'], str(n))
+        await pg.evaluate("TN.radars.set('u1',{id:'u1',lat:-19.8,lon:-43.8,max:60,dir:null,user:true,k:'radar',exp:null});TN.radSave()"); await pg.evaluate('TN.radFlush()')
+        check('"gravar agora" (usado no Sair do app) grava sem esperar', (await pg.evaluate(READ_FILE))['u'])
 
         # ---------- gravação falha: avisa ----------
         await pg.evaluate("window.__failW={'radares.json':5}")
@@ -94,9 +101,13 @@ async def main():
         await reload({'manifest.json': 999})
         for _ in range(20):
             oi = await pg.text_content('#offInfo')
-            if 'está no aparelho' in oi: break
+            if 'estão no aparelho' in oi: break
             await pg.wait_for_timeout(300)
-        check('manifest sempre ilegível: diz que o mapa está no aparelho e não manda apagar (antes: "nenhum mapa")', 'está no aparelho' in oi and 'não apague' in oi, oi)
+        check('manifest sempre ilegível: diz que os arquivos estão no aparelho e pede para não apagar (antes: "nenhum mapa")', 'estão no aparelho' in oi and 'antes de baixar de novo ou apagar' in oi, oi)
+        await pg.evaluate('downloadMap()'); await pg.wait_for_timeout(2500)
+        oi = await pg.text_content('#offInfo')
+        nf = await pg.evaluate('''(async()=>{let n=0;for await (const k of (await (await navigator.storage.getDirectory()).getDirectoryHandle('mapa-dl')).keys())n++;return n})()''')
+        check('"Baixar" com o índice do mapa ilegível: não mistura partes, para e explica (arquivos intactos)', 'não consegui ler o mapa que já está no aparelho' in oi and nf == 4, oi + ' arquivos=%s' % nf)
         await pg.evaluate('window.__fail={}')
         for _ in range(20):
             if await pg.evaluate('!!TN.offPM'): break
