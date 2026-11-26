@@ -48,7 +48,7 @@ async def main():
         vs = await calls('voiceStart')
         words = vs[0]['words'] if vs else []
         check('assistente liga sozinho ao abrir (permissão de microfone dada)', len(vs) == 1 and await pg.evaluate('TN.voiceSt') == 'on')
-        check('vocabulário: música e atender/recusar (2.7.11), sem a agenda', all(w in words for w in ['trilha', 'próxima', 'música', 'volume', 'cancelar', 'atender', 'recusar']) and not ({'maria', 'joão', 'mãe', 'ir'} & set(words)) and len(words) < 120, str(len(words)))
+        check('vocabulário: música, atender/recusar (2.7.11) e os comandos da 2.7.12, sem a agenda (o nome vem da escuta do Google)', all(w in words for w in ['trilha', 'próxima', 'música', 'volume', 'cancelar', 'atender', 'recusar', 'ir', 'ligar']) and not ({'maria', 'joão', 'mãe'} & set(words)) and len(words) < 120, str(len(words)))
         check('assistente pede o microfone do fone Bluetooth (2.7.9: padrão ligado de novo, voz sem mãos andando)', vs and vs[0].get('bt') is True, str(vs[0].get('bt') if vs else None))
         await pg.evaluate("__emit('voice',{state:'on',msg:'fone'})")
         check('ouvindo pelo fone: botão mostra "Ouvindo (fone)"', await pg.text_content('#bVoice span') == 'Ouvindo (fone)')
@@ -69,7 +69,7 @@ async def main():
         await heard('pausar'); await pg.wait_for_timeout(200)
         check('… só uma vez (depois volta a exigir "trilha")', len(await calls('mediaKey')) == 2)
         await heard('trilha ligar para mãe'); await pg.wait_for_timeout(300)
-        check('"trilha ligar para mãe" não liga mais (só música)', not await pg.evaluate("document.querySelector('#callBox').classList.contains('on')") and not await calls('findContacts') and (await spoken())[-1] == 'Não entendi: ligar para mãe')
+        check('"trilha ligar para mãe" sem favoritos: não liga nem procura na agenda (2.7.12: só favoritos, t33)', not await pg.evaluate("document.querySelector('#callBox').classList.contains('on')") and not await calls('findContacts') and (await spoken())[-1] == 'Nenhum favorito no Telefone')
 
         # ---------- ligação tocando ----------
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})"); await pg.wait_for_timeout(4500)

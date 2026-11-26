@@ -1086,9 +1086,9 @@ function parseCmd(t){const s=normTxt(t);if(!s)return null;
   /* (2.7.12) navegação e telefone. Depois de "ir para", "ligar para" e "mandar localização" o nome é ouvido pela escuta do Google (voiceAsk);
      pelo botão Voz (que já é a escuta do Google) o nome pode vir na mesma frase: q */
   const tail=re=>{const m=re.exec(String(t));return m?m[1].replace(/\s+/g,' ').trim().slice(0,80):''};
-  if(/\bir (para|de|do|da)\b/.test(s.replace(/\bpra\b/g,'para'))){let q=tail(/\bir\s+((?:para|pra|de|do|da)\s.+)$/i);q=q.replace(/^(?:para|pra)\s+/i,'');return {a:'goto',q}}
-  if(/\bmandar\b.*\blocalizacao\b|\blocalizacao\b/.test(s))return {a:'sendloc',q:tail(/\blocaliza[cç][aã]o\s+(?:para|pra)\s+(.+)$/i)};
-  if(/\bligar\b/.test(s)&&!/\b(musica|som|volume)\b/.test(s))return {a:'callto',q:tail(/\b(?:ligar|liga|ligue)\s+(.+)$/i).replace(/^(?:para|pra)(?:\s+|$)/i,'')};
+  if(/\bir (para|de|do|da)\b/.test(s.replace(/\b(pra|pro)\b/g,'para'))){let q=tail(/\bir\s+((?:para|pra|pro|de|do|da)\s.+)$/i);q=q.replace(/^(?:para|pra|pro)\s+/i,'').replace(/^(?:a|o|as|os)\s+/i,'');return {a:'goto',q}}
+  if(/\bmandar\b.*\blocalizacao\b/.test(s))return {a:'sendloc',q:tail(/\blocaliza[cç][aã]o\s+(?:para|pra|pro)\s+(.+)$/i)};   /* "qual a minha localização" não manda nada */
+  if(/\bligar\b/.test(s.replace(/\b(liga|ligue)\b/g,'ligar'))&&!/\b(musica|som|volume)\b/.test(s))return {a:'callto',q:tail(/\b(?:ligar|liga|ligue)\s+(.+)$/i).replace(/^(?:para|pra|pro)(?:\s+|$)/i,'')};
   if(/\bonde (eu )?estou\b/.test(s))return {a:'where'};
   if(/\bquanto (que )?falta\b/.test(s))return {a:'eta'};
   if(/\bposto\b/.test(s))return {a:'fuel'};
@@ -1127,14 +1127,16 @@ function onCall(o){o=o||{};const st=['ringing','offhook','idle'].includes(o.stat
       txt=(callSt.src==='wa'?(callSt.video?'Chamada de vídeo do WhatsApp de ':'Ligação de WhatsApp de '):'Ligação de ')+who+(cfg.vCall!==false&&voiceLive()?'. Diga atender ou recusar':'');say(txt,true)}
   else if(st==='offhook'){if(dialT){clearTimeout(dialT);dialT=null}showCall('offhook')}
   else{hideCall();callCtx=null}}
-function dial(c){if(!c||!fmtNum(c.number)){say('Número inválido');return}if(dialT)clearTimeout(dialT);callCtx={name:String(c.name||'').slice(0,80),number:fmtNum(c.number)};
-  showCall('dial');say('Ligando para '+(callCtx.name||callCtx.number.split('').join(' ')),true);
-  dialT=setTimeout(()=>{dialT=null;nat('placeCall',{number:callCtx.number}).catch(e=>{hideCall();toast('Não consegui ligar: '+errTxt(e),5000);say('Não consegui ligar')})},3500)}
+/* (2.7.12) quanto tempo o app leva para falar t (uns 13 caracteres por segundo): a contagem para dizer "cancelar" só começa depois */
+const ttsMs=t=>cfg.voice?Math.round(String(t||'').length*75)+400:0;
+function dial(c,byVoice){if(!c||!fmtNum(c.number)){say('Número inválido');return}if(dialT)clearTimeout(dialT);callCtx={name:String(c.name||'').slice(0,80),number:fmtNum(c.number)};
+  const msg='Ligando para '+(callCtx.name||callCtx.number.split('').join(' '));showCall('dial');say(msg,true);
+  dialT=setTimeout(()=>{dialT=null;nat('placeCall',{number:callCtx.number}).catch(e=>{hideCall();toast('Não consegui ligar: '+errTxt(e),5000);say('Não consegui ligar')})},3500+(byVoice?ttsMs(msg):0))}
 function getFavs(){return (LS.get('phFav',[])||[]).filter(f=>f&&typeof f.name==='string'&&typeof f.number==='string').slice(0,30)}
 async function runCmd(c){if(!c)return;if(sos&&sos.phase==='count'&&c.a==='none'){sosCancel();return}const st=callSt.state;
   switch(c.a){
     case 'answer':if(st!=='ringing'){say('Nenhuma ligação tocando');return}(callSt.src==='wa'?nat('waCallAction',{act:'answer'}):nat('answerCall')).then(()=>toast('Atendida')).catch(e=>{say('Não consegui atender');toast(errTxt(e),5000)});return;
-    case 'none':case 'end':if(dialT){clearTimeout(dialT);dialT=null;hideCall();callCtx=null;say('Ligação cancelada');return}if(locT){locCancel();return}if(c.a==='none')return;if(st==='idle'){say('Nenhuma ligação');return}
+    case 'none':case 'end':{let k=false;if(dialT){clearTimeout(dialT);dialT=null;hideCall();callCtx=null;say('Ligação cancelada');k=true}if(locT){locCancel();k=true}if(k)return}if(c.a==='none')return;if(st==='idle'){say('Nenhuma ligação');return}
       (callSt.src==='wa'?nat('waCallAction',{act:st==='ringing'?'decline':'hangup'}):nat('endCall')).then(()=>{if(st==='ringing')toast('Recusada')}).catch(e=>{say('Não consegui encerrar');toast(errTxt(e),5000)});return;
     case 'pause':return media('pause');case 'next':return media('next');case 'prev':return media('previous');
     case 'volup':return nat('volume',{dir:'up'}).catch(()=>{});case 'voldown':return nat('volume',{dir:'down'}).catch(()=>{});
@@ -1168,9 +1170,10 @@ async function goVoice(q){let hs=q?[q]:null;
   try{navSel={from,to};const rs=await anyRoute(from||here,to,false);addRecent(to);navStart(rs[0],to,from?from.name:null);toast('Indo para '+to.name+(to.sub?' · '+to.sub:''),6000)}
   catch(e){say('Não consegui calcular a rota');toast('Rota: '+errTxt(e),5000)}}
 /* nome dito × favoritos do Telefone: sem acento e sem maiúscula; vale o nome inteiro ou só o primeiro nome. Com o nome inteiro de um, só ele */
-function favMatch(hs,favs){for(const h of hs){const nh=normTxt(h).replace(/^(?:(?:para|pra|o|a)\s+)+/,'').trim();if(nh.length<2)continue;
-    const full=favs.filter(f=>normTxt(f.name)===nh);if(full.length)return full;
-    const first=favs.filter(f=>normTxt(f.name).split(' ')[0]===nh||(' '+normTxt(f.name)+' ').includes(' '+nh+' '));if(first.length)return first}
+const FSTOP=new Set(['da','de','do','das','dos','e']);
+function favMatch(hs,favs){const H=hs.map(h=>normTxt(h).replace(/^(?:(?:para|pra|pro|o|a)\s+)+/,'').trim()).filter(h=>h.length>=2&&!FSTOP.has(h));
+  for(const h of H){const full=favs.filter(f=>normTxt(f.name)===h);if(full.length)return full}
+  for(const h of H){const part=favs.filter(f=>(' '+normTxt(f.name)+' ').includes(' '+h+' '));if(part.length)return part}
   return []}
 async function favAsk(q,what){const favs=getFavs();if(!favs.length){say('Nenhum favorito no Telefone');return null}
   let hs=q?[q]:null;if(!hs)try{hs=await voiceAsk('Para quem?')}catch(e){voiceAskFail(e,'o nome');return null}
@@ -1178,17 +1181,17 @@ async function favAsk(q,what){const favs=getFavs();if(!favs.length){say('Nenhum 
   if(m.length===1)return m[0];
   if(m.length>1){say('Tenho '+m.slice(0,3).map(f=>f.name).join(' e ')+'. Diga o nome inteiro');return null}
   say(hs[0]+' não está nos favoritos');return null}
-async function callVoice(q){const f=await favAsk(q,'ligar para');if(f)dial(f)}
+async function callVoice(q){const f=await favAsk(q,'ligar para');if(f)dial(f,true)}
 /* localização por SMS para um favorito, com 5 s para dizer "cancelar" (ou tocar em Cancelar) */
 function locCancel(){if(!locT)return;clearTimeout(locT);locT=null;if($('#dlgAsk').open&&$('#askT').textContent==='Mandar localização')$('#dlgAsk').close();say('Envio cancelado')}
 async function sendLocVoice(q){if(!fix){say('Sem sinal do GPS');return}const f=await favAsk(q,'localização para');if(!f)return;
   let pm=null;try{pm=await nat('requestSms')}catch(e){}if(!pm||!pm.granted){say('Sem permissão de SMS');toast('Permita o SMS em Telefone para mandar a localização',6000);return}
-  if(locT)clearTimeout(locT);say('Mandando sua localização para '+f.name+'. Diga cancelar',true);
+  if(locT)clearTimeout(locT);const msg='Mandando sua localização para '+f.name+'. Diga cancelar';say(msg,true);
   locT=setTimeout(async()=>{locT=null;if($('#dlgAsk').open&&$('#askT').textContent==='Mandar localização')$('#dlgAsk').close();const p=fix||LS.get('lastPos',null);if(!p){say('Sem sinal do GPS');return}
     const link='https://maps.google.com/?q='+(+p.lat).toFixed(6)+','+(+p.lon).toFixed(6);
     try{await nat('sendSms',{numbers:[fmtNum(f.number)],text:'TrilhaNav: minha localização agora: '+link});say('Localização enviada para '+f.name);toast('Localização enviada para '+f.name,4000)}
-    catch(e){say('Não consegui mandar o SMS');toast('SMS: '+errTxt(e),5000)}},5000);
-  ask({title:'Mandar localização',msg:'Para '+f.name+' ('+fmtNum(f.number)+') por SMS em 5 s. Diga "cancelar" ou toque abaixo.',ok:'Cancelar o envio',danger:true}).then(v=>{if(v)locCancel()})}
+    catch(e){say('Não consegui mandar o SMS');toast('SMS: '+errTxt(e),5000)}},5000+ttsMs(msg));
+  ask({title:'Mandar localização',msg:'Para '+f.name+' ('+fmtNum(f.number)+') por SMS em 5 s. Diga "cancelar" ou toque abaixo.',ok:'Cancelar o envio',danger:true}).then(v=>{if(v)locCancel()}).catch(()=>{})}
 async function fuelGo(){if(!LS.get('netOk',false)&&!offPM){say('Baixe o mapa offline ou abra o Ir para e aceite o aviso de internet');return}
   try{const l=await fuelFind();if(!l.length){say('Nenhum posto a até 8 quilômetros');return}say('Posto mais perto: '+l[0].name+', a '+spokenDist(hav(fix||LS.get('lastPos',null),l[0])));fuelRoute(l[0])}
   catch(e){say(/GPS/.test(errTxt(e))?'Sem sinal do GPS':'Não consegui procurar postos')}}
@@ -1647,8 +1650,9 @@ function ask({title,msg='',value=null,options=null,ok='OK',danger=false}){return
   $('#askT').textContent=title;$('#askMsg').textContent=msg;inp.style.display=value!=null?'':'none';sel.style.display=options?'':'none';if(value!=null)inp.value=value;
   if(options)sel.innerHTML=options.map((o,i)=>'<option value="'+i+'">'+esc(o.label)+'</option>').join('');
   $('#askOk').textContent=ok;$('#askOk').className='btn'+(danger?' r':'');
-  const fin=v=>{if(done)return;done=true;d.close();res(v)};
-  $('#askOk').onclick=()=>fin(options?options[+sel.value].value:value!=null?inp.value:true);$('#askNo').onclick=()=>fin(null);d.onclose=()=>fin(null);d.showModal();if(value!=null)inp.focus()})}
+  const fin=v=>{if(done)return;done=true;if(ask.cur===fin)ask.cur=null;if(d.open)d.close();res(v)};
+  if(ask.cur)ask.cur(null);ask.cur=fin;   /* (2.7.12) a pergunta que estava aberta fica como "não" */
+  $('#askOk').onclick=()=>fin(options?options[+sel.value].value:value!=null?inp.value:true);$('#askNo').onclick=()=>fin(null);d.onclose=()=>{if(!d.open)fin(null)};d.showModal();if(value!=null)inp.focus()})}
 
 /* ---------- arquivos no aparelho (OPFS): GPX em pastas e notas da gravação ---------- */
 const cleanName=n=>String(n).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').trim().slice(0,80);

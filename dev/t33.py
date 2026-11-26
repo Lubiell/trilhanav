@@ -64,7 +64,8 @@ async def main():
              ('mandar localização', 'sendloc', ''), ('mandar a localização para Emiliane', 'sendloc', 'Emiliane'),
              ('onde estou', 'where', None), ('onde eu estou', 'where', None), ('quanto falta', 'eta', None), ('quanto que falta', 'eta', None),
              ('posto', 'fuel', None), ('mapa', 'tab', None), ('painel', 'tab', None), ('telefone', 'tab', None),
-             ('desligar a música', None, None), ('liga a música', None, None), ('desligar', 'end', None)]
+             ('desligar a música', None, None), ('liga a música', None, None), ('desligar', 'end', None),
+             ('Liga pro João da Silva', 'callto', 'João da Silva'), ('ir pro centro', 'goto', 'centro'), ('qual a minha localização', None, None)]
         got = await pg.evaluate("fs=>fs.map(t=>{const c=parseCmd(t);return c?[c.a,c.q===undefined?null:c.q]:[null,null]})", [f for f, _, _ in F])
         bad = [(f, a, q, g) for (f, a, q), g in zip(F, got) if g[0] != a or (q is not None and g[1] != q)]
         check('frases novas viram o comando certo (e o nome dito pelo botão Voz vem junto)', not bad, str(bad))
@@ -134,11 +135,13 @@ async def main():
         n0 = len(await spoken()); await heard('trilha ligar para'); await pg.wait_for_timeout(500)
         check('"ligar para" → "Para quem?" → "Emiliane": liga para o favorito pelo primeiro nome, falando o nome antes', (await said_after(n0))[:2] == ['Para quem?', 'Ligando para Emiliane Souza'] and not await calls('placeCall'), str(await said_after(n0)))
         await pg.wait_for_timeout(3600)
-        check('… 3,5 s depois liga', (await calls('placeCall')) == [{'number': '31988887777'}], str(await calls('placeCall')))
+        check('… os 3,5 s para dizer "cancelar" só contam depois da fala (o assistente não escuta enquanto o app fala)', not await calls('placeCall'))
+        await pg.wait_for_timeout(2400)
+        check('… e então liga', (await calls('placeCall')) == [{'number': '31988887777'}], str(await calls('placeCall')))
         await pg.evaluate("__emit('call',{state:'idle'})"); await pg.wait_for_timeout(100)
         await listenQ(['Emiliane'])
         await heard('trilha ligar para'); await pg.wait_for_timeout(500)
-        k0 = len(await calls('mediaKey')); await heard('próxima'); await heard('cancelar'); await pg.wait_for_timeout(3600)
+        k0 = len(await calls('mediaKey')); await heard('próxima'); await heard('cancelar'); await pg.wait_for_timeout(6200)
         check('"cancelar" sem "Trilha" nos 3,5 s cancela a ligação (e música sem "Trilha" não vale)', len(await calls('placeCall')) == 1 and len(await calls('mediaKey')) == k0 and 'Ligação cancelada' in await spoken())
         await listenQ(['Joaquim'])
         n0 = len(await spoken()); await heard('trilha ligar para'); await pg.wait_for_timeout(4000)
@@ -148,9 +151,11 @@ async def main():
         n0 = len(await spoken()); await heard('trilha ligar para'); await pg.wait_for_timeout(4000)
         check('dois favoritos com o mesmo nome: fala os dois e não liga', len(await calls('placeCall')) == 1 and any(x.startswith('Tenho Emiliane Souza e Emiliane Casa') for x in await said_after(n0)), str(await said_after(n0)))
         await listenQ(['Emiliane Casa'])
-        await heard('trilha ligar para'); await pg.wait_for_timeout(4200)
+        await heard('trilha ligar para'); await pg.wait_for_timeout(6600)
         check('… com o nome inteiro liga para o certo', (await calls('placeCall'))[-1] == {'number': '3132221111'}, str(await calls('placeCall')))
         await pg.evaluate("__emit('call',{state:'idle'})"); await pg.wait_for_timeout(100)
+        r = await pg.evaluate("[favMatch(['da'],[{name:'Maria da Silva',number:'1'}]).length,favMatch(['Emiliane','Emiliane Casa'],getFavs()).map(f=>f.name)]")
+        check('favoritos: o nome inteiro em qualquer hipótese vence o primeiro nome; "da" sozinho não escolhe ninguém', r == [0, ['Emiliane Casa']], str(r))
 
         # ---------- mandar localização ----------
         await listenQ(['Emiliane Souza'])
@@ -158,16 +163,26 @@ async def main():
         dl = await pg.evaluate("[document.querySelector('#dlgAsk').open,document.querySelector('#askT').textContent]")
         check('"mandar localização": avisa por voz e na tela, com 5 s para cancelar', 'Mandando sua localização para Emiliane Souza. Diga cancelar' in await said_after(n0) and dl == [True, 'Mandar localização'] and not await calls('sendSms'), str(dl))
         await pg.wait_for_timeout(5000)
+        check('… os 5 s só contam depois da fala', not await calls('sendSms'))
+        await pg.wait_for_timeout(5000)
         sms = await calls('sendSms')
         check('… 5 s depois manda o SMS só para o favorito, com o link do mapa', len(sms) == 1 and sms[0]['numbers'] == ['31988887777'] and 'https://maps.google.com/?q=-21.120000,-42.940000' in sms[0]['text'] and not await pg.evaluate("document.querySelector('#dlgAsk').open"), str(sms))
         await listenQ(['Emiliane Souza'])
         await heard('trilha mandar localização'); await pg.wait_for_timeout(600)
-        await heard('cancelar'); await pg.wait_for_timeout(5200)
+        await heard('cancelar'); await pg.wait_for_timeout(10500)
         check('"cancelar" sem "Trilha" não manda', len(await calls('sendSms')) == 1 and 'Envio cancelado' in await spoken() and not await pg.evaluate("document.querySelector('#dlgAsk').open"))
         await listenQ(['Emiliane Souza'])
         await heard('trilha mandar localização'); await pg.wait_for_timeout(600)
-        await pg.click('#askOk'); await pg.wait_for_timeout(5200)
+        await pg.click('#askOk'); await pg.wait_for_timeout(10500)
         check('tocar em "Cancelar o envio" não manda', len(await calls('sendSms')) == 1)
+        await pg.evaluate("()=>{window.__a1=null;ask({title:'Outra pergunta'}).then(v=>{window.__a1=v===null?'null':v})}"); await pg.wait_for_timeout(100)
+        await listenQ(['Emiliane Souza'], ['Emiliane Casa'])
+        await heard('trilha mandar localização'); await pg.wait_for_timeout(600)
+        t = await pg.evaluate("[document.querySelector('#askT').textContent,window.__a1]")
+        check('com outra pergunta aberta, a do SMS toma o lugar e a outra fica como "não"', t == ['Mandar localização', 'null'], str(t))
+        p0 = len(await calls('placeCall')); await heard('trilha ligar para'); await pg.wait_for_timeout(600)
+        await heard('cancelar'); await pg.wait_for_timeout(10500)
+        check('ligação e SMS contando juntos: um "cancelar" cancela os dois', len(await calls('sendSms')) == 1 and len(await calls('placeCall')) == p0, str(await calls('sendSms')))
         await pg.evaluate("window.__smsOk=false"); await listenQ(['Emiliane Souza'])
         n0 = len(await spoken()); await heard('trilha mandar localização'); await pg.wait_for_timeout(5600)
         check('sem permissão de SMS não manda', len(await calls('sendSms')) == 1 and 'Sem permissão de SMS' in await said_after(n0), str(await said_after(n0)))
