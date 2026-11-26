@@ -3,7 +3,9 @@
 O vocabulário do assistente sempre ligado (VBASE, gramática do Vosk) cobre toda palavra que o intérprete (parseCmd) entende e nada
 além disso; as frases de música viram o comando certo; as dos comandos que saíram não fazem nada; hipóteses alternativas do Vosk;
 o "cancelar/estou bem" do aviso de queda continua. Nativo simulado.
-v2.7.11 (o dono pediu de volta): "atender" e "recusar/desligar" voltam, valendo sem "Trilha" só enquanto o telefone toca."""
+v2.7.11 (o dono pediu de volta): "atender" e "recusar/desligar" voltam, valendo sem "Trilha" só enquanto o telefone toca.
+v2.7.12 (o dono pediu de volta): abas, "ir para", "ligar para" favorito, posto, onde estou, quanto falta e mandar localização (t33);
+aqui só confere que o vocabulário continua batendo com o intérprete e que o resto que saiu continua sem efeito."""
 import asyncio, json, re, sys, unicodedata
 from playwright.async_api import async_playwright
 
@@ -26,11 +28,11 @@ for lit in re.findall(r'/(\^?(?:\\.|[^/\n])+)/\.(?:test|exec)', html[i:j]):
 words -= {'test', 'exec'}
 falta = sorted(w for w in words if na(w) not in vbn)
 check('toda palavra que o intérprete entende está no vocabulário do assistente (senão o Vosk nunca a escreve)', not falta, str(falta))
-check('vocabulário sem repetição e sem palavras que soam como outra ação (troca/toca, passa/pausa, volta/toca, para/pausa)', len(vb) == len(set(vb)) and not ({'troca', 'trocar', 'passa', 'passar', 'volta', 'voltar', 'para', 'pra', 'pare', 'parar'} & set(vb)), str(len(vb)))
+check('vocabulário sem repetição e sem palavras que soam como outra ação (troca/toca, passa/pausa, volta/toca, pare/pausa); "para" só em "ir para"/"ligar para" (2.7.12)', len(vb) == len(set(vb)) and not ({'troca', 'trocar', 'passa', 'passar', 'volta', 'voltar', 'pra', 'pare', 'parar'} & set(vb)), str(len(vb)))
 sobra = sorted(w for w in vb if len(na(w)) > 2 and na(w) not in words and w not in {'trilha', 'que', 'por', 'favor', 'não', 'quero', 'música', 'volume', 'som'})
-check('vocabulário só com música, aviso de queda e atender/recusar (sem ir/hospital/blitz…)', not sobra and not ({'ir', 'ligação', 'hospital', 'blitz', 'onde', 'clima', 'posto', 'zoom'} & set(vb)) and {'atender', 'recusar', 'desligar'} <= set(vb), str(sobra))
-gone = [x for x in ('placeGrammar', 'vosk-words', 'PALIAS', 'goPlace', 'askPlace', 'callByName', 'radMarkVoice', 'poiGo', 'callVoice', 'Para onde?') if x in html]
-check('saiu o "ir para" por voz, as cidades na gramática, ligar por voz e marcar aviso por voz', not gone, str(gone))
+check('vocabulário só com música, aviso de queda, atender/recusar e os comandos da 2.7.12 (sem hospital/blitz/clima/zoom…)', not sobra and not ({'ligação', 'hospital', 'blitz', 'clima', 'zoom', 'farmácia', 'marcar'} & set(vb)) and {'atender', 'recusar', 'desligar', 'ir', 'ligar', 'posto', 'mapa'} <= set(vb), str(sobra))
+gone = [x for x in ('placeGrammar', 'vosk-words', 'PALIAS', 'goPlace', 'askPlace', 'callByName', 'radMarkVoice', 'poiGo') if x in html]
+check('continuam fora: as cidades na gramática (o nome vem da escuta do Google), ligar pela agenda inteira e marcar aviso por voz', not gone, str(gone))
 
 MUSICA = [
     ('próxima', 'next'), ('próxima música', 'next'), ('toca a próxima', 'next'), ('anterior', 'prev'), ('música anterior', 'prev'),
@@ -38,8 +40,7 @@ MUSICA = [
     ('tocar', 'play'), ('toca música', 'play'), ('voltar a tocar', 'play'), ('estou bem', 'none'), ('tô bem', 'none'), ('cancelar', 'none'),
 ]
 LIGA = [('atender', 'answer'), ('atende', 'answer'), ('recusar', 'end'), ('recusa', 'end'), ('desligar', 'end'), ('desliga', 'end')]   # 2.7.11
-SAIU = ['ir para guidoval', 'quero ir para ouro preto', 'me leva no posto', 'ir para o hospital', 'ligar para maria',
-        'onde estou', 'quanto falta', 'repetir', 'que horas são', 'velocidade', 'clima', 'vai chover', 'posto', 'hospital', 'farmácia',
+SAIU = ['repetir', 'que horas são', 'velocidade', 'clima', 'vai chover', 'hospital', 'farmácia',
         'marcar blitz', 'marcar radar', 'apagar aviso', 'travar tela', 'gravar trilha', 'ler mensagens', 'ajuda', 'aproximar', 'autonomia', 'abasteci',
         # sinônimos que saíram na 2.7.5 (uma palavra por ação)
         'trocar música', 'pula essa', 'outra música', 'volta a música', 'desligar a música', 'para a música', 'mais volume', 'baixa o som', 'diminui o volume',
@@ -113,14 +114,14 @@ async def main():
         check('"trilha" sozinho arma e o comando seguinte vale', (await calls('volume')) == [{'dir': 'up'}])
         await heard('trilha de a o', ['trilha de a o', 'trilha pausar'])
         check('a 2ª hipótese vale quando a 1ª não é comando', (await calls('mediaKey'))[-1] == {'key': 'pause'} and (await vlog())[0][2] == 'comando: pausar (pela 2ª hipótese)', str((await vlog())[:1]))
-        n0 = len(await spoken()); await heard('trilha ir para guidoval'); await pg.wait_for_timeout(1600)
+        n0 = len(await spoken()); await heard('trilha ir para guidoval'); await pg.wait_for_timeout(600)
         s = await said_after(n0)
-        check('"trilha, ir para Guidoval": não procura nem pergunta "Para onde?"', s == ['Não entendi: ir para guidoval'] and not await calls('listen') and not await pg.evaluate('!!TN.nav'), str(s))
+        check('"trilha, ir para Guidoval" (2.7.12): o Vosk não usa o "guidoval" da gramática; pergunta "Para onde?" à escuta do Google', s[:1] == ['Para onde?'] and len(await calls('listen')) == 1 and not await pg.evaluate('!!TN.nav'), str(s))
         n0 = len(await spoken()); await heard('trilha ligar para maria'); await pg.wait_for_timeout(300)
-        check('"trilha, ligar para Maria": não liga', (await said_after(n0)) == ['Não entendi: ligar para maria'] and not await calls('findContacts') and not await calls('placeCall'))
-        n0 = len(await spoken()); b0 = len(await beeps()); await heard('trilha mapa')
-        check('não entendeu: um bipe grave e diz o que ouviu', (await said_after(n0)) == ['Não entendi: mapa'] and (await beeps())[b0:] == [330], str((await beeps())[b0:]))
-        check('diagnóstico: "não entendi"', (await vlog())[0] == ['v', 'trilha mapa', 'não entendi'], str((await vlog())[:1]))
+        check('"trilha, ligar para Maria" sem favoritos: não liga nem procura na agenda', (await said_after(n0)) == ['Nenhum favorito no Telefone'] and not await calls('findContacts') and not await calls('placeCall'), str(await said_after(n0)))
+        n0 = len(await spoken()); b0 = len(await beeps()); await heard('trilha som')
+        check('não entendeu: um bipe grave e diz o que ouviu', (await said_after(n0)) == ['Não entendi: som'] and (await beeps())[b0:] == [330], str((await beeps())[b0:]))
+        check('diagnóstico: "não entendi"', (await vlog())[0] == ['v', 'trilha som', 'não entendi'], str((await vlog())[:1]))
         n0 = len(await spoken()); await heard('trilha de a o')
         check('só palavras soltas ("de a o"): diz apenas "Não entendi"', (await said_after(n0)) == ['Não entendi'])
         b0 = len(await beeps()); await heard('trilha'); await heard('de a o'); await pg.wait_for_timeout(100)
@@ -135,10 +136,10 @@ async def main():
         # ---------- 4) ligação (2.7.11): anuncia quem liga e "atender"/"recusar" valem sem "Trilha" enquanto toca ----------
         r = await pg.evaluate("TN.LIGA_OK=%s.map(([t,a])=>{const c=TN.parseCmd(t);return [t,c&&c.a]})" % json.dumps(LIGA))
         check('"atender/atende" viram atender e "recusar/recusa/desligar/desliga" viram recusar', all(a == b for (t, a), (_, b) in zip(LIGA, r)), str(r))
-        n0 = len(await spoken())
+        n0 = len(await spoken()); l0 = len(await calls('listen'))
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})"); await pg.wait_for_timeout(4500)
         r = await pg.evaluate("({st:document.querySelector('#callSt').textContent,ans:getComputedStyle(document.querySelector('#callAns')).display})")
-        check('ligação chegando: anuncia quem liga e pede "atender ou recusar" (sem abrir a escuta do Google)', (await said_after(n0)) == ['Ligação de Maria Souza. Diga atender ou recusar'] and r['st'] == 'Ligação chegando' and r['ans'] != 'none' and not await calls('listen'), str(await said_after(n0)))
+        check('ligação chegando: anuncia quem liga e pede "atender ou recusar" (sem abrir a escuta do Google)', (await said_after(n0)) == ['Ligação de Maria Souza. Diga atender ou recusar'] and r['st'] == 'Ligação chegando' and r['ans'] != 'none' and len(await calls('listen')) == l0, str(await said_after(n0)))
         await heard('não atender'); await heard('não atende'); await heard('eu não quero atender')
         check('tocando: "não atender" (negação) não atende (revisão 2.7.11)', len(await calls('answerCall')) == 0)
         await heard('atender')
@@ -165,7 +166,7 @@ async def main():
         check('com "atender/recusar por voz" desligado: não pede e não atende', (await said_after(n0)) == ['Ligação de Maria Souza'] and len(await calls('answerCall')) == a0, str(await said_after(n0)))
         await pg.evaluate("TN.cfg.vCall=true;__emit('call',{state:'idle'})")
         set_html = await pg.evaluate("document.querySelector('#dlgPhone').innerHTML")
-        check('Telefone com os ajustes novos (sensibilidade e atender/recusar por voz); ajuda da voz sem "ir para"', 'sVSens' in set_html and 'sVCall' in set_html and 'próxima música' in set_html and 'ir para' not in set_html.lower(), '')
+        check('Telefone com os ajustes (nome, sensibilidade e atender/recusar por voz); a ajuda da voz explica os comandos novos e a escuta do Google', 'sVName' in set_html and 'sVSens' in set_html and 'sVCall' in set_html and 'próxima música' in set_html and 'ir para' in set_html.lower() and 'escuta do Google' in set_html, '')
 
         # ---------- 5) aviso de queda: "cancelar" vale sem "trilha"; música sem "trilha" não ----------
         await pg.evaluate("document.querySelector('#sosTestB').click()"); await pg.wait_for_timeout(300)
@@ -178,14 +179,14 @@ async def main():
 
         # ---------- 6) botão Voz (escuta do Google) com o assistente desligado ----------
         await pg.evaluate("TN.cfg.voiceAlways=false;TN.onVoiceState({state:'off'})")
-        await pg.evaluate("__listenQ.push(['ir para Ouro Preto'],['próxima'])")
+        await pg.evaluate("__listenQ.push(['que horas são'],['próxima'])")
         n0 = len(await spoken()); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
-        check('botão Voz: "ir para Ouro Preto" não faz nada', (await said_after(n0)) == ['Não entendi: ir para Ouro Preto'] and not await pg.evaluate('!!TN.nav'), str(await said_after(n0)))
+        check('botão Voz: "que horas são" (saiu na 2.7.4) não faz nada', (await said_after(n0)) == ['Não entendi: que horas são'] and not await pg.evaluate('!!TN.nav'), str(await said_after(n0)))
         k0 = len(await calls('mediaKey')); b0 = len(await beeps()); await pg.click('#bVoice'); await pg.wait_for_timeout(400)
         check('botão Voz: "próxima" passa, com os dois bipes (depois do bipe de "fale agora")', (await calls('mediaKey'))[k0:] == [{'key': 'next'}] and (await beeps())[b0:] == [1000, 1500, 1500], str((await beeps())[b0:]))
         await pg.click('#bVoice'); await pg.wait_for_timeout(400)
         check('botão Voz sem resposta da escuta: aparece no diagnóstico como erro', (await vlog())[0][0] == 'g' and (await vlog())[0][2].startswith('erro da escuta'), str((await vlog())[:1]))
-        check('diagnóstico: frase do botão Voz', (await vlog())[1] == ['g', 'próxima', 'comando: próxima música'] and (await vlog())[2] == ['g', 'ir para Ouro Preto', 'não entendi'], str((await vlog())[:3]))
+        check('diagnóstico: frase do botão Voz', (await vlog())[1] == ['g', 'próxima', 'comando: próxima música'] and (await vlog())[2] == ['g', 'que horas são', 'não entendi'], str((await vlog())[:3]))
 
         # ---------- 7) tela: diagnóstico, dica do intercomunicador; nada guardado ----------
         for k in range(12): await heard('conversa %d' % k)

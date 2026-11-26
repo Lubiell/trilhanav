@@ -491,6 +491,17 @@ public class TrilhaNativePlugin extends Plugin implements TrilhaNotifService.Sin
         if (!has("mic")) { call.reject("sem permissão do microfone"); return; }
         if (!SpeechRecognizer.isRecognitionAvailable(getContext())) { call.reject("reconhecimento de voz indisponível"); return; }
         final int ms = Math.max(2000, Math.min(15000, call.getInt("ms", 7000)));
+        // (2.7.12) "Para onde?"/"Para quem?": espera a pergunta terminar de ser falada (até 6 s) em vez de cortá-la
+        final boolean afterTts = Boolean.TRUE.equals(call.getBoolean("afterTts", false));
+        final long t0 = System.currentTimeMillis();
+        // a fala pedida logo antes pode ainda não ter começado: a 1ª conferência é depois de 400 ms
+        main.postDelayed(new Runnable() { @Override public void run() {
+            if (afterTts && tts != null && tts.isSpeaking() && System.currentTimeMillis() - t0 < 6000) { main.postDelayed(this, 150); return; }
+            startListen(call, ms);
+        } }, afterTts ? 400 : 0);
+    }
+
+    private void startListen(final PluginCall call, final int ms) {
         main.post(() -> {
             if (listenCall != null) { listenCall.reject("cancelado"); listenCall = null; }
             if (tts != null) tts.stop();
