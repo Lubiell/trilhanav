@@ -4,7 +4,8 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 
 | Arquivo | Versão | Compilado de | Tamanho |
 |---|---|---|---|
-| **`trilhanav-2.7.11.apk`** (atual) | 2.7.11 (versionCode 20711) | `main` `be5bd87` (merge do PR #23), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 (a voz não roda no emulador) | 56 MB (modelo de voz) |
+| **`trilhanav-2.7.12.apk`** (atual) | 2.7.12 (versionCode 20712) | `main` `3a2df55` (merge do PR #25), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 (a voz não roda no emulador) | 56 MB (modelo de voz) |
+| `trilhanav-2.7.11.apk` | 2.7.11 (versionCode 20711) | `main` `be5bd87` (merge do PR #23), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 (a voz não roda no emulador) | 56 MB (modelo de voz) |
 | `trilhanav-2.7.10.apk` | 2.7.10 (versionCode 20710) | `main` `b863447` (merge do PR #22), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 | 56 MB (modelo de voz) |
 | `trilhanav-2.7.9.apk` | 2.7.9 (versionCode 20709) | `main` `e4bb3a5` (merge do PR #20), workflow APK + assinatura com a chave fixa; testado no emulador Android 14 | 56 MB (modelo de voz) |
 | `trilhanav-2.7.8.apk` | 2.7.8 (versionCode 20708) | `main` `d219bba` (merge do PR #18), workflow APK + assinatura com a chave fixa | 56 MB (modelo de voz) |
@@ -15,13 +16,14 @@ Branch órfã só com o APK (mesmo esquema do branch `mapas`). O código-fonte e
 | `trilhanav-2.0.1.apk` | 2.0.1 (versionCode 20001) | commit `3ae9f0d` (PR #2) | 5,4 MB |
 | `trilhanav-2.0.0.apk` | 2.0.0 (versionCode 20000) | commit `dc6f6af` (PR #1) | 5,4 MB |
 
-**Baixar no celular (2.7.11):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.11.apk
+**Baixar no celular (2.7.12):** https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.12.apk
 
 (A 2.7.4, a 2.7.3, a 2.7.2, a 2.7.1, a 2.7.0, a 2.6.2, a 2.6.1, a 2.6.0, a 2.5.0, a 2.4.0, a 2.3.0, a 2.2.0 e a 2.1.0 saíram do branch para não pesar o repositório; continuam no histórico do git.)
 
 `versao.json` diz ao app qual é a versão atual (a partir da 2.2.0 o app procura atualização sozinho: baixa daqui, confere o SHA-256 e abre o instalador).
 
 SHA-256 em `SHA256SUMS`:
+- 2.7.12: `c0be7abb2bda45a4a137ff5ee211236f10cbb27b4c892b54303c252e70e12799`
 - 2.7.11: `1083f30a99b95c1992b90447547a620c0e8a4086959cf620346f33051a60b7e1`
 - 2.7.10: `7a7032305f65f89031ff83a8ca0e66c268da0e446b7f448e819e9c0be9b97b0e`
 - 2.7.9: `8468d842efcba1e0c729b59f072c247cb590ea2f2eb98b773df74a84b05fb2e2`

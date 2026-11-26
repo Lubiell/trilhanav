@@ -1,7 +1,7 @@
 {
- "version": "2.7.11",
- "code": 20711,
- "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.11.apk",
- "sha256": "1083f30a99b95c1992b90447547a620c0e8a4086959cf620346f33051a60b7e1",
- "notes": "\"Trilha\" mais sensível (vale nas 3 hipóteses; ajuste normal/alta). Quando alguém liga, o app fala quem é e \"atender\" ou \"recusar\" valem por voz sem dizer \"Trilha\". WhatsApp: escolha as pessoas que terão o texto lido (☆ na mensagem ou pelo nome)."
+ "version": "2.7.12",
+ "code": 20712,
+ "apk": "https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.12.apk",
+ "sha256": "c0be7abb2bda45a4a137ff5ee211236f10cbb27b4c892b54303c252e70e12799",
+ "notes": "Voz: \"Trilha, mapa/painel/telefone\" muda de aba; \"Trilha, ir para\" pergunta o lugar (ou \"de Ubá para Guidoval\"); \"Trilha, ligar para\" e \"mandar localização\" (SMS) para os favoritos do Telefone, com tempo para dizer \"cancelar\"; posto, onde estou e quanto falta. Dá para chamar o assistente de Piloto, Garupa, Parceiro ou Comandante. Aviso quando o microfone do capacete não está conectado."
 }
