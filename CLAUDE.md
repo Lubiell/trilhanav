@@ -76,10 +76,10 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 | Onde | O que tem |
 |---|---|
-| `main` | o código: v2.7.11 (merge do PR #23, `be5bd87`, 25/11/2026) |
+| `main` | o código: v2.7.12 (merge do PR #25, `3a2df55`, 26/11/2026) |
 | `gh-pages` | https://lubiell.github.io/trilhanav/: desde a v2.7.0 só uma página de download (lê o `versao.json` e mostra o link do APK mais novo) e um `sw.js` que apaga o app antigo (PWA) do navegador de quem já tinha aberto. O código dessa página não está no `main` (só no `gh-pages`) |
 | `mapas` (órfão) | mapa de Minas Gerais: `mg/manifest.json` + 30 partes de 45 MB |
-| `apk` (órfão) | `trilhanav-2.7.11.apk` (atual, 56 MB, **chave fixa** `c7654768…`; "Trilha" mais sensível, atender/recusar por voz, WhatsApp de pessoas escolhidas; testado no emulador, voz não), 2.7.10, 2.7.9, 2.7.8, 2.7.7, 2.7.6 e 2.7.5 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.4 a 2.7.1 saíram do branch, ficam no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.11.apk, SHA-256 `1083f30a99b95c1992b90447547a620c0e8a4086959cf620346f33051a60b7e1` |
+| `apk` (órfão) | `trilhanav-2.7.12.apk` (atual, 56 MB, **chave fixa** `c7654768…`; voz: abas, ir para, ligar para favorito, mandar localização, posto, onde estou, quanto falta, nome do assistente; testado no emulador, voz não), 2.7.11, 2.7.10, 2.7.9, 2.7.8, 2.7.7, 2.7.6 e 2.7.5 (mesma chave), 2.6.3, 2.0.1, 2.0.0 (a 2.7.4 a 2.7.1 saíram do branch, ficam no histórico); `SHA256SUMS`, README (histórico das versões) e **`versao.json`** (o app lê para se atualizar; atualizar a cada APK novo). Baixar: https://raw.githubusercontent.com/Lubiell/trilhanav/apk/trilhanav-2.7.12.apk, SHA-256 `c0be7abb2bda45a4a137ff5ee211236f10cbb27b4c892b54303c252e70e12799` |
 | `claude/loving-lovelace-yzb96l` | branch de trabalho das sessões do Claude (recomeçado do `main` depois de cada merge) |
 | Google Drive (raiz) | `trilhanav_backup_AAAA-MM-DD_vX.Y.zip` (código via `git archive`) e a pasta **"TrilhaNav - chave do APK (NAO APAGAR)"**: `trilhanav_chave_apk.p12` (PKCS12, alias `trilhanav`, 30 anos) + `trilhanav_chave_apk_senha.txt`. Só ali; nunca no git nem no chat em claro |
 
@@ -87,7 +87,7 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - `index.html`: app inteiro (HTML + CSS + JS inline, estilo denso). Leaflet vem do cdnjs (com SRI; no APK vai local). `window.TN` expõe internos só para os testes.
 - `lib/`: `pmtiles.js` 4.5.0, `protomaps-leaflet.js` 5.1.0 (mapa vetorial offline), `leaflet-rotate.js` 0.2.8 (**GPL-3.0**, ver `NOTICE.md`).
-- `sw.js`: cache offline (`trilhanav-vN`, hoje `v28`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
+- `sw.js`: cache offline (`trilhanav-vN`, hoje `v29`) e tiles online já vistos (`trilhanav-tiles`, ≤3000). Subir `N` a cada release.
 - `android-app/`: empacotamento do APK (`build-apk.sh`, `rewrite-html.py`, `patch-android.py`, `native/*.java`: `MainActivity` (Voltar), `TrilhaNativePlugin` (`exitApp`: Sair do app), `TrilhaNotifService`, `TrilhaVoiceService` (Vosk); `sign/assinar.sh` + `sign/Signer.java`: assinatura com a chave fixa). `node_modules/`, `android/`, `www/` e `*.apk` não vão para o git.
 - `.github/workflows/apk.yml` (compila o APK; manual ou tag `v*`) e `testes.yml` (CI).
 - `dev/`: testes Playwright (ver "Como testar"), `fixtures.py`, `make_testmap.py`, `roads.pmtiles`, `t.gpx`.
@@ -116,7 +116,8 @@ App de navegação de **moto** (Android, APK com Capacitor): mapa offline de MG,
 
 - **Testar em celular real** (prioridade): voz pelo capacete com música, foco de áudio, rota e busca offline numa estrada real (o mapa de MG tem `places`/`pois`/nomes de rua? conferido só no mapa de teste), GPS com a tela apagada, telefone/WhatsApp, SOS, atualização automática.
 - **Gravação de trilha só é guardada ao exportar ou ao "Sair do app"**: se o Android matar o app no meio da viagem, os pontos (só na memória, `rec`) se perdem. Guardar de tempos em tempos seria a correção (não pedida).
-- **Combinado para depois**: mandar a localização (por voz estava combinado, mas desde a 2.7.4 a voz é só música: perguntar ao dono), paradas no caminho no Ir para, histórico de viagens.
+- **Combinado para depois**: paradas no caminho no Ir para, histórico de viagens (mandar localização por voz entrou na 2.7.12).
+- **Voz da 2.7.12 no celular**: conferir com o Helmet V10 se o "para" de volta na gramática rouba o "pausa" com vento (revisão: [Provável]) e se a escuta do Google ouve pelo microfone do capacete (SCO) [Provável].
 - **Licença**: `leaflet-rotate` é GPL-3.0 (código aberto obrigatório); o repositório ainda não tem `LICENSE` próprio (decisão do dono).
 - **Origem compartilhada** (`lubiell.github.io`): só importa se o site voltar.
 - Ideias: nomes de rua na voz da rota offline (o grafo não guarda o nome da via), busca offline de ruas longe de você (hoje só a 6 km).
