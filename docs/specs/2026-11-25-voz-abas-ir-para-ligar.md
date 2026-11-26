@@ -1,5 +1,5 @@
 # Spec — voz no bolso, abas, "ir para", "ligar para", nome do assistente e extras (2.7.12)
-Data: 2026-11-25 · Estado: **proposta (esperando o ok do dono)**
+Data: 2026-11-25 · Estado: **aprovada pelo dono em 25/11 ("Ok")**
 
 ## Problema
 - Com o celular no bolso, o microfone dele fica abafado (roupa e vento): o "Trilha" quase não é ouvido.

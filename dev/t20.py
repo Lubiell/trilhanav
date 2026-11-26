@@ -107,7 +107,7 @@ async def main():
         check('"Ir" faz a rota até o posto', await pg.evaluate("TN.nav&&TN.nav.to.name") == 'Posto <b>Perto</b>')
         await pg.evaluate("TN.navStop()")
         c = await pg.evaluate("['posto mais perto','preciso abastecer','gasolina'].map(t=>TN.parseCmd(t))")
-        check('posto por voz saiu (voz só para música; postos pela tela)', c == [None, None, None], str(c))
+        check('"posto" por voz voltou na 2.7.12 (t33); "abastecer"/"gasolina" não são comando', c == [{'a': 'fuel'}, None, None], str(c))
 
         # ---------- limite da via ----------
         for i in range(3):

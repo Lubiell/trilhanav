@@ -113,7 +113,7 @@ async def main():
         MODE['om'] = 'ok'
         await pg.evaluate("TN.wxUpdate(true)"); await pg.wait_for_timeout(1500)
         c = await pg.evaluate("[TN.parseCmd('clima'),TN.parseCmd('ir para a Praça da Estação'),TN.parseCmd('encerrar rota')]")
-        check('"clima", "ir para" e "encerrar rota" por voz saíram (voz só para música)', c == [None, None, None], str(c))
+        check('"clima" e "encerrar rota" por voz continuam fora; "ir para" voltou na 2.7.12 (t33)', c == [None, {'a': 'goto', 'q': 'Praça da Estação'}, None], str(c))
 
         # ---------- "Ir para" pela tela ----------
         await pg.evaluate("TN.cfg.wx=true")

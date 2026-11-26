@@ -52,10 +52,10 @@ async def main():
         # ---------- intérprete de comandos: só música (v2.7.4) ----------
         casos = {'pausar': 'pause', 'próxima música': 'next', 'música anterior': 'prev', 'aumentar o volume': 'volup', 'abaixa o volume': 'voldown',
                  'tocar Spotify': 'play', 'toca música': 'play', 'cancelar': 'none', 'bom dia': None,
-                 'Atender': 'answer', 'recusar': 'end', 'ligar para Maria': None, 'Liga pro João da Silva': None, 'ler mensagens': None}
+                 'Atender': 'answer', 'recusar': 'end', 'ligar para Maria': 'callto', 'Liga pro João da Silva': 'callto', 'ler mensagens': None}   # ligar para favorito voltou na 2.7.12 (t33)
         res = await pg.evaluate("(cs)=>Object.fromEntries(cs.map(t=>{const c=TN.parseCmd(t);return [t,c?c.a:null]}))", list(casos))
         bad = {k: (res[k], v) for k, v in casos.items() if res[k] != v}
-        check('frases de música viram o comando certo; atender/recusar voltaram (2.7.11); ligar/ler por voz continuam fora', not bad, str(bad))
+        check('frases de música viram o comando certo; atender/recusar (2.7.11) e ligar para (2.7.12) voltaram; ler por voz continua fora', not bad, str(bad))
 
         # ---------- ligação chegando: botões da tela (a escuta de "atender/recusar" saiu na v2.7.4) ----------
         await pg.evaluate("__emit('call',{state:'ringing',number:'+5531999990000',name:'Maria Souza'})")

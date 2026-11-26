@@ -278,6 +278,7 @@ public class TrilhaVoiceService extends Service {
         loop = new Thread(() -> {
             AudioRecord ar = null;
             android.media.audiofx.AutomaticGainControl agc = null;
+            android.media.audiofx.NoiseSuppressor ns = null;
             try {
                 int min = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
                 ar = new AudioRecord(bt ? MediaRecorder.AudioSource.VOICE_COMMUNICATION : MediaRecorder.AudioSource.VOICE_RECOGNITION,
@@ -292,6 +293,13 @@ public class TrilhaVoiceService extends Service {
                             if (agc != null) agc.setEnabled(true);
                         }
                     } catch (Exception e) { agc = null; }
+                    // (2.7.12) no bolso e com vento: também o supressor de ruído do Android, se o aparelho tiver
+                    try {
+                        if (android.media.audiofx.NoiseSuppressor.isAvailable()) {
+                            ns = android.media.audiofx.NoiseSuppressor.create(ar.getAudioSessionId());
+                            if (ns != null) ns.setEnabled(true);
+                        }
+                    } catch (Exception e) { ns = null; }
                 }
                 ar.startRecording();
                 short[] buf = new short[2048];
@@ -327,6 +335,7 @@ public class TrilhaVoiceService extends Service {
                 state("error", "microfone: " + e.getMessage());
             } finally {
                 if (agc != null) { try { agc.release(); } catch (Exception ignored) { } }
+                if (ns != null) { try { ns.release(); } catch (Exception ignored) { } }
                 if (ar != null) { try { ar.stop(); } catch (Exception ignored) { } ar.release(); }
                 running = false;
             }
